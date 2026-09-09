@@ -172,7 +172,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-lg font-bold tracking-tight text-white">rakshak.ai</h1>
+                <h1 className="text-lg font-bold tracking-tight text-white">Rakshak.ai</h1>
                 <span className="text-[10px] uppercase font-bold tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                   x402 Protocol
                 </span>
@@ -575,7 +575,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 px-6 py-4 text-center text-xs text-slate-500">
-        rakshak.ai &bull; x402 Protocol on Algorand Testnet &bull; GoPlausible Facilitator &bull; LoRA Explorer Verification
+        Rakshak.ai &bull; x402 Protocol on Algorand Testnet &bull; GoPlausible Facilitator &bull; LoRA Explorer Verification
       </footer>
     </div>
   );

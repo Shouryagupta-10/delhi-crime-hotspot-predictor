@@ -1,4 +1,4 @@
-# 🛡️ rakshak.ai: Crime Hotspot & Premises Risk Predictor
+# 🛡️ Rakshak.ai: Crime Hotspot & Premises Risk Predictor
 ### Geospatial Density Clustering (Haversine DBSCAN) & Supervised Machine Learning Studio
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)

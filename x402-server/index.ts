@@ -60,7 +60,7 @@ app.get('/api/v1/dbscan-hotspots', handleHotspotsRequest);
 app.get('/health', (c) => c.json({ status: 'OK', network: 'Algorand Testnet', timestamp: new Date().toISOString() }));
 app.get('/', (c) =>
   c.json({
-    service: 'rakshak.ai: Crime Hotspot & Premises Risk x402 Server',
+    service: 'Rakshak.ai: Crime Hotspot & Premises Risk x402 Server',
     track: 'Agentic Solutions: Powered by x402',
     network: 'Algorand Testnet',
     chain_caip2: ALGORAND_TESTNET_CAIP2,
