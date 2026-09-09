@@ -119,8 +119,8 @@ def render_gps_locator(key_suffix=""):
 
 # Page Configuration
 st.set_page_config(
-    page_title="Delhi Crime Hotspot & Premises Risk Predictor",
-    page_icon="🗺️",
+    page_title="rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -301,8 +301,8 @@ elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
 # Header Section
-st.markdown('<div class="main-header">Delhi Crime Hotspot & Premises Risk Predictor</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Geospatial Density Clustering (Haversine DBSCAN) & Supervised Machine Learning across 15 Delhi Police Districts</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🛡️ rakshak.ai <span style="font-size: 1.05rem; font-weight: 600; color: #166534; background: #DCFCE7; padding: 3px 10px; border-radius: 6px; margin-left: 8px; vertical-align: middle;">Delhi Police & Citizen Safety Intelligence</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Geospatial Density Clustering (Haversine DBSCAN) & Supervised Premises Risk Forecasting across 15 Delhi Police Districts</div>', unsafe_allow_html=True)
 
 # Live GPS Banner if location is active
 if user_lat is not None:
@@ -738,4 +738,4 @@ with tab5:
 
 # Footer
 st.markdown("---")
-st.caption("Delhi Crime Hotspot & Premises Risk Predictor | Built with Python, Scikit-learn, XGBoost, Folium, and Streamlit.")
+st.caption("rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor | Built with Python, Scikit-learn, XGBoost, Folium, and Streamlit.")
