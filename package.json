@@ -1,0 +1,43 @@
+{
+  "name": "delhi-crime-hotspot-predictor-x402",
+  "version": "1.0.0",
+  "description": "Delhi Premises Crime Hotspot Predictor & Patrol Intelligence - Powered by x402 on Algorand Testnet with GoPlausible Facilitator",
+  "main": "x402-server/index.ts",
+  "type": "module",
+  "scripts": {
+    "x402:server": "cd x402-server && npm run start",
+    "x402:agent": "cd x402-server && npm run agent",
+    "x402:dev": "cd x402-server && npm run dev",
+    "streamlit": "bash run_project.sh"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^7.0.0",
+    "@hono/node-server": "^1.13.7",
+    "@x402-avm/extensions": "^2.6.1",
+    "@x402-avm/fetch": "^2.6.1",
+    "@x402/avm": "^2.25.0",
+    "@x402/core": "^2.25.0",
+    "@x402/hono": "^2.25.0",
+    "algosdk": "^2.9.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.17.0",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2"
+  },
+  "keywords": [
+    "x402",
+    "x402-avm",
+    "algorand",
+    "testnet",
+    "goplausible",
+    "agentic-solutions",
+    "lora-algokit",
+    "geospatial-ai",
+    "delhi-police"
+  ],
+  "author": "Hackathon Team",
+  "license": "MIT"
+}
