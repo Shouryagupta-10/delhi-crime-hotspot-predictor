@@ -144,9 +144,12 @@ st.markdown("""
     }
 
     [data-testid="stAppViewContainer"] {
-        background-color: #090b10 !important;
-        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0) !important;
-        background-size: 24px 24px !important;
+        background-color: #000000 !important;
+        background-image: 
+            radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1.2px, transparent 0),
+            radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%) !important;
+        background-size: 24px 24px, 100% 100% !important;
+        background-attachment: fixed !important;
     }
 
     /* Top padding fix */
@@ -577,15 +580,11 @@ overflow: hidden;
 .parallax-bg-glow {
 position: absolute;
 inset: -30px;
-background: radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.22) 0%, transparent 50%),
-radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.18) 0%, transparent 50%),
-radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
-#080c14;
+background: radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%);
 background-image: 
 radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0),
-radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.22) 0%, transparent 50%),
-radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.18) 0%, transparent 50%);
-background-size: 28px 28px, auto, auto;
+radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%);
+background-size: 28px 28px, 100% 100%;
 pointer-events: none;
 animation: heroPulse 12s ease-in-out infinite alternate;
 }
