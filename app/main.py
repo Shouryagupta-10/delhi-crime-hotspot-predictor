@@ -22,7 +22,7 @@ if BASE_DIR not in sys.path:
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
-from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html
+from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
 
@@ -523,6 +523,22 @@ map_zoom_sidebar = st.sidebar.slider(
 )
 st.session_state["map_zoom"] = map_zoom_sidebar
 
+with st.sidebar.expander("🌍 Google Maps Platform Key", expanded=False):
+    gmaps_api_input = st.text_input(
+        "Google Maps API Key",
+        value=st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", "")),
+        type="password",
+        help="Enter your Google Maps Platform API key with Maps JavaScript API, Places API, and Geocoding API enabled. If blank, you can also connect directly within the map."
+    )
+    if gmaps_api_input:
+        st.session_state["google_maps_api_key"] = gmaps_api_input
+    st.markdown(
+        "<div style='font-size: 11px; color: #94a3b8; margin-top: 4px;'>"
+        "Need a key? Get one on the <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
+        "</div>",
+        unsafe_allow_html=True
+    )
+
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
 
@@ -910,7 +926,11 @@ with tab1:
         with map_col:
             map_mode = st.radio(
                 "Select Map Experience:",
-                ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
+                [
+                    "🌍 Google Maps Platform (Vector Night, 360° Street View, Traffic & Places)",
+                    "⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)",
+                    "🗺️ Static Density Heatmap (Folium)"
+                ],
                 index=0,
                 horizontal=True
             )
@@ -936,7 +956,33 @@ with tab1:
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
-        if map_mode.startswith("⚡"):
+        if map_mode.startswith("🌍"):
+            active_key = st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", ""))
+            gmaps_html = create_google_maps_sentinel_html(
+                hotspots_df=cluster_engine.hotspots_df,
+                initial_user_lat=user_lat,
+                initial_user_lon=user_lon,
+                initial_zoom=current_zoom,
+                incidents_df=filtered_df,
+                api_key=active_key
+            )
+            # Cruip Showcase Terminal Header
+            st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-google-maps.live • Google Maps Platform Vector Night 3D & 360° Street View</span>
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25);">
+        GOOGLE MAPS PLATFORM • 60 FPS VECTOR
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            st.components.v1.html(gmaps_html, height=750)
+            st.caption("Google Maps")
+        elif map_mode.startswith("⚡"):
             # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,

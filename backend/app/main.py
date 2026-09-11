@@ -22,7 +22,7 @@ if BASE_DIR not in sys.path:
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
-from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html
+from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
 
@@ -134,179 +134,205 @@ st.set_page_config(
 # Custom Once UI & Magic Portfolio CSS styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
 
-    /* Global Dark Canvas with Once UI Dot Grid */
-    html, body, [data-testid="stAppViewContainer"], .main {
-        font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
-        background-color: #090b10 !important;
-        color: #f1f5f9 !important;
-    }
+/* Global Cruip Dark Canvas with Indigo Horizon */
+html, body, [data-testid="stAppViewContainer"], .main {
+font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+background-color: #030712 !important;
+color: #e2e8f0 !important;
+}
 
-    [data-testid="stAppViewContainer"] {
-        background-color: #090b10 !important;
-        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0) !important;
-        background-size: 24px 24px !important;
-    }
+[data-testid="stAppViewContainer"] {
+background-color: #030712 !important;
+background-image: 
+radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1.2px, transparent 0),
+radial-gradient(125% 125% at 50% 10%, #030712 40%, #4338ca 100%) !important;
+background-size: 24px 24px, 100% 100% !important;
+background-attachment: fixed !important;
+}
 
-    /* Top padding fix */
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 3rem !important;
-        max-width: 1400px !important;
-    }
+/* Container Spacing */
+.block-container {
+padding-top: 1.2rem !important;
+padding-bottom: 3.5rem !important;
+max-width: 1360px !important;
+}
 
-    /* Sidebar Once UI Styling */
-    [data-testid="stSidebar"] {
-        background-color: rgba(11, 15, 23, 0.95) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(20px) !important;
-    }
+/* Cruip Sidebar Styling */
+[data-testid="stSidebar"] {
+background-color: rgba(3, 7, 18, 0.95) !important;
+border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+backdrop-filter: blur(24px) !important;
+}
 
-    [data-testid="stSidebar"] hr {
-        border-color: rgba(255, 255, 255, 0.08) !important;
-    }
+[data-testid="stSidebar"] hr {
+border-color: rgba(255, 255, 255, 0.08) !important;
+}
 
-    /* Streamlit Metric Cards -> Once UI Pop Cards */
-    [data-testid="stMetric"] {
-        background: rgba(14, 18, 26, 0.75) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 20px !important;
-        padding: 16px 20px !important;
-        box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-        transition: all 0.2s ease !important;
-    }
+/* Cruip Open PRO Shimmer Gradient Animation */
+@keyframes cruipGradient {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
 
-    [data-testid="stMetric"]:hover {
-        border-color: rgba(6, 182, 212, 0.4) !important;
-        transform: translateY(-2px);
-    }
+.cruip-shimmer-title {
+background: linear-gradient(to right, #f8fafc 20%, #c7d2fe 40%, #e0e7ff 60%, #818cf8 80%, #f8fafc 100%);
+background-size: 200% auto;
+color: transparent;
+-webkit-background-clip: text;
+background-clip: text;
+animation: cruipGradient 8s ease infinite;
+}
 
-    [data-testid="stMetricLabel"] {
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.06em !important;
-        color: #94a3b8 !important;
-    }
+/* Cruip Glass Metric Cards */
+[data-testid="stMetric"] {
+background: rgba(15, 23, 42, 0.6) !important;
+backdrop-filter: blur(16px) !important;
+-webkit-backdrop-filter: blur(16px) !important;
+border: 1px solid rgba(255, 255, 255, 0.08) !important;
+border-radius: 20px !important;
+padding: 18px 22px !important;
+box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
 
-    [data-testid="stMetricValue"] {
-        font-size: 30px !important;
-        font-weight: 900 !important;
-        color: #ffffff !important;
-        letter-spacing: -0.03em !important;
-    }
+[data-testid="stMetric"]:hover {
+border-color: rgba(99, 102, 241, 0.45) !important;
+transform: translateY(-2px);
+box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.15) !important;
+}
 
-    [data-testid="stMetricDelta"] {
-        font-family: 'Geist Mono', monospace !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-    }
+[data-testid="stMetricLabel"] {
+font-size: 11px !important;
+font-weight: 700 !important;
+text-transform: uppercase !important;
+letter-spacing: 0.07em !important;
+color: #94a3b8 !important;
+}
 
-    /* Streamlit Tabs -> Once UI Floating Capsule Nav */
-    div[data-baseweb="tab-list"] {
-        background: rgba(14, 18, 26, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 9999px !important;
-        padding: 6px !important;
-        gap: 6px !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(16px) !important;
-        margin-bottom: 24px !important;
-    }
+[data-testid="stMetricValue"] {
+font-size: 28px !important;
+font-weight: 900 !important;
+color: #ffffff !important;
+letter-spacing: -0.03em !important;
+}
 
-    div[data-baseweb="tab"] {
-        border-radius: 9999px !important;
-        color: #94a3b8 !important;
-        font-size: 12.5px !important;
-        font-weight: 600 !important;
-        padding: 8px 16px !important;
-        border: 1px solid transparent !important;
-        transition: all 0.2s ease !important;
-        background: transparent !important;
-    }
+[data-testid="stMetricDelta"] {
+font-family: 'Geist Mono', monospace !important;
+font-size: 11px !important;
+font-weight: 600 !important;
+}
 
-    div[data-baseweb="tab"]:hover {
-        color: #ffffff !important;
-        background: rgba(255, 255, 255, 0.04) !important;
-    }
+/* Cruip Floating Pill Tabs */
+div[data-baseweb="tab-list"] {
+background: rgba(15, 23, 42, 0.8) !important;
+border: 1px solid rgba(255, 255, 255, 0.08) !important;
+border-radius: 9999px !important;
+padding: 6px !important;
+gap: 6px !important;
+box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
+backdrop-filter: blur(20px) !important;
+margin-bottom: 24px !important;
+}
 
-    div[data-baseweb="tab"][aria-selected="true"] {
-        background: rgba(255, 255, 255, 0.12) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    }
+div[data-baseweb="tab"] {
+border-radius: 9999px !important;
+color: #94a3b8 !important;
+font-size: 12.5px !important;
+font-weight: 600 !important;
+padding: 8px 18px !important;
+border: 1px solid transparent !important;
+transition: all 0.2s ease !important;
+background: transparent !important;
+}
 
-    div[data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
+div[data-baseweb="tab"]:hover {
+color: #ffffff !important;
+background: rgba(255, 255, 255, 0.04) !important;
+}
 
-    /* Buttons -> Once UI Pill Buttons */
-    .stButton > button {
-        border-radius: 9999px !important;
-        font-weight: 600 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        background: rgba(255, 255, 255, 0.06) !important;
-        color: #ffffff !important;
-        transition: all 0.2s ease !important;
-        padding: 8px 18px !important;
-    }
+div[data-baseweb="tab"][aria-selected="true"] {
+background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%) !important;
+color: #ffffff !important;
+border: 1px solid rgba(129, 140, 248, 0.4) !important;
+box-shadow: 0 0 20px rgba(99, 102, 241, 0.25) !important;
+}
 
-    .stButton > button:hover {
-        background: rgba(255, 255, 255, 0.14) !important;
-        border-color: rgba(6, 182, 212, 0.5) !important;
-        color: #22d3ee !important;
-    }
+div[data-baseweb="tab-highlight"] {
+display: none !important;
+}
 
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%) !important;
-        border: none !important;
-        color: white !important;
-        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
-    }
+/* Cruip Gradient Action Buttons */
+.stButton > button {
+border-radius: 12px !important;
+font-weight: 600 !important;
+border: 1px solid rgba(255, 255, 255, 0.12) !important;
+background: rgba(30, 41, 59, 0.6) !important;
+color: #f1f5f9 !important;
+transition: all 0.2s ease !important;
+padding: 8px 20px !important;
+}
 
-    /* Selectboxes and Inputs */
-    div[data-baseweb="select"] > div {
-        background: rgba(14, 18, 26, 0.75) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 14px !important;
-        color: #f1f5f9 !important;
-    }
+.stButton > button:hover {
+background: rgba(51, 65, 85, 0.8) !important;
+border-color: rgba(99, 102, 241, 0.5) !important;
+color: #a5b4fc !important;
+transform: translateY(-1px);
+}
 
-    /* Badges */
-    .badge-high {
-        background-color: rgba(239, 68, 68, 0.15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
-    .badge-med {
-        background-color: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
-    .badge-low {
-        background-color: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
+.stButton > button[kind="primary"] {
+background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%) !important;
+border: 1px solid rgba(255, 255, 255, 0.2) !important;
+color: white !important;
+box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+background: linear-gradient(180deg, #4f46e5 0%, #4338ca 100%) !important;
+box-shadow: 0 6px 24px rgba(79, 70, 229, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Selectboxes & Inputs */
+div[data-baseweb="select"] > div {
+background: rgba(15, 23, 42, 0.75) !important;
+border: 1px solid rgba(255, 255, 255, 0.1) !important;
+border-radius: 12px !important;
+color: #f1f5f9 !important;
+}
+
+/* Cruip Badges */
+.badge-high {
+background-color: rgba(239, 68, 68, 0.15);
+color: #f87171;
+border: 1px solid rgba(239, 68, 68, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
+.badge-med {
+background-color: rgba(245, 158, 11, 0.15);
+color: #fbbf24;
+border: 1px solid rgba(245, 158, 11, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
+.badge-low {
+background-color: rgba(16, 185, 129, 0.15);
+color: #34d399;
+border: 1px solid rgba(16, 185, 129, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -497,6 +523,22 @@ map_zoom_sidebar = st.sidebar.slider(
 )
 st.session_state["map_zoom"] = map_zoom_sidebar
 
+with st.sidebar.expander("🌍 Google Maps Platform Key", expanded=False):
+    gmaps_api_input = st.text_input(
+        "Google Maps API Key",
+        value=st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", "")),
+        type="password",
+        help="Enter your Google Maps Platform API key with Maps JavaScript API, Places API, and Geocoding API enabled. If blank, you can also connect directly within the map."
+    )
+    if gmaps_api_input:
+        st.session_state["google_maps_api_key"] = gmaps_api_input
+    st.markdown(
+        "<div style='font-size: 11px; color: #94a3b8; margin-top: 4px;'>"
+        "Need a key? Get one on the <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
+        "</div>",
+        unsafe_allow_html=True
+    )
+
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
 
@@ -521,45 +563,281 @@ elif time_preset == "Evening Rush (17:00-21:00)":
 elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
-# Top Floating Capsule Header (Once UI Style)
-st.markdown("""
-<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 9999px; padding: 10px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #10b981); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 16px rgba(6,182,212,0.35);">
-            🛡️
-        </div>
-        <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 16px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
-                <span style="font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Delhi Police & Civic AI</span>
-            </div>
-            <div style="font-size: 11px; color: #94a3b8;">Predictive Policing, Spatial Hotspots & Autonomous Agent Gateway</div>
-        </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; font-family: 'Geist Mono', monospace;">
-        <div style="display: flex; align-items: center; gap: 6px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2);">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
-            <span>All ML Models Live</span>
-        </div>
-        <span style="color: #475569;">•</span>
-        <span style="color: #94a3b8;">Asia/Kolkata (IST)</span>
-    </div>
+# Cruip Open PRO Header, Hero & Bento Grid
+cruip_layout_html = """
+<style>
+.cruip-header-wrapper {
+margin-bottom: 24px;
+}
+.cruip-header-nav {
+background: rgba(15, 23, 42, 0.75);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 20px;
+padding: 10px 24px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+flex-wrap: wrap;
+gap: 12px;
+}
+.cruip-logo-icon {
+width: 38px;
+height: 38px;
+border-radius: 12px;
+background: linear-gradient(135deg, #6366f1, #4f46e5);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 18px;
+box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.cruip-badge-mini {
+font-size: 10px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+background: rgba(99, 102, 241, 0.15);
+color: #a5b4fc;
+border: 1px solid rgba(129, 140, 248, 0.35);
+padding: 2px 8px;
+border-radius: 9999px;
+text-transform: uppercase;
+letter-spacing: 0.04em;
+}
+.cruip-status-pill {
+display: flex;
+align-items: center;
+gap: 6px;
+color: #34d399;
+background: rgba(16, 185, 129, 0.1);
+padding: 5px 12px;
+border-radius: 9999px;
+border: 1px solid rgba(16, 185, 129, 0.25);
+font-family: 'Geist Mono', monospace;
+}
+.cruip-status-dot {
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: #34d399;
+box-shadow: 0 0 8px #34d399;
+}
+.cruip-hero-section {
+text-align: center;
+padding: 34px 20px 28px 20px;
+position: relative;
+max-width: 980px;
+margin: 0 auto;
+}
+.cruip-hero-eyebrow {
+display: inline-flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+}
+.cruip-eyebrow-line {
+height: 1px;
+width: 32px;
+background: linear-gradient(to right, transparent, rgba(129, 140, 248, 0.5));
+}
+.cruip-hero-eyebrow span:last-child {
+background: linear-gradient(to left, transparent, rgba(129, 140, 248, 0.5));
+}
+.cruip-eyebrow-text {
+font-size: 11.5px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+background: linear-gradient(to right, #a5b4fc, #c7d2fe);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+}
+.cruip-hero-h1 {
+font-size: clamp(2.2rem, 4.4vw, 3.4rem);
+font-weight: 900;
+letter-spacing: -0.035em;
+line-height: 1.15;
+margin: 0 0 16px 0;
+text-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
+}
+.cruip-hero-sub {
+font-size: 15px;
+color: #94a3b8;
+line-height: 1.65;
+max-width: 820px;
+margin: 0 auto 22px auto;
+}
+.cruip-hero-chips {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+flex-wrap: wrap;
+margin-bottom: 24px;
+}
+.cruip-chip {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+background: rgba(15, 23, 42, 0.7);
+border: 1px solid rgba(255, 255, 255, 0.1);
+border-radius: 9999px;
+padding: 5px 14px;
+font-size: 11px;
+font-family: 'Geist Mono', monospace;
+color: #e2e8f0;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.cruip-chip:hover {
+border-color: rgba(99, 102, 241, 0.5);
+transform: translateY(-1px);
+}
+.cruip-bento-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 16px;
+margin-bottom: 28px;
+}
+.cruip-card {
+background: rgba(15, 23, 42, 0.5);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 20px;
+padding: 22px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cruip-card:hover {
+border-color: rgba(99, 102, 241, 0.4);
+transform: translateY(-2px);
+box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.12);
+}
+.cruip-card-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 12px;
+}
+.cruip-card-icon {
+width: 34px;
+height: 34px;
+border-radius: 10px;
+background: rgba(99, 102, 241, 0.12);
+border: 1px solid rgba(129, 140, 248, 0.25);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 16px;
+}
+.cruip-card-tag {
+font-size: 10px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+color: #818cf8;
+background: rgba(99, 102, 241, 0.1);
+padding: 2px 8px;
+border-radius: 9999px;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.cruip-card-title {
+font-size: 15.5px;
+font-weight: 700;
+color: #f1f5f9;
+margin: 0 0 6px 0;
+letter-spacing: -0.015em;
+}
+.cruip-card-desc {
+font-size: 12.5px;
+color: #94a3b8;
+line-height: 1.6;
+margin: 0;
+}
+</style>
+
+<div class="cruip-header-wrapper">
+<div class="cruip-header-nav">
+<div style="display: flex; align-items: center; gap: 12px;">
+<div class="cruip-logo-icon">🛡️</div>
+<div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
+<span class="cruip-badge-mini">Open PRO • Delhi Police AI</span>
+</div>
+<div style="font-size: 11px; color: #94a3b8;">Autonomous Spatial Forensics & Civic Safety Engine</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
+<div class="cruip-status-pill">
+<span class="cruip-status-dot"></span>
+<span>All ML Engines Active</span>
+</div>
+<span style="color: #475569;">•</span>
+<span style="color: #94a3b8; font-family: 'Geist Mono', monospace;">IST (Asia/Kolkata)</span>
+</div>
+</div>
 </div>
 
-<!-- Once UI Hero Banner Card -->
-<div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px 28px; margin-bottom: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);">
-    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #22d3ee; font-size: 10.5px; font-family: 'Geist Mono', monospace; font-weight: 700; text-transform: uppercase; margin-bottom: 10px;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22d3ee;"></span>
-        PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
-    </div>
-    <h1 style="font-size: 2.1rem; font-weight: 900; color: #ffffff; letter-spacing: -0.03em; margin: 0 0 8px 0; line-height: 1.2;">
-        Algorithmic Crime Forensics & Autonomous Agent Deterrence
-    </h1>
-    <p style="font-size: 13.5px; color: #94a3b8; max-width: 900px; margin: 0; line-height: 1.6;">
-        Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
-    </p>
+<div class="cruip-hero-section">
+<div class="cruip-hero-eyebrow">
+<span class="cruip-eyebrow-line"></span>
+<span class="cruip-eyebrow-text">PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS</span>
+<span class="cruip-eyebrow-line"></span>
 </div>
-""", unsafe_allow_html=True)
+<h1 class="cruip-shimmer-title cruip-hero-h1">
+Algorithmic Crime Forensics & Autonomous Agent Deterrence
+</h1>
+<p class="cruip-hero-sub">
+Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
+</p>
+<div class="cruip-hero-chips">
+<span class="cruip-chip"><b style="color: #818cf8;">15</b> Police Districts</span>
+<span class="cruip-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
+<span class="cruip-chip"><b style="color: #fbbf24;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
+<span class="cruip-chip"><b style="color: #c084fc;">60fps</b> Interactive Movement Radar</span>
+</div>
+</div>
+
+<div class="cruip-bento-grid">
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">📍</div>
+<span class="cruip-card-tag">Unsupervised ML</span>
+</div>
+<div class="cruip-card-title">DBSCAN ε=600m Spatial Clustering</div>
+<p class="cruip-card-desc">
+Automatically isolates high-density crime corridors from ambient noise across 15 districts, prioritizing patrol intervention where repeat offenses cluster.
+</p>
+</div>
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">⏱️</div>
+<span class="cruip-card-tag">Criminology Law</span>
+</div>
+<div class="cruip-card-title">Koper Curve 12-15m Deterrence</div>
+<p class="cruip-card-desc">
+Calculates optimal stationary patrol stops between 12 and 15 minutes, yielding up to 2 hours of residual deterrence without exhausting tactical units.
+</p>
+</div>
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">⚡</div>
+<span class="cruip-card-tag">Epidemiology Forensics</span>
+</div>
+<div class="cruip-card-title">Knox Space-Time Contagion</div>
+<p class="cruip-card-desc">
+Evaluates space-time interaction windows to flag secondary victimization risks within 72 hours and chart safest pedestrian corridors in real time.
+</p>
+</div>
+</div>
+"""
+st.markdown(cruip_layout_html, unsafe_allow_html=True)
 
 # Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
@@ -630,13 +908,13 @@ with tab1:
     
     if is_clean_mode:
         st.markdown("""
-        <div style="background: #F0FDF4; border-left: 5px solid #16A34A; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #166534;">
+        <div style="background: rgba(16, 185, 129, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 5px solid #10b981; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #6ee7b7; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
             <b>🛡️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div style="background: #FFFBEB; border-left: 5px solid #D97706; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #92400E;">
+        <div style="background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 5px solid #f59e0b; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #fde68a; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
             <b>⚠️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
         </div>
         """, unsafe_allow_html=True)
@@ -648,49 +926,86 @@ with tab1:
         with map_col:
             map_mode = st.radio(
                 "Select Map Experience:",
-                ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
+                [
+                    "🌍 Google Maps Platform (Vector Night, 360° Street View, Traffic & Places)",
+                    "⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)",
+                    "🗺️ Static Density Heatmap (Folium)"
+                ],
                 index=0,
                 horizontal=True
             )
         with zoom_tb_col:
-            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #475569; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
-            z1, z2, z3, z4, z_in, z_out = st.columns(6)
+            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
+            z1, z2, z3, z4 = st.columns(4)
             with z1:
-                if st.button("🗺️ City (11x)", use_container_width=True, help="Full Delhi NCT Overview"):
+                if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
                     st.session_state["map_zoom"] = 11
                     st.rerun()
             with z2:
-                if st.button("🏙️ District (13x)", use_container_width=True, help="District Jurisdiction View"):
+                if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
                     st.session_state["map_zoom"] = 13
                     st.rerun()
             with z3:
-                if st.button("🚨 Corridor (15x)", use_container_width=True, help="DBSCAN Hotspot Cluster Core"):
+                if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
                     st.session_state["map_zoom"] = 15
                     st.rerun()
             with z4:
-                if st.button("🔎 Street (17x)", use_container_width=True, help="Street & Premises Detail"):
+                if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
                     st.session_state["map_zoom"] = 17
-                    st.rerun()
-            with z_in:
-                if st.button("➕ In", use_container_width=True, help="Step Zoom In"):
-                    st.session_state["map_zoom"] = min(19, st.session_state.get("map_zoom", 13) + 1)
-                    st.rerun()
-            with z_out:
-                if st.button("➖ Out", use_container_width=True, help="Step Zoom Out"):
-                    st.session_state["map_zoom"] = max(9, st.session_state.get("map_zoom", 13) - 1)
                     st.rerun()
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
-        if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with dedicated zoom dock and HUD controls
+        if map_mode.startswith("🌍"):
+            active_key = st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", ""))
+            gmaps_html = create_google_maps_sentinel_html(
+                hotspots_df=cluster_engine.hotspots_df,
+                initial_user_lat=user_lat,
+                initial_user_lon=user_lon,
+                initial_zoom=current_zoom,
+                incidents_df=filtered_df,
+                api_key=active_key
+            )
+            # Cruip Showcase Terminal Header
+            st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-google-maps.live • Google Maps Platform Vector Night 3D & 360° Street View</span>
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25);">
+        GOOGLE MAPS PLATFORM • 60 FPS VECTOR
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            st.components.v1.html(gmaps_html, height=750)
+            st.caption("Google Maps")
+        elif map_mode.startswith("⚡"):
+            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,
                 initial_user_lat=user_lat,
                 initial_user_lon=user_lon,
-                initial_zoom=current_zoom
+                initial_zoom=current_zoom,
+                incidents_df=filtered_df
             )
-            st.components.v1.html(smooth_html, height=640)
+            # Cruip Showcase Terminal Header
+            st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Delhi NCT Sentinel</span>
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #818cf8; background: rgba(99, 102, 241, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(129, 140, 248, 0.25);">
+        60 FPS TELEMETRY
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            st.components.v1.html(smooth_html, height=720)
         else:
             # Folium Map with returned_objects=[] to eliminate re-run lag
             crime_map = create_delhi_crime_map(
@@ -735,11 +1050,11 @@ with tab_clean:
 
     # Executive Pipeline Flow / Summary Card
     st.markdown("""
-    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-        <div style="font-weight: 700; color: #1E293B; font-size: 15px; margin-bottom: 6px;">
+    <div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);">
+        <div style="font-weight: 700; color: #f8fafc; font-size: 15px; margin-bottom: 8px;">
             🛡️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
         </div>
-        <div style="color: #475569; font-size: 13px; line-height: 1.5;">
+        <div style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
             In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
             false alarms, or records with missing coordinates leak into density estimators like DBSCAN, cluster centroids warp and police patrols 
             are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter.
@@ -1057,7 +1372,7 @@ with tab2:
             st.markdown("- **IPC 379 (BNS 303)**: Unattended Vehicle Theft in Perimeter Parking")
             st.markdown("- **IPC 392 / 394 (BNS 309)**: Robbery / Extortion along unlit transit corridors")
 
-# --- TAB 3: DBSCAN VS K-MEANS INTERVIEW DEFENSE ---
+# DBSCAN tab removed
 if False:
     st.subheader("Algorithmic Defense: Why DBSCAN Over K-Means for Crime Hotspots?")
     st.markdown("""
