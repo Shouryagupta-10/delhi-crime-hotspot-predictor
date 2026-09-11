@@ -1,0 +1,15 @@
+# Core Streamlit & Web GIS
+streamlit>=1.35.0
+streamlit-folium>=0.20.0
+folium>=0.16.0
+branca>=0.7.0
+
+# Data Science & Machine Learning
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+altair>=5.0.0
+
+# HTTP & API Gateway Client
+requests>=2.31.0
