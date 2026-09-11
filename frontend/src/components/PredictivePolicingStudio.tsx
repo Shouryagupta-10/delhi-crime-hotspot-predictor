@@ -68,57 +68,67 @@ export const PredictivePolicingStudio: React.FC = () => {
   return (
     <div className="space-y-6">
       
-      {/* Top Banner Navigation Ribbon */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+      {/* Top Banner Navigation Ribbon (Once UI Style) */}
+      <div className="once-surface rounded-3xl p-5 shadow-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/20">
               <Cpu className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white tracking-tight">Predictive Policing Intelligence Suite</h3>
-              <p className="text-[11px] text-slate-400">Criminological spatial modeling, patrol optimization & tactical interception</p>
+              <h3 className="text-base font-extrabold text-white tracking-tight">Predictive Policing Intelligence Suite</h3>
+              <p className="text-xs text-slate-400">Criminological spatial modeling, patrol optimization & tactical interception</p>
             </div>
           </div>
 
-          {/* Sub-Tabs Pills */}
-          <div className="flex flex-wrap items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          {/* Sub-Tabs Capsule Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-black/40 border border-white/[0.08] text-xs">
             <button
               onClick={() => setActiveSubTab('patrol')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'patrol' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'patrol' 
+                  ? 'bg-white/[0.14] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <span>🚔 Patrol Dispatcher</span>
             </button>
             <button
               onClick={() => setActiveSubTab('knox')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'knox' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'knox' 
+                  ? 'bg-white/[0.14] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <span>🔁 Near-Repeat (Knox)</span>
             </button>
             <button
               onClick={() => setActiveSubTab('safe_corridor')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'safe_corridor' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'safe_corridor' 
+                  ? 'bg-white/[0.14] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <span>🛡️ Safe Corridor Navigator</span>
+              <span>🛡️ Safe Corridor</span>
             </button>
             <button
               onClick={() => setActiveSubTab('choke')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'choke' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'choke' 
+                  ? 'bg-white/[0.14] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <span>🛑 Choke-Point Pickets</span>
             </button>
             <button
               onClick={() => setActiveSubTab('b2b')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'b2b' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'b2b' 
+                  ? 'bg-white/[0.14] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <span>⚡ B2B Fleet x402</span>

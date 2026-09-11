@@ -4,19 +4,52 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rakshak.ai | Civic Safety Intelligence & x402 Gateway</title>
+    <title>Rakshak.ai | Civic Safety Intelligence & Predictive Policing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --page-background: #090b10;
+        --surface-background: rgba(14, 18, 26, 0.75);
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-hover: rgba(255, 255, 255, 0.16);
+      }
       body {
-        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        background-color: var(--page-background);
+        color: #f1f5f9;
       }
       code, pre, .font-mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: 'Geist Mono', monospace;
       }
+      
+      /* Once UI Dot Grid Background */
+      .once-dots-pattern {
+        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.09) 1.2px, transparent 0);
+        background-size: 24px 24px;
+      }
+      
+      .once-fade-mask {
+        mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+        -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+      }
+
+      /* Once UI Glass Surface */
+      .once-surface {
+        background: var(--surface-background);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+
+      .once-surface-hover:hover {
+        border-color: var(--border-hover);
+      }
+
       /* Pulsing radar dot for user live location */
       @keyframes pulse-radar {
         0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
@@ -26,24 +59,25 @@
       .radar-pulse-marker {
         animation: pulse-radar 2s infinite;
       }
+
       /* Custom map scrollbar & controls styling */
       .leaflet-container {
         font-family: inherit !important;
-        background: #0b1120 !important;
+        background: #090b10 !important;
       }
       .leaflet-popup-content-wrapper {
-        background: #0f172a !important;
+        background: #0e121a !important;
         color: #f8fafc !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.6) !important;
       }
       .leaflet-popup-tip {
-        background: #0f172a !important;
+        background: #0e121a !important;
       }
     </style>
   </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300">
+  <body class="bg-[#090b10] text-slate-100 min-h-screen selection:bg-cyan-500/30 selection:text-cyan-300 relative overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
