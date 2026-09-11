@@ -23,7 +23,8 @@ import {
   MapPin,
   Globe
 } from 'lucide-react';
-import { SmoothRiskMap, DELHI_HOTSPOTS, DELHI_SAFE_ZONES } from './components/SmoothRiskMap';
+import { DELHI_HOTSPOTS, DELHI_SAFE_ZONES } from './components/SmoothRiskMap';
+import { AdvancedMap } from '@/components/ui/interactive-map';
 import { PredictivePolicingStudio } from './components/PredictivePolicingStudio';
 
 const SERVER_URL = 'http://127.0.0.1:4021';
@@ -559,9 +560,70 @@ export default function App() {
             <div className="lg:col-span-8 space-y-6">
               
               <div className="once-surface rounded-3xl overflow-hidden p-1 shadow-2xl">
-                <SmoothRiskMap 
-                  onSelectCoordinate={handleSelectFromMap}
-                  onRequestRiskCheck={handleQuickRiskCheck}
+                <AdvancedMap 
+                  center={[parseFloat(lat) || 28.6328, parseFloat(lon) || 77.2197]}
+                  zoom={12}
+                  markers={[
+                    ...DELHI_HOTSPOTS.map((h) => ({
+                      id: `hotspot-${h.id}`,
+                      position: [h.lat, h.lon] as [number, number],
+                      color: h.riskLevel === 'HIGH' ? 'red' : 'orange',
+                      size: h.riskLevel === 'HIGH' ? ('large' as const) : ('medium' as const),
+                      popup: {
+                        title: h.name,
+                        content: `${h.district} District • ${h.crime} (${h.ipc}) • Peak: ${h.peakHours} • ${Math.round(h.riskScore * 100)}% Risk Level`,
+                        image: h.premises.includes('Metro')
+                          ? "https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?w=600&auto=format&fit=crop&q=80"
+                          : h.premises.includes('Market')
+                          ? "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&auto=format&fit=crop&q=80"
+                          : "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80"
+                      },
+                      raw: h
+                    })),
+                    ...DELHI_SAFE_ZONES.map((s) => ({
+                      id: `safe-${s.name}`,
+                      position: [s.lat, s.lon] as [number, number],
+                      color: 'blue',
+                      size: 'small' as const,
+                      popup: {
+                        title: `🛡️ ${s.name}`,
+                        content: `Classification: ${s.type} • Active 24/7 guarded security perimeter.`
+                      },
+                      raw: { lat: s.lat, lon: s.lon, premises: 'Police Picket & Safe Buffer' }
+                    }))
+                  ]}
+                  circles={DELHI_HOTSPOTS.filter(h => h.riskLevel === 'HIGH').slice(0, 8).map((h) => ({
+                    id: `circle-${h.id}`,
+                    center: [h.lat, h.lon] as [number, number],
+                    radius: 600,
+                    style: { color: '#f43f5e', fillOpacity: 0.22, weight: 1.5 },
+                    popup: `DBSCAN ε=600m Cluster: ${h.name}`
+                  }))}
+                  polygons={[
+                    {
+                      id: 'cp-inner-circle',
+                      positions: [
+                        [28.634, 77.215],
+                        [28.636, 77.222],
+                        [28.630, 77.225],
+                        [28.627, 77.218]
+                      ],
+                      style: { color: '#a855f7', fillOpacity: 0.25, weight: 2 },
+                      popup: 'Connaught Place Commercial Core (Deterrence Patrol Picket)'
+                    }
+                  ]}
+                  enableClustering={true}
+                  enableSearch={true}
+                  enableControls={true}
+                  onMarkerClick={(marker: any) => {
+                    if (marker.raw) {
+                      handleSelectFromMap(marker.raw.lat, marker.raw.lon, marker.raw.premises);
+                    }
+                  }}
+                  onMapClick={(latlng: any) => {
+                    handleSelectFromMap(latlng.lat, latlng.lng, 'Street & Public Roadways');
+                  }}
+                  style={{ height: "560px", width: "100%" }}
                 />
               </div>
 
