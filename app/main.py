@@ -44,84 +44,64 @@ def find_nearest_delhi_jurisdiction(lat, lon):
     return closest_dist, closest_ps, round(min_dist, 2)
 
 def render_gps_locator(key_suffix=""):
-    """Renders an interactive Once UI glassmorphic HTML5 Geolocation radar button."""
+    """Renders an interactive Geolocation button with clear user feedback."""
     btn_id = f"gps-btn{key_suffix}"
     status_id = f"gps-status{key_suffix}"
     geo_html = f"""
-    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); font-family: 'Geist', -apple-system, sans-serif;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px;">📍</span>
-                <span style="font-weight: 800; color: #ffffff; font-size: 12px; letter-spacing: -0.01em;">Live GPS Geolocation Radar</span>
-            </div>
-            <span style="font-size: 10px; font-family: 'Geist Mono', monospace; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">HTML5 GPS</span>
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); text-align: center; font-family: 'Inter', sans-serif;">
+        <div style="margin-bottom: 15px;">
+            <span style="font-weight: 800; color: #ffffff; font-size: 16px;">📍 Share Your Location for Local Safety Alerts</span>
         </div>
         <button id="{btn_id}" onclick="requestGPS_{key_suffix}()" style="
-            width: 100%;
+            width: 100%; max-width: 400px;
             background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 9999px;
-            padding: 10px 14px;
-            font-weight: 700;
-            font-size: 12.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
-            transition: all 0.2s ease;
+            color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 9999px;
+            padding: 12px 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35); transition: all 0.2s ease;
         ">
             🛰️ Access My Current Location
         </button>
-        <div id="{status_id}" style="font-size: 10.5px; color: #94a3b8; margin-top: 8px; text-align: center; font-family: 'Geist Mono', monospace;">
-            Click to detect your current latitude & longitude
+        <div id="{status_id}" style="font-size: 12.5px; color: #94a3b8; margin-top: 12px;">
+            Click to securely detect your latitude & longitude
         </div>
     </div>
     <script>
     function requestGPS_{key_suffix}() {{
         const btn = document.getElementById("{btn_id}");
         const status = document.getElementById("{status_id}");
-        if (!navigator.geolocation) {{
-            status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported by browser.</span>";
-            return;
-        }}
+        if (!navigator.geolocation) {{ status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported.</span>"; return; }}
+        
         btn.disabled = true;
-        btn.innerText = "⏳ Acquiring GPS Fix...";
-        status.innerHTML = "<span style='color: #38bdf8;'>Requesting browser permission...</span>";
+        btn.innerText = "⏳ Connecting to Satellite...";
+        status.innerHTML = "<span style='color: #38bdf8;'>Requesting permission...</span>";
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {{
+                // FIX: Instantly change the button to show SUCCESS
+                btn.innerText = "✅ Location Granted!";
+                btn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>Your location has been securely received! Scroll down to view the map.</span>";
+                
                 const lat = pos.coords.latitude.toFixed(5);
                 const lon = pos.coords.longitude.toFixed(5);
-                const acc = Math.round(pos.coords.accuracy);
-                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
-                
                 try {{
                     const target = window.top || window.parent;
                     const url = new URL(target.location.href);
                     url.searchParams.set("user_lat", lat);
                     url.searchParams.set("user_lon", lon);
                     target.location.href = url.href;
-                }} catch(e) {{
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("user_lat", lat);
-                    url.searchParams.set("user_lon", lon);
-                    window.location.href = url.href;
-                }}
+                }} catch(e) {{}}
             }},
             (err) => {{
-                btn.disabled = false;
-                btn.innerText = "🛰️ Access My Current Location";
-                let msg = err.message;
-                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser.";
-                else if (err.code === 2) msg = "GPS position unavailable.";
-                else if (err.code === 3) msg = "GPS request timed out.";
-                status.innerHTML = "<span style='color: #f87171;'>⚠️ " + msg + "</span>";
+                btn.disabled = false; btn.innerText = "🛰️ Access My Current Location";
+                status.innerHTML = "<span style='color: #f87171;'>⚠️ Permission denied. Please allow location access.</span>";
             }},
-            {{ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }}
+            {{ enableHighAccuracy: true, timeout: 12000 }}
         );
     }}
     </script>
     """
-    st.components.v1.html(geo_html, height=115)
+    st.components.v1.html(geo_html, height=150)
 
 # Page Configuration
 st.set_page_config(
@@ -150,6 +130,8 @@ radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1.2px, transparent 
 radial-gradient(125% 125% at 50% 10%, #030712 40%, #4338ca 100%) !important;
 background-size: 24px 24px, 100% 100% !important;
 background-attachment: fixed !important;
+[data-testid="stHeader"] {
+    background-color: transparent !important;
 }
 
 /* Container Spacing */
@@ -395,7 +377,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Live Movement & Risk Radar")
 
 if user_lat is None:
-    render_gps_locator(key_suffix="_side")
+   # render_gps_locator(key_suffix="_side")
     st.sidebar.caption("Or test location scenarios:")
     col_g1, col_g2 = st.sidebar.columns(2)
     with col_g1:
@@ -568,280 +550,76 @@ elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
 # Cruip Open PRO Header, Hero & Bento Grid
-cruip_layout_html = """
+# --- 1. RAKSHAK.AI HEADER (AT THE VERY TOP) ---
+header_html = """
 <style>
-.cruip-header-wrapper {
-margin-bottom: 24px;
-}
-.cruip-header-nav {
-background: rgba(15, 23, 42, 0.75);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 20px;
-padding: 10px 24px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-flex-wrap: wrap;
-gap: 12px;
-}
-.cruip-logo-icon {
-width: 38px;
-height: 38px;
-border-radius: 12px;
-background: linear-gradient(135deg, #6366f1, #4f46e5);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 18px;
-box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-.cruip-badge-mini {
-font-size: 10px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-background: rgba(99, 102, 241, 0.15);
-color: #a5b4fc;
-border: 1px solid rgba(129, 140, 248, 0.35);
-padding: 2px 8px;
-border-radius: 9999px;
-text-transform: uppercase;
-letter-spacing: 0.04em;
-}
-.cruip-status-pill {
-display: flex;
-align-items: center;
-gap: 6px;
-color: #34d399;
-background: rgba(16, 185, 129, 0.1);
-padding: 5px 12px;
-border-radius: 9999px;
-border: 1px solid rgba(16, 185, 129, 0.25);
-font-family: 'Geist Mono', monospace;
-}
-.cruip-status-dot {
-width: 6px;
-height: 6px;
-border-radius: 50%;
-background: #34d399;
-box-shadow: 0 0 8px #34d399;
-}
-.cruip-hero-section {
-text-align: center;
-padding: 34px 20px 28px 20px;
-position: relative;
-max-width: 980px;
-margin: 0 auto;
-}
-.cruip-hero-eyebrow {
-display: inline-flex;
-align-items: center;
-gap: 12px;
-margin-bottom: 16px;
-}
-.cruip-eyebrow-line {
-height: 1px;
-width: 32px;
-background: linear-gradient(to right, transparent, rgba(129, 140, 248, 0.5));
-}
-.cruip-hero-eyebrow span:last-child {
-background: linear-gradient(to left, transparent, rgba(129, 140, 248, 0.5));
-}
-.cruip-eyebrow-text {
-font-size: 11.5px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-text-transform: uppercase;
-letter-spacing: 0.08em;
-background: linear-gradient(to right, #a5b4fc, #c7d2fe);
--webkit-background-clip: text;
-background-clip: text;
-color: transparent;
-}
-.cruip-hero-h1 {
-font-size: clamp(2.2rem, 4.4vw, 3.4rem);
-font-weight: 900;
-letter-spacing: -0.035em;
-line-height: 1.15;
-margin: 0 0 16px 0;
-text-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
-}
-.cruip-hero-sub {
-font-size: 15px;
-color: #94a3b8;
-line-height: 1.65;
-max-width: 820px;
-margin: 0 auto 22px auto;
-}
-.cruip-hero-chips {
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 10px;
-flex-wrap: wrap;
-margin-bottom: 24px;
-}
-.cruip-chip {
-display: inline-flex;
-align-items: center;
-gap: 6px;
-background: rgba(15, 23, 42, 0.7);
-border: 1px solid rgba(255, 255, 255, 0.1);
-border-radius: 9999px;
-padding: 5px 14px;
-font-size: 11px;
-font-family: 'Geist Mono', monospace;
-color: #e2e8f0;
-box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-transition: border-color 0.2s ease, transform 0.2s ease;
-}
-.cruip-chip:hover {
-border-color: rgba(99, 102, 241, 0.5);
-transform: translateY(-1px);
-}
-.cruip-bento-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-gap: 16px;
-margin-bottom: 28px;
-}
-.cruip-card {
-background: rgba(15, 23, 42, 0.5);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 20px;
-padding: 22px;
-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cruip-card:hover {
-border-color: rgba(99, 102, 241, 0.4);
-transform: translateY(-2px);
-box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.12);
-}
-.cruip-card-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 12px;
-}
-.cruip-card-icon {
-width: 34px;
-height: 34px;
-border-radius: 10px;
-background: rgba(99, 102, 241, 0.12);
-border: 1px solid rgba(129, 140, 248, 0.25);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 16px;
-}
-.cruip-card-tag {
-font-size: 10px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-color: #818cf8;
-background: rgba(99, 102, 241, 0.1);
-padding: 2px 8px;
-border-radius: 9999px;
-text-transform: uppercase;
-letter-spacing: 0.05em;
-}
-.cruip-card-title {
-font-size: 15.5px;
-font-weight: 700;
-color: #f1f5f9;
-margin: 0 0 6px 0;
-letter-spacing: -0.015em;
-}
-.cruip-card-desc {
-font-size: 12.5px;
-color: #94a3b8;
-line-height: 1.6;
-margin: 0;
-}
+.cruip-header-wrapper { margin-bottom: 24px; }
+.cruip-header-nav { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 12px; }
+.cruip-bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.cruip-card { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.25s; }
+.cruip-card:hover { border-color: rgba(99, 102, 241, 0.4); transform: translateY(-2px); }
+.cruip-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cruip-card-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(129, 140, 248, 0.25); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.cruip-card-tag { font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; color: #818cf8; background: rgba(99, 102, 241, 0.1); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; }
+.cruip-card-title { font-size: 15.5px; font-weight: 700; color: #f1f5f9; margin: 0 0 6px 0; }
+.cruip-card-desc { font-size: 12.5px; color: #94a3b8; line-height: 1.6; margin: 0; }
 </style>
 
 <div class="cruip-header-wrapper">
-<div class="cruip-header-nav">
-<div style="display: flex; align-items: center; gap: 12px;">
-<div class="cruip-logo-icon">🛡️</div>
-<div>
-<div style="display: flex; align-items: center; gap: 8px;">
-<span style="font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
-<span class="cruip-badge-mini">Open PRO • Delhi Police AI</span>
-</div>
-<div style="font-size: 11px; color: #94a3b8;">Autonomous Spatial Forensics & Civic Safety Engine</div>
-</div>
-</div>
-<div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
-<div class="cruip-status-pill">
-<span class="cruip-status-dot"></span>
-<span>All ML Engines Active</span>
-</div>
-<span style="color: #475569;">•</span>
-<span style="color: #94a3b8; font-family: 'Geist Mono', monospace;">IST (Asia/Kolkata)</span>
-</div>
-</div>
-</div>
-
-<div class="cruip-hero-section">
-<div class="cruip-hero-eyebrow">
-<span class="cruip-eyebrow-line"></span>
-<span class="cruip-eyebrow-text">PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS</span>
-<span class="cruip-eyebrow-line"></span>
-</div>
-<h1 class="cruip-shimmer-title cruip-hero-h1">
-Algorithmic Crime Forensics & Autonomous Agent Deterrence
-</h1>
-<p class="cruip-hero-sub">
-Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
-</p>
-<div class="cruip-hero-chips">
-<span class="cruip-chip"><b style="color: #818cf8;">15</b> Police Districts</span>
-<span class="cruip-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
-<span class="cruip-chip"><b style="color: #fbbf24;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
-<span class="cruip-chip"><b style="color: #c084fc;">60fps</b> Interactive Movement Radar</span>
-</div>
-</div>
-
-<div class="cruip-bento-grid">
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">📍</div>
-<span class="cruip-card-tag">Unsupervised ML</span>
-</div>
-<div class="cruip-card-title">DBSCAN ε=600m Spatial Clustering</div>
-<p class="cruip-card-desc">
-Automatically isolates high-density crime corridors from ambient noise across 15 districts, prioritizing patrol intervention where repeat offenses cluster.
-</p>
-</div>
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">⏱️</div>
-<span class="cruip-card-tag">Criminology Law</span>
-</div>
-<div class="cruip-card-title">Koper Curve 12-15m Deterrence</div>
-<p class="cruip-card-desc">
-Calculates optimal stationary patrol stops between 12 and 15 minutes, yielding up to 2 hours of residual deterrence without exhausting tactical units.
-</p>
-</div>
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">⚡</div>
-<span class="cruip-card-tag">Epidemiology Forensics</span>
-</div>
-<div class="cruip-card-title">Knox Space-Time Contagion</div>
-<p class="cruip-card-desc">
-Evaluates space-time interaction windows to flag secondary victimization risks within 72 hours and chart safest pedestrian corridors in real time.
-</p>
-</div>
+    <div class="cruip-header-nav">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <!-- Ashoka Emblem -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" width="45" style="filter: brightness(0) invert(1);">
+            <div>
+                <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; margin-bottom: 2px;">Rakshak.ai</div>
+                <div style="font-size: 14px; color: #94a3b8; font-weight: 500;">Safety Portal for Citizens</div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 6px 14px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25); font-family: 'Geist Mono', monospace; font-weight: bold;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+                Safety Systems Active
+            </div>
+        </div>
+    </div>
 </div>
 """
-st.markdown(cruip_layout_html, unsafe_allow_html=True)
+st.markdown(header_html, unsafe_allow_html=True)
+
+# --- 2. GPS LOCATION BUTTON (Right under header) ---
+if user_lat is None:
+    render_gps_locator(key_suffix="_main_top")
+
+# --- 3. CITIZEN FEATURES / INFO BOXES (Simplified language) ---
+bento_html = """
+<div class="cruip-bento-grid">
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">📍</div>
+            <span class="cruip-card-tag">AI MAPPING</span>
+        </div>
+        <div class="cruip-card-title">Identify Danger Zones</div>
+        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">🚓</div>
+            <span class="cruip-card-tag">POLICE SUPPORT</span>
+        </div>
+        <div class="cruip-card-title">Smart Patrol Routing</div>
+        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">⚡</div>
+            <span class="cruip-card-tag">PREDICTIVE TECH</span>
+        </div>
+        <div class="cruip-card-title">Predict Future Threats</div>
+        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
+    </div>
+</div>
+"""
+st.markdown(bento_html, unsafe_allow_html=True) 
 
 # Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
