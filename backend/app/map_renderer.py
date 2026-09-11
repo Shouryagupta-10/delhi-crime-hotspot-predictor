@@ -1143,6 +1143,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                   <button onclick="map.flyTo([${{h.lat}}, ${{h.lon}}], 16, {{duration: 1}})" style="width: 100%; background: #0284c7; border: 1px solid #38bdf8; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
                     🔍 Zoom into Cluster Core
                   </button>
+                  <a href="https://www.mapillary.com/app/?lat=${{h.lat}}&lng=${{h.lon}}&z=17" target="_blank" style="display: block; text-align: center; width: 100%; box-sizing: border-box; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 5px 8px; font-size: 10.5px; font-weight: 700; text-decoration: none; margin-top: 6px;">
+                    📸 Free 360° Street View (Mapillary)
+                  </a>
                 </div>
               </div>
             `);
