@@ -1619,24 +1619,75 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         
         async function fetchNominatimMatches(query) {{
           try {{
-            const q = query.trim().toLowerCase();
-            const searchTerm = q.includes('delhi') ? q : q + ' Delhi';
-            const url = 'https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&viewbox=76.8,28.4,77.4,28.9&bounded=0&limit=5&q=' + encodeURIComponent(searchTerm);
-            const res = await fetch(url);
-            const data = await res.json();
+            const q = query.trim();
+            if (!q) return [];
+            
+            // Format search term with Delhi NCT context if not already present
+            const cleanQ = q.replace(/,/g, ' ').replace(/\s+/g, ' ');
+            const searchTerm = cleanQ.toLowerCase().includes('delhi') ? cleanQ : `${{cleanQ}}, Delhi`;
+            
+            // 1. Primary OpenStreetMap Nominatim with relaxed Delhi NCR bounding box
+            const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&viewbox=76.80,28.95,77.45,28.35&bounded=0&limit=8&q=${{encodeURIComponent(searchTerm)}}`;
+            
+            let data = [];
+            try {{
+              const res = await fetch(osmUrl, {{ headers: {{ 'Accept-Language': 'en' }} }});
+              if (res.ok) data = await res.json();
+            }} catch (e) {{
+              console.warn('Nominatim primary failed, using Photon fallback:', e);
+            }}
+            
+            // 2. Fallback or complement with Komoot Photon OSM API (ultra-fast, fuzzy, covers all alleys & colonies)
+            if (!data || data.length === 0) {{
+              try {{
+                const photonUrl = `https://photon.komoot.io/api/?q=${{encodeURIComponent(searchTerm)}}&lat=28.6139&lon=77.2090&limit=8`;
+                const pres = await fetch(photonUrl);
+                if (pres.ok) {{
+                  const pdata = await pres.json();
+                  if (pdata && pdata.features) {{
+                    return pdata.features
+                      .filter(f => {{
+                        const coords = f.geometry.coordinates;
+                        // Filter to Delhi NCR region (Lat 28.3 - 28.95, Lon 76.8 - 77.5)
+                        return coords[1] >= 28.20 && coords[1] <= 29.05 && coords[0] >= 76.70 && coords[0] <= 77.60;
+                      }})
+                      .map(f => {{
+                        const p = f.properties;
+                        const name = p.name || p.street || q;
+                        const sub = [p.district, p.city || 'Delhi', p.state].filter(Boolean).join(', ');
+                        return {{
+                          name: name,
+                          district: sub || 'Delhi NCT',
+                          lat: f.geometry.coordinates[1],
+                          lon: f.geometry.coordinates[0],
+                          badge: 'Delhi Location',
+                          badgeClass: 'badge-safe'
+                        }};
+                      }});
+                  }}
+                }}
+              }} catch (pe) {{
+                console.warn('Photon fallback notice:', pe);
+              }}
+            }}
             
             if (data && data.length > 0) {{
-              return data.map(d => ({{
-                name: d.display_name.split(',')[0],
-                district: d.display_name.split(',').slice(1, 4).join(',').trim(),
-                lat: parseFloat(d.lat),
-                lon: parseFloat(d.lon),
-                badge: 'OpenStreetMap',
-                badgeClass: 'badge-transit'
-              }}));
+              return data.map(d => {{
+                const parts = d.display_name.split(',');
+                const title = parts[0].trim();
+                const district = parts.slice(1, 4).join(',').trim();
+                return {{
+                  name: title,
+                  district: district || 'Delhi NCT',
+                  lat: parseFloat(d.lat),
+                  lon: parseFloat(d.lon),
+                  badge: 'Delhi NCT',
+                  badgeClass: 'badge-transit'
+                }};
+              }});
             }}
           }} catch (e) {{
-            console.warn('OSM search error:', e);
+            console.warn('Location search error:', e);
           }}
           return [];
         }}
@@ -1650,11 +1701,11 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             return;
           }}
           
-          // 1. Instant local match
+          // 1. Instant local match from Delhi index
           const localMatches = getPredictiveMatches(query);
           renderSuggestions(localMatches);
           
-          // 2. Debounce remote search to complement suggestions
+          // 2. Debounce remote search to discover any location/colony/street in Delhi
           if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
           searchDebounceTimer = setTimeout(async () => {{
             const remoteMatches = await fetchNominatimMatches(query);
@@ -1668,9 +1719,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                   names.add(rm.name.toLowerCase());
                 }}
               }});
-              renderSuggestions(combined.slice(0, 7));
+              renderSuggestions(combined.slice(0, 8));
             }}
-          }}, 250);
+          }}, 200);
         }});
         
         // Keyboard navigation for autocomplete list
@@ -1735,7 +1786,13 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           const query = searchInput.value.trim();
           if (!query) return;
           
-          // Check if matches local top item
+          // Check if exact or partial match in current suggestions
+          if (currentSuggestions && currentSuggestions.length > 0) {{
+            focusLocationOnMap(currentSuggestions[0].lat, currentSuggestions[0].lon, currentSuggestions[0].name, currentSuggestions[0].district);
+            searchDropdown.style.display = 'none';
+            return;
+          }}
+          
           const local = getPredictiveMatches(query);
           if (local.length > 0) {{
             focusLocationOnMap(local[0].lat, local[0].lon, local[0].name, local[0].district);
@@ -1743,7 +1800,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             return;
           }}
           
-          // Otherwise fetch remote
+          // Live search across all Delhi locations
           const btn = document.getElementById('searchActionBtn');
           btn.innerText = '⌛';
           btn.disabled = true;
@@ -1755,7 +1812,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               focusLocationOnMap(matches[0].lat, matches[0].lon, matches[0].name, matches[0].district);
               searchDropdown.style.display = 'none';
             }} else {{
-              alert('Location not found in Delhi. Try typing "Rajiv Chowk", "Dwarka", or "Hauz Khas".');
+              alert(`Could not find "${{query}}" in Delhi. Try entering a colony, landmark, or metro station name (e.g. Rohini, Dwarka, Janakpuri, Lajpat Nagar, Mayur Vihar).`);
             }}
           }});
         }};
