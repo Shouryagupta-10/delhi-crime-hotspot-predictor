@@ -21,13 +21,18 @@ if BASE_DIR not in sys.path:
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
-from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+try:
+    from map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+except ImportError:
+    from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
+
 try:
-    from app.search_component import render_predictive_search
-except ImportError:
     from search_component import render_predictive_search
+except ImportError:
+    from app.search_component import render_predictive_search
 
 # Comprehensive Delhi Police Station Geocoordinates Registry for Precision Proximity Calculation
 DELHI_POLICE_STATIONS = [
