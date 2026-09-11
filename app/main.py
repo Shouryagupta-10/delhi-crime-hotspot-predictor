@@ -134,182 +134,205 @@ st.set_page_config(
 # Custom Once UI & Magic Portfolio CSS styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
 
-    /* Global Dark Canvas with Once UI Dot Grid */
-    html, body, [data-testid="stAppViewContainer"], .main {
-        font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
-        background-color: #090b10 !important;
-        color: #f1f5f9 !important;
-    }
+/* Global Cruip Dark Canvas with Indigo Horizon */
+html, body, [data-testid="stAppViewContainer"], .main {
+font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+background-color: #030712 !important;
+color: #e2e8f0 !important;
+}
 
-    [data-testid="stAppViewContainer"] {
-        background-color: #000000 !important;
-        background-image: 
-            radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1.2px, transparent 0),
-            radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%) !important;
-        background-size: 24px 24px, 100% 100% !important;
-        background-attachment: fixed !important;
-    }
+[data-testid="stAppViewContainer"] {
+background-color: #030712 !important;
+background-image: 
+radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1.2px, transparent 0),
+radial-gradient(125% 125% at 50% 10%, #030712 40%, #4338ca 100%) !important;
+background-size: 24px 24px, 100% 100% !important;
+background-attachment: fixed !important;
+}
 
-    /* Top padding fix */
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 3rem !important;
-        max-width: 1400px !important;
-    }
+/* Container Spacing */
+.block-container {
+padding-top: 1.2rem !important;
+padding-bottom: 3.5rem !important;
+max-width: 1360px !important;
+}
 
-    /* Sidebar Once UI Styling */
-    [data-testid="stSidebar"] {
-        background-color: rgba(11, 15, 23, 0.95) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(20px) !important;
-    }
+/* Cruip Sidebar Styling */
+[data-testid="stSidebar"] {
+background-color: rgba(3, 7, 18, 0.95) !important;
+border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+backdrop-filter: blur(24px) !important;
+}
 
-    [data-testid="stSidebar"] hr {
-        border-color: rgba(255, 255, 255, 0.08) !important;
-    }
+[data-testid="stSidebar"] hr {
+border-color: rgba(255, 255, 255, 0.08) !important;
+}
 
-    /* Streamlit Metric Cards -> Once UI Pop Cards */
-    [data-testid="stMetric"] {
-        background: rgba(14, 18, 26, 0.75) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 20px !important;
-        padding: 16px 20px !important;
-        box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-        transition: all 0.2s ease !important;
-    }
+/* Cruip Open PRO Shimmer Gradient Animation */
+@keyframes cruipGradient {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
 
-    [data-testid="stMetric"]:hover {
-        border-color: rgba(6, 182, 212, 0.4) !important;
-        transform: translateY(-2px);
-    }
+.cruip-shimmer-title {
+background: linear-gradient(to right, #f8fafc 20%, #c7d2fe 40%, #e0e7ff 60%, #818cf8 80%, #f8fafc 100%);
+background-size: 200% auto;
+color: transparent;
+-webkit-background-clip: text;
+background-clip: text;
+animation: cruipGradient 8s ease infinite;
+}
 
-    [data-testid="stMetricLabel"] {
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.06em !important;
-        color: #94a3b8 !important;
-    }
+/* Cruip Glass Metric Cards */
+[data-testid="stMetric"] {
+background: rgba(15, 23, 42, 0.6) !important;
+backdrop-filter: blur(16px) !important;
+-webkit-backdrop-filter: blur(16px) !important;
+border: 1px solid rgba(255, 255, 255, 0.08) !important;
+border-radius: 20px !important;
+padding: 18px 22px !important;
+box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
 
-    [data-testid="stMetricValue"] {
-        font-size: 30px !important;
-        font-weight: 900 !important;
-        color: #ffffff !important;
-        letter-spacing: -0.03em !important;
-    }
+[data-testid="stMetric"]:hover {
+border-color: rgba(99, 102, 241, 0.45) !important;
+transform: translateY(-2px);
+box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.15) !important;
+}
 
-    [data-testid="stMetricDelta"] {
-        font-family: 'Geist Mono', monospace !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-    }
+[data-testid="stMetricLabel"] {
+font-size: 11px !important;
+font-weight: 700 !important;
+text-transform: uppercase !important;
+letter-spacing: 0.07em !important;
+color: #94a3b8 !important;
+}
 
-    /* Streamlit Tabs -> Once UI Floating Capsule Nav */
-    div[data-baseweb="tab-list"] {
-        background: rgba(14, 18, 26, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 9999px !important;
-        padding: 6px !important;
-        gap: 6px !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(16px) !important;
-        margin-bottom: 24px !important;
-    }
+[data-testid="stMetricValue"] {
+font-size: 28px !important;
+font-weight: 900 !important;
+color: #ffffff !important;
+letter-spacing: -0.03em !important;
+}
 
-    div[data-baseweb="tab"] {
-        border-radius: 9999px !important;
-        color: #94a3b8 !important;
-        font-size: 12.5px !important;
-        font-weight: 600 !important;
-        padding: 8px 16px !important;
-        border: 1px solid transparent !important;
-        transition: all 0.2s ease !important;
-        background: transparent !important;
-    }
+[data-testid="stMetricDelta"] {
+font-family: 'Geist Mono', monospace !important;
+font-size: 11px !important;
+font-weight: 600 !important;
+}
 
-    div[data-baseweb="tab"]:hover {
-        color: #ffffff !important;
-        background: rgba(255, 255, 255, 0.04) !important;
-    }
+/* Cruip Floating Pill Tabs */
+div[data-baseweb="tab-list"] {
+background: rgba(15, 23, 42, 0.8) !important;
+border: 1px solid rgba(255, 255, 255, 0.08) !important;
+border-radius: 9999px !important;
+padding: 6px !important;
+gap: 6px !important;
+box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
+backdrop-filter: blur(20px) !important;
+margin-bottom: 24px !important;
+}
 
-    div[data-baseweb="tab"][aria-selected="true"] {
-        background: rgba(255, 255, 255, 0.12) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    }
+div[data-baseweb="tab"] {
+border-radius: 9999px !important;
+color: #94a3b8 !important;
+font-size: 12.5px !important;
+font-weight: 600 !important;
+padding: 8px 18px !important;
+border: 1px solid transparent !important;
+transition: all 0.2s ease !important;
+background: transparent !important;
+}
 
-    div[data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
+div[data-baseweb="tab"]:hover {
+color: #ffffff !important;
+background: rgba(255, 255, 255, 0.04) !important;
+}
 
-    /* Buttons -> Once UI Pill Buttons */
-    .stButton > button {
-        border-radius: 9999px !important;
-        font-weight: 600 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        background: rgba(255, 255, 255, 0.06) !important;
-        color: #ffffff !important;
-        transition: all 0.2s ease !important;
-        padding: 8px 18px !important;
-    }
+div[data-baseweb="tab"][aria-selected="true"] {
+background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%) !important;
+color: #ffffff !important;
+border: 1px solid rgba(129, 140, 248, 0.4) !important;
+box-shadow: 0 0 20px rgba(99, 102, 241, 0.25) !important;
+}
 
-    .stButton > button:hover {
-        background: rgba(255, 255, 255, 0.14) !important;
-        border-color: rgba(6, 182, 212, 0.5) !important;
-        color: #22d3ee !important;
-    }
+div[data-baseweb="tab-highlight"] {
+display: none !important;
+}
 
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%) !important;
-        border: none !important;
-        color: white !important;
-        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
-    }
+/* Cruip Gradient Action Buttons */
+.stButton > button {
+border-radius: 12px !important;
+font-weight: 600 !important;
+border: 1px solid rgba(255, 255, 255, 0.12) !important;
+background: rgba(30, 41, 59, 0.6) !important;
+color: #f1f5f9 !important;
+transition: all 0.2s ease !important;
+padding: 8px 20px !important;
+}
 
-    /* Selectboxes and Inputs */
-    div[data-baseweb="select"] > div {
-        background: rgba(14, 18, 26, 0.75) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 14px !important;
-        color: #f1f5f9 !important;
-    }
+.stButton > button:hover {
+background: rgba(51, 65, 85, 0.8) !important;
+border-color: rgba(99, 102, 241, 0.5) !important;
+color: #a5b4fc !important;
+transform: translateY(-1px);
+}
 
-    /* Badges */
-    .badge-high {
-        background-color: rgba(239, 68, 68, 0.15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
-    .badge-med {
-        background-color: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
-    .badge-low {
-        background-color: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        font-family: 'Geist Mono', monospace;
-    }
+.stButton > button[kind="primary"] {
+background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%) !important;
+border: 1px solid rgba(255, 255, 255, 0.2) !important;
+color: white !important;
+box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+background: linear-gradient(180deg, #4f46e5 0%, #4338ca 100%) !important;
+box-shadow: 0 6px 24px rgba(79, 70, 229, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Selectboxes & Inputs */
+div[data-baseweb="select"] > div {
+background: rgba(15, 23, 42, 0.75) !important;
+border: 1px solid rgba(255, 255, 255, 0.1) !important;
+border-radius: 12px !important;
+color: #f1f5f9 !important;
+}
+
+/* Cruip Badges */
+.badge-high {
+background-color: rgba(239, 68, 68, 0.15);
+color: #f87171;
+border: 1px solid rgba(239, 68, 68, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
+.badge-med {
+background-color: rgba(245, 158, 11, 0.15);
+color: #fbbf24;
+border: 1px solid rgba(245, 158, 11, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
+.badge-low {
+background-color: rgba(16, 185, 129, 0.15);
+color: #34d399;
+border: 1px solid rgba(16, 185, 129, 0.35);
+padding: 4px 12px;
+border-radius: 9999px;
+font-weight: 700;
+font-size: 0.8rem;
+font-family: 'Geist Mono', monospace;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -524,219 +547,281 @@ elif time_preset == "Evening Rush (17:00-21:00)":
 elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
-# Top Floating Capsule Header (Once UI Style)
-st.markdown("""
-<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 9999px; padding: 10px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #10b981); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 16px rgba(6,182,212,0.35);">
-            🛡️
-        </div>
-        <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 16px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
-                <span style="font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Delhi Police & Civic AI</span>
-            </div>
-            <div style="font-size: 11px; color: #94a3b8;">Predictive Policing, Spatial Hotspots & Autonomous Agent Gateway</div>
-        </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; font-family: 'Geist Mono', monospace;">
-        <div style="display: flex; align-items: center; gap: 6px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2);">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
-            <span>All ML Models Live</span>
-        </div>
-        <span style="color: #475569;">•</span>
-        <span style="color: #94a3b8;">Asia/Kolkata (IST)</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# Multi-Layered Parallax Hero Banner
-hero_banner_html = """
+# Cruip Open PRO Header, Hero & Bento Grid
+cruip_layout_html = """
 <style>
-.parallax-hero-wrapper {
-position: relative;
-width: 100%;
-border-radius: 24px;
-overflow: hidden;
+.cruip-header-wrapper {
 margin-bottom: 24px;
-border: 1px solid rgba(255, 255, 255, 0.1);
-box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-background: #080c14;
-transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
 }
-.parallax-hero-wrapper:hover {
-box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-.parallax-hero {
-position: relative;
-min-height: 280px;
-width: 100%;
+.cruip-header-nav {
+background: rgba(15, 23, 42, 0.75);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 20px;
+padding: 10px 24px;
 display: flex;
-flex-direction: column;
-justify-content: center;
-padding: 38px 34px 40px 34px;
-overflow: hidden;
-}
-.parallax-bg-glow {
-position: absolute;
-inset: -30px;
-background: radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%);
-background-image: 
-radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0),
-radial-gradient(125% 125% at 50% 10%, #000000 40%, #63e 100%);
-background-size: 28px 28px, 100% 100%;
-pointer-events: none;
-animation: heroPulse 12s ease-in-out infinite alternate;
-}
-@keyframes heroPulse {
-0% { transform: scale(1) translate(0, 0); opacity: 0.9; }
-50% { transform: scale(1.02) translate(-6px, 4px); opacity: 1; }
-100% { transform: scale(1.04) translate(6px, -4px); opacity: 0.95; }
-}
-.parallax-overlay {
-position: absolute;
-inset: 0;
-background: linear-gradient(180deg, rgba(8, 12, 20, 0.2) 0%, rgba(8, 12, 20, 0.75) 75%, #080c14 100%);
-pointer-events: none;
-z-index: 2;
-}
-.parallax-content {
-position: relative;
-z-index: 5;
-max-width: 960px;
-}
-.parallax-badge {
-display: inline-flex;
 align-items: center;
-gap: 8px;
-padding: 5px 14px;
-border-radius: 9999px;
-background: rgba(6, 182, 212, 0.08);
-border: 1px solid rgba(56, 189, 248, 0.4);
-box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
-color: #38bdf8;
-font-size: 10.5px;
+justify-content: space-between;
+box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+flex-wrap: wrap;
+gap: 12px;
+}
+.cruip-logo-icon {
+width: 38px;
+height: 38px;
+border-radius: 12px;
+background: linear-gradient(135deg, #6366f1, #4f46e5);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 18px;
+box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.cruip-badge-mini {
+font-size: 10px;
 font-family: 'Geist Mono', monospace;
 font-weight: 700;
+background: rgba(99, 102, 241, 0.15);
+color: #a5b4fc;
+border: 1px solid rgba(129, 140, 248, 0.35);
+padding: 2px 8px;
+border-radius: 9999px;
 text-transform: uppercase;
-letter-spacing: 0.06em;
-margin-bottom: 12px;
+letter-spacing: 0.04em;
 }
-.parallax-badge-dot {
+.cruip-status-pill {
+display: flex;
+align-items: center;
+gap: 6px;
+color: #34d399;
+background: rgba(16, 185, 129, 0.1);
+padding: 5px 12px;
+border-radius: 9999px;
+border: 1px solid rgba(16, 185, 129, 0.25);
+font-family: 'Geist Mono', monospace;
+}
+.cruip-status-dot {
 width: 6px;
 height: 6px;
 border-radius: 50%;
-background: #38bdf8;
-box-shadow: 0 0 8px #38bdf8;
-animation: blinkGlow 2s infinite ease-in-out;
+background: #34d399;
+box-shadow: 0 0 8px #34d399;
 }
-@keyframes blinkGlow {
-0%, 100% { opacity: 1; transform: scale(1); }
-50% { opacity: 0.4; transform: scale(0.85); }
+.cruip-hero-section {
+text-align: center;
+padding: 34px 20px 28px 20px;
+position: relative;
+max-width: 980px;
+margin: 0 auto;
 }
-.parallax-title {
-font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+.cruip-hero-eyebrow {
+display: inline-flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+}
+.cruip-eyebrow-line {
+height: 1px;
+width: 32px;
+background: linear-gradient(to right, transparent, rgba(129, 140, 248, 0.5));
+}
+.cruip-hero-eyebrow span:last-child {
+background: linear-gradient(to left, transparent, rgba(129, 140, 248, 0.5));
+}
+.cruip-eyebrow-text {
+font-size: 11.5px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+background: linear-gradient(to right, #a5b4fc, #c7d2fe);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+}
+.cruip-hero-h1 {
+font-size: clamp(2.2rem, 4.4vw, 3.4rem);
 font-weight: 900;
 letter-spacing: -0.035em;
-color: #ffffff;
-margin: 0 0 12px 0;
-line-height: 1.18;
-text-shadow: 0 10px 30px rgba(0,0,0,0.85);
-background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
+line-height: 1.15;
+margin: 0 0 16px 0;
+text-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
 }
-.parallax-desc {
-font-size: 14px;
+.cruip-hero-sub {
+font-size: 15px;
 color: #94a3b8;
 line-height: 1.65;
-margin: 0 0 18px 0;
-max-width: 880px;
+max-width: 820px;
+margin: 0 auto 22px auto;
 }
-.parallax-chips {
+.cruip-hero-chips {
 display: flex;
 align-items: center;
+justify-content: center;
 gap: 10px;
 flex-wrap: wrap;
+margin-bottom: 24px;
 }
-.parallax-chip {
+.cruip-chip {
 display: inline-flex;
 align-items: center;
 gap: 6px;
-background: rgba(14, 18, 26, 0.85);
+background: rgba(15, 23, 42, 0.7);
 border: 1px solid rgba(255, 255, 255, 0.1);
 border-radius: 9999px;
 padding: 5px 14px;
 font-size: 11px;
 font-family: 'Geist Mono', monospace;
 color: #e2e8f0;
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 transition: border-color 0.2s ease, transform 0.2s ease;
 }
-.parallax-chip:hover {
-border-color: rgba(56, 189, 248, 0.4);
+.cruip-chip:hover {
+border-color: rgba(99, 102, 241, 0.5);
 transform: translateY(-1px);
 }
-.parallax-layer-backdrop {
-position: absolute;
-inset: -10px;
-background: url('https://cdn.21st.dev/assets/mirror/a4/a43f4eae3459c461345ee676f12d6e1ddca65e8a5279a5af00d475b17ff83aea.webp') center / cover no-repeat;
-opacity: 0.12;
-mix-blend-mode: screen;
-pointer-events: none;
+.cruip-bento-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 16px;
+margin-bottom: 28px;
 }
-.parallax-layer-city {
-position: absolute;
-bottom: -10px;
-left: 0;
-right: 0;
-height: 100%;
-background: url('https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1600&auto=format&fit=crop&q=80') center bottom / cover no-repeat;
-opacity: 0.16;
-mix-blend-mode: screen;
-filter: contrast(1.3) brightness(0.75);
-pointer-events: none;
+.cruip-card {
+background: rgba(15, 23, 42, 0.5);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 20px;
+padding: 22px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.parallax-fade-bottom {
-position: absolute;
-bottom: 0;
-left: 0;
-right: 0;
-height: 90px;
-background: linear-gradient(180deg, transparent 0%, #080c14 100%);
-pointer-events: none;
-z-index: 3;
+.cruip-card:hover {
+border-color: rgba(99, 102, 241, 0.4);
+transform: translateY(-2px);
+box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.12);
+}
+.cruip-card-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 12px;
+}
+.cruip-card-icon {
+width: 34px;
+height: 34px;
+border-radius: 10px;
+background: rgba(99, 102, 241, 0.12);
+border: 1px solid rgba(129, 140, 248, 0.25);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 16px;
+}
+.cruip-card-tag {
+font-size: 10px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+color: #818cf8;
+background: rgba(99, 102, 241, 0.1);
+padding: 2px 8px;
+border-radius: 9999px;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.cruip-card-title {
+font-size: 15.5px;
+font-weight: 700;
+color: #f1f5f9;
+margin: 0 0 6px 0;
+letter-spacing: -0.015em;
+}
+.cruip-card-desc {
+font-size: 12.5px;
+color: #94a3b8;
+line-height: 1.6;
+margin: 0;
 }
 </style>
-<div class="parallax-hero-wrapper">
-<div class="parallax-hero">
-<div class="parallax-bg-glow"></div>
-<div class="parallax-layer-backdrop"></div>
-<div class="parallax-layer-city"></div>
-<div class="parallax-fade-bottom"></div>
-<div class="parallax-overlay"></div>
-<div class="parallax-content">
-<div class="parallax-badge">
-<span class="parallax-badge-dot"></span>
-PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+
+<div class="cruip-header-wrapper">
+<div class="cruip-header-nav">
+<div style="display: flex; align-items: center; gap: 12px;">
+<div class="cruip-logo-icon">🛡️</div>
+<div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
+<span class="cruip-badge-mini">Open PRO • Delhi Police AI</span>
 </div>
-<h1 class="parallax-title">
+<div style="font-size: 11px; color: #94a3b8;">Autonomous Spatial Forensics & Civic Safety Engine</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
+<div class="cruip-status-pill">
+<span class="cruip-status-dot"></span>
+<span>All ML Engines Active</span>
+</div>
+<span style="color: #475569;">•</span>
+<span style="color: #94a3b8; font-family: 'Geist Mono', monospace;">IST (Asia/Kolkata)</span>
+</div>
+</div>
+</div>
+
+<div class="cruip-hero-section">
+<div class="cruip-hero-eyebrow">
+<span class="cruip-eyebrow-line"></span>
+<span class="cruip-eyebrow-text">PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS</span>
+<span class="cruip-eyebrow-line"></span>
+</div>
+<h1 class="cruip-shimmer-title cruip-hero-h1">
 Algorithmic Crime Forensics & Autonomous Agent Deterrence
 </h1>
-<p class="parallax-desc">
+<p class="cruip-hero-sub">
 Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
 </p>
-<div class="parallax-chips">
-<span class="parallax-chip"><b style="color: #38bdf8;">15</b> Police Districts</span>
-<span class="parallax-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
-<span class="parallax-chip"><b style="color: #f59e0b;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
-<span class="parallax-chip"><b style="color: #a78bfa;">60fps</b> Interactive Movement Radar</span>
+<div class="cruip-hero-chips">
+<span class="cruip-chip"><b style="color: #818cf8;">15</b> Police Districts</span>
+<span class="cruip-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
+<span class="cruip-chip"><b style="color: #fbbf24;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
+<span class="cruip-chip"><b style="color: #c084fc;">60fps</b> Interactive Movement Radar</span>
 </div>
 </div>
+
+<div class="cruip-bento-grid">
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">📍</div>
+<span class="cruip-card-tag">Unsupervised ML</span>
+</div>
+<div class="cruip-card-title">DBSCAN ε=600m Spatial Clustering</div>
+<p class="cruip-card-desc">
+Automatically isolates high-density crime corridors from ambient noise across 15 districts, prioritizing patrol intervention where repeat offenses cluster.
+</p>
+</div>
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">⏱️</div>
+<span class="cruip-card-tag">Criminology Law</span>
+</div>
+<div class="cruip-card-title">Koper Curve 12-15m Deterrence</div>
+<p class="cruip-card-desc">
+Calculates optimal stationary patrol stops between 12 and 15 minutes, yielding up to 2 hours of residual deterrence without exhausting tactical units.
+</p>
+</div>
+<div class="cruip-card">
+<div class="cruip-card-header">
+<div class="cruip-card-icon">⚡</div>
+<span class="cruip-card-tag">Epidemiology Forensics</span>
+</div>
+<div class="cruip-card-title">Knox Space-Time Contagion</div>
+<p class="cruip-card-desc">
+Evaluates space-time interaction windows to flag secondary victimization risks within 72 hours and chart safest pedestrian corridors in real time.
+</p>
 </div>
 </div>
 """
-st.markdown(hero_banner_html, unsafe_allow_html=True)
+st.markdown(cruip_layout_html, unsafe_allow_html=True)
 
 # Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
@@ -860,6 +945,20 @@ with tab1:
                 initial_zoom=current_zoom,
                 incidents_df=filtered_df
             )
+            # Cruip Showcase Terminal Header
+            st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Delhi NCT Sentinel</span>
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #818cf8; background: rgba(99, 102, 241, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(129, 140, 248, 0.25);">
+        60 FPS TELEMETRY
+    </div>
+</div>
+""", unsafe_allow_html=True)
             st.components.v1.html(smooth_html, height=720)
         else:
             # Folium Map with returned_objects=[] to eliminate re-run lag
