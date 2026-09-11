@@ -1068,7 +1068,7 @@ with tab2:
         st.markdown("#### 🔍 Search Location & Temporal Parameters")
         st.caption("Type any Delhi locality, landmark, colony, market, or metro station.")
         
-        # Location Search Bar
+        # Location Search Bar with Real-time Predictive Autocomplete
         default_search = "Rajiv Chowk Metro (Connaught Place)"
         if user_lat is not None:
             default_search = "My Live GPS Location"
@@ -1076,10 +1076,46 @@ with tab2:
         location_query = st.text_input(
             "Search Delhi Location / Landmark",
             value=st.session_state.get("tab2_location_search", default_search),
-            placeholder="e.g. Connaught Place, Hauz Khas, Dwarka Mor, Rohini Sector 14, Saket...",
-            help="Type any Delhi colony or landmark name. The system automatically pinpoints coordinates, district, and jurisdictional police station."
+            placeholder="Type e.g. Hauz Khas, Dwarka Mor, Rohini, Saket, Karol Bagh...",
+            help="Type any Delhi colony, market, POI, or metro station to get instant predictive suggestions and risk analysis."
         )
         st.session_state["tab2_location_search"] = location_query
+
+        # Real-time Predictive Suggestions Dropdown / Quick Selector (Matching Maps Tab behavior)
+        query_clean = location_query.strip().lower()
+        if len(query_clean) >= 2 and query_clean not in ["my live gps location", "live gps"]:
+            predictive_matches = [
+                loc for loc in DELHI_SEARCH_INDEX 
+                if query_clean in loc["name"].lower() or query_clean in loc["district"].lower()
+            ][:5]
+            
+            if predictive_matches:
+                st.markdown("""
+                <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin: 4px 0 2px 2px; font-family: 'Geist Mono', monospace;">
+                    ⚡ Predictive Matches in Delhi NCT:
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Render interactive suggestion buttons
+                cols = st.columns(min(len(predictive_matches), 3))
+                for idx, match in enumerate(predictive_matches[:3]):
+                    with cols[idx]:
+                        short_title = match["name"].split(" (")[0]
+                        if st.button(f"📍 {short_title[:20]}", key=f"pred_loc_{idx}", use_container_width=True):
+                            st.session_state["tab2_location_search"] = match["name"]
+                            st.rerun()
+                            
+                # Also provide a quick selectbox if user wants to expand suggestions
+                match_names = [m["name"] for m in predictive_matches]
+                if location_query not in match_names:
+                    picked_suggestion = st.selectbox(
+                        "Or choose from matching locations:",
+                        ["(Select matching location...)"] + match_names,
+                        key="pred_select_box"
+                    )
+                    if picked_suggestion != "(Select matching location...)":
+                        st.session_state["tab2_location_search"] = picked_suggestion
+                        st.rerun()
         
         # Resolve location details
         selected_location = None
