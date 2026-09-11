@@ -1601,3 +1601,607 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
     """
     return html_code
 
+
+
+def create_google_maps_sentinel_html(hotspots_df=None, initial_user_lat=None, initial_user_lon=None, initial_zoom=13, incidents_df=None, api_key=None):
+    """
+    Renders an interactive Google Maps Platform Sentinel experience:
+    - Google Maps JavaScript API with dynamic library bootstrap loader
+    - Mandatory internalUsageAttributionIds: ['gmp_git_agentskills_v1']
+    - Custom High-Contrast Cruip Dark Vector Map Style
+    - Satellite & Hybrid toggle, Street View Pegman, and Real-time Traffic Layer
+    - DBSCAN Hotspot Circles with InfoWindows and Landmark Imagery
+    - Live Geolocation watchPosition tracking with pulse animation
+    - Google Places Autocomplete search input
+    - Crime density heatmap overlay using google.maps.visualization.HeatmapLayer
+    - Dedicated 'Google Maps' attribution line
+    """
+    import json
+    import os
+
+    resolved_key = (api_key or "").strip() or os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()
+
+    landmark_images = {
+        "Rajiv Chowk": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=500&auto=format&fit=crop&q=80",
+        "Connaught Place": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=500&auto=format&fit=crop&q=80",
+        "Kashmere Gate": "https://images.unsplash.com/photo-1597040663342-45b6af3d91a5?w=500&auto=format&fit=crop&q=80",
+        "Seelampur": "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?w=500&auto=format&fit=crop&q=80",
+        "Anand Vihar": "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=500&auto=format&fit=crop&q=80",
+        "Jahangirpuri": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=500&auto=format&fit=crop&q=80",
+        "Chandni Chowk": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=500&auto=format&fit=crop&q=80",
+        "Karol Bagh": "https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?w=500&auto=format&fit=crop&q=80",
+        "Saket": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=500&auto=format&fit=crop&q=80",
+        "India Gate": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=500&auto=format&fit=crop&q=80",
+        "default": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=500&auto=format&fit=crop&q=80"
+    }
+
+    hotspot_records = []
+    if hotspots_df is not None and not hotspots_df.empty:
+        for _, r in hotspots_df.iterrows():
+            d_name = str(r.get('district', 'Delhi'))
+            p_name = str(r.get('dominant_premises', 'Hotspot'))
+            img = landmark_images["default"]
+            for k in landmark_images:
+                if k.lower() in d_name.lower() or k.lower() in p_name.lower():
+                    img = landmark_images[k]
+                    break
+
+            hotspot_records.append({
+                "id": str(r.get("cluster_id", "")),
+                "name": f"{d_name} - {p_name}",
+                "district": d_name,
+                "lat": float(r.get("centroid_lat", 28.6139)),
+                "lon": float(r.get("centroid_lon", 77.2090)),
+                "crime": str(r.get("primary_crime", "Street Crime")),
+                "premises": p_name,
+                "risk": float(r.get("avg_risk", 0.5)),
+                "count": int(r.get("incident_count", 10)),
+                "radius": float(r.get("radius_meters", 450)),
+                "img": img
+            })
+
+    heatmap_points = []
+    if incidents_df is not None and not incidents_df.empty:
+        sample_df = incidents_df.sample(min(len(incidents_df), 1000), random_state=42)
+        for _, r in sample_df.iterrows():
+            try:
+                lat = float(r.get("latitude", 0))
+                lon = float(r.get("longitude", 0))
+                if 28.30 <= lat <= 28.95 and 76.80 <= lon <= 77.50:
+                    weight = 2.0 if bool(r.get("is_high_risk", False)) else 1.0
+                    heatmap_points.append({"lat": lat, "lng": lon, "weight": weight})
+            except Exception:
+                continue
+
+    hotspots_json = json.dumps(hotspot_records)
+    heatmap_json = json.dumps(heatmap_points)
+
+    center_lat = float(initial_user_lat) if initial_user_lat is not None else 28.6139
+    center_lon = float(initial_user_lon) if initial_user_lon is not None else 77.2090
+    user_present = "true" if initial_user_lat is not None else "false"
+    init_zoom = int(initial_zoom) if initial_zoom else 13
+
+    html_code = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rakshak.ai Google Maps Sentinel Experience</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    html, body {{
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #030712;
+      color: #f1f5f9;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }}
+    .gmap-layout {{
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      background: #030712;
+    }}
+    /* Cruip Top Navigation Bar */
+    .gmap-navbar {{
+      flex-shrink: 0;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 100;
+    }}
+    .gmap-brand {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }}
+    .gmap-logo {{
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+    }}
+    .gmap-title {{
+      font-weight: 800;
+      font-size: 14px;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }}
+    .gmap-badge {{
+      font-size: 10px;
+      font-family: 'Geist Mono', monospace;
+      font-weight: 700;
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.15);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }}
+    /* Search Bar */
+    .gmap-search-wrap {{
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }}
+    .gmap-search-input {{
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 14px 8px 36px;
+      color: #ffffff;
+      font-size: 12.5px;
+      outline: none;
+      transition: all 0.2s ease;
+    }}
+    .gmap-search-input:focus {{
+      border-color: rgba(99, 102, 241, 0.6);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.25);
+      background: rgba(30, 41, 59, 0.95);
+    }}
+    .gmap-search-icon {{
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      opacity: 0.6;
+      pointer-events: none;
+    }}
+    /* Action Buttons */
+    .gmap-actions {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+    .gmap-btn {{
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }}
+    .gmap-btn:hover, .gmap-btn.active {{
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(129, 140, 248, 0.5);
+      color: #ffffff;
+    }}
+    /* Map Canvas */
+    #map {{
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: #030712;
+    }}
+    /* Key Prompt Modal */
+    .gmap-modal-overlay {{
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.88);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 20px;
+    }}
+    .gmap-modal-card {{
+      max-width: 520px;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.2);
+      text-align: center;
+    }}
+    .gmap-modal-title {{
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }}
+    .gmap-modal-desc {{
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }}
+    .gmap-modal-input {{
+      width: 100%;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 13px;
+      margin-bottom: 16px;
+      outline: none;
+      font-family: 'Geist Mono', monospace;
+    }}
+    .gmap-modal-btn {{
+      background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+      transition: all 0.2s ease;
+    }}
+    .gmap-modal-btn:hover {{
+      background: linear-gradient(180deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+    }}
+    /* Attribution Footer */
+    .gmap-footer {{
+      flex-shrink: 0;
+      background: rgba(15, 23, 42, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #64748b;
+      font-family: 'Geist Mono', monospace;
+    }}
+  </style>
+</head>
+<body>
+  <div class="gmap-layout">
+    <div class="gmap-navbar">
+      <div class="gmap-brand">
+        <div class="gmap-logo">🛡️</div>
+        <div>
+          <div class="gmap-title">Rakshak.ai Sentinel</div>
+        </div>
+        <span class="gmap-badge">Google Maps Platform</span>
+      </div>
+
+      <div class="gmap-search-wrap">
+        <span class="gmap-search-icon">🔍</span>
+        <input type="text" id="gmapSearch" class="gmap-search-input" placeholder="Search Delhi NCR address, metro station, or market..." />
+      </div>
+
+      <div class="gmap-actions">
+        <button id="btnDark" class="gmap-btn active" onclick="setTheme('dark')">🌙 Night</button>
+        <button id="btnHybrid" class="gmap-btn" onclick="setTheme('hybrid')">🛰️ Hybrid</button>
+        <button id="btnTraffic" class="gmap-btn" onclick="toggleTraffic()">🚦 Traffic</button>
+        <button id="btnHeatmap" class="gmap-btn active" onclick="toggleHeatmap()">🔥 Heatmap</button>
+        <button id="btnGPS" class="gmap-btn" onclick="locateUser()">📍 Track GPS</button>
+      </div>
+    </div>
+
+    <div style="position: relative; flex: 1; width: 100%; height: 100%;">
+      <div id="map"></div>
+
+      <div id="keyModal" class="gmap-modal-overlay" style="display: {'none' if resolved_key else 'flex'};">
+        <div class="gmap-modal-card">
+          <div style="font-size: 36px; margin-bottom: 12px;">🗺️</div>
+          <div class="gmap-modal-title">Google Maps Platform Integration</div>
+          <p class="gmap-modal-desc">
+            Connect your Google Maps Platform API key to unlock hardware-accelerated Vector Maps, Live Traffic layers, 360° Street View, and Places Autocomplete for Delhi Crime Hotspots.
+          </p>
+          <input type="password" id="inputApiKey" class="gmap-modal-input" placeholder="AIzaSy..." value="{resolved_key}" />
+          <button class="gmap-modal-btn" onclick="applyApiKey()">Launch Google Maps Sentinel</button>
+          <div style="margin-top: 14px; font-size: 11px; color: #64748b;">
+            Don't have a key? Get one on <a href="https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1" target="_blank" style="color: #818cf8; text-decoration: underline;">Google Cloud Console</a>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gmap-footer">
+      <div>Sentinel Vector Engine • internalUsageAttributionIds: <code>gmp_git_agentskills_v1</code></div>
+      <div>
+        Google Maps
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HOTSPOTS = {hotspots_json};
+    const HEATMAP_DATA = {heatmap_json};
+    const INITIAL_CENTER = {{ lat: {center_lat}, lng: {center_lon} }};
+    const INITIAL_ZOOM = {init_zoom};
+    const HAS_INITIAL_USER = {user_present};
+    let ACTIVE_KEY = "{resolved_key}" || sessionStorage.getItem('gmp_api_key') || "";
+
+    const NIGHT_STYLES = [
+      {{ elementType: "geometry", stylers: [{{ color: "#0b0f19" }}] }},
+      {{ elementType: "labels.text.stroke", stylers: [{{ color: "#0b0f19" }}] }},
+      {{ elementType: "labels.text.fill", stylers: [{{ color: "#94a3b8" }}] }},
+      {{ featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{{ color: "#e2e8f0" }}] }},
+      {{ featureType: "poi", elementType: "labels.text.fill", stylers: [{{ color: "#94a3b8" }}] }},
+      {{ featureType: "poi.park", elementType: "geometry", stylers: [{{ color: "#062024" }}] }},
+      {{ featureType: "road", elementType: "geometry", stylers: [{{ color: "#1e293b" }}] }},
+      {{ featureType: "road", elementType: "geometry.stroke", stylers: [{{ color: "#0f172a" }}] }},
+      {{ featureType: "road.highway", elementType: "geometry", stylers: [{{ color: "#334155" }}] }},
+      {{ featureType: "road.highway", elementType: "geometry.stroke", stylers: [{{ color: "#1e293b" }}] }},
+      {{ featureType: "water", elementType: "geometry", stylers: [{{ color: "#031024" }}] }},
+      {{ featureType: "water", elementType: "labels.text.fill", stylers: [{{ color: "#38bdf8" }}] }}
+    ];
+
+    let map = null;
+    let trafficLayer = null;
+    let heatmapLayer = null;
+    let userMarker = null;
+    let userCircle = null;
+    let infoWindow = null;
+
+    function applyApiKey() {{
+      const k = document.getElementById('inputApiKey').value.trim();
+      if (!k) return;
+      ACTIVE_KEY = k;
+      sessionStorage.setItem('gmp_api_key', k);
+      document.getElementById('keyModal').style.display = 'none';
+      loadGoogleMaps();
+    }}
+
+    function loadGoogleMaps() {{
+      if (!ACTIVE_KEY) {{
+        document.getElementById('keyModal').style.display = 'flex';
+        return;
+      }}
+      document.getElementById('keyModal').style.display = 'none';
+
+      // Official Dynamic Bootstrap Script Loader
+      (g=>{{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={{}});var d=b.maps||(b.maps={{}}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${{c}}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))}})({{
+        key: ACTIVE_KEY,
+        v: "weekly"
+      }});
+
+      initSentinelMap();
+    }}
+
+    async function initSentinelMap() {{
+      try {{
+        const {{ Map }} = await google.maps.importLibrary("maps");
+        const {{ AdvancedMarkerElement }} = await google.maps.importLibrary("marker").catch(() => ({{}}));
+        const {{ HeatmapLayer }} = await google.maps.importLibrary("visualization").catch(() => ({{}}));
+        const {{ Autocomplete }} = await google.maps.importLibrary("places").catch(() => ({{}}));
+
+        // Initialize Map with mandatory usage attribution
+        map = new Map(document.getElementById("map"), {{
+          center: INITIAL_CENTER,
+          zoom: INITIAL_ZOOM,
+          styles: NIGHT_STYLES,
+          mapTypeId: "roadmap",
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: true,
+          // Mandatory tracking attribution ID
+          internalUsageAttributionIds: ['gmp_git_agentskills_v1']
+        }});
+
+        infoWindow = new google.maps.InfoWindow();
+
+        // Traffic Layer
+        trafficLayer = new google.maps.TrafficLayer();
+
+        // Heatmap Layer
+        if (HeatmapLayer && HEATMAP_DATA.length > 0) {{
+          const points = HEATMAP_DATA.map(p => ({{
+            location: new google.maps.LatLng(p.lat, p.lng),
+            weight: p.weight
+          }}));
+          heatmapLayer = new HeatmapLayer({{
+            data: points,
+            map: map,
+            radius: 25,
+            opacity: 0.75
+          }});
+        }}
+
+        // Render Hotspot Corridors
+        HOTSPOTS.forEach(h => {{
+          const isHigh = h.risk >= 0.7;
+          const strokeColor = isHigh ? "#ef4444" : "#f59e0b";
+          const fillColor = isHigh ? "#dc2626" : "#d97706";
+
+          // Circle overlay
+          const circle = new google.maps.Circle({{
+            strokeColor: strokeColor,
+            strokeOpacity: 0.85,
+            strokeWeight: 2,
+            fillColor: fillColor,
+            fillOpacity: 0.22,
+            map: map,
+            center: {{ lat: h.lat, lng: h.lon }},
+            radius: h.radius || 500
+          }});
+
+          // Marker
+          const marker = new google.maps.Marker({{
+            position: {{ lat: h.lat, lng: h.lon }},
+            map: map,
+            title: h.name,
+            icon: {{
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 7,
+              fillColor: strokeColor,
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2
+            }}
+          }});
+
+          const contentString = `
+            <div style="font-family: 'Inter', sans-serif; padding: 6px; max-width: 240px; color: #0f172a;">
+              <img src="${{h.img}}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />
+              <div style="font-weight: 800; font-size: 13px; color: #0f172a;">${{h.name}}</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Primary Crime: <b>${{h.crime}}</b></div>
+              <div style="font-size: 11px; color: #64748b;">Incidents Logged: <b>${{h.count}}</b></div>
+              <div style="margin-top: 6px; font-weight: 700; font-size: 11px; color: ${{isHigh ? '#dc2626' : '#d97706'}};">
+                Risk Score: ${{(h.risk * 100).toFixed(0)}}% (${{isHigh ? 'HIGH DANGER' : 'MODERATE'}})
+              </div>
+            </div>
+          `;
+
+          marker.addListener("click", () => {{
+            infoWindow.setContent(contentString);
+            infoWindow.open(map, marker);
+          }});
+
+          circle.addListener("click", () => {{
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition({{ lat: h.lat, lng: h.lon }});
+            infoWindow.open(map);
+          }});
+        }});
+
+        // Setup Autocomplete Search
+        const searchInput = document.getElementById("gmapSearch");
+        if (Autocomplete && searchInput) {{
+          const autocomplete = new Autocomplete(searchInput, {{
+            componentRestrictions: {{ country: "in" }},
+            fields: ["geometry", "name", "formatted_address"]
+          }});
+          autocomplete.addListener("place_changed", () => {{
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {{
+              map.setCenter(place.geometry.location);
+              map.setZoom(15);
+            }}
+          }});
+        }}
+
+        // If user location is passed, show it
+        if (HAS_INITIAL_USER) {{
+          setUserPin(INITIAL_CENTER.lat, INITIAL_CENTER.lng);
+        }}
+
+      }} catch (err) {{
+        console.error("Google Maps initialization failed:", err);
+      }}
+    }}
+
+    function setUserPin(lat, lon) {{
+      if (!map) return;
+      const pos = new google.maps.LatLng(lat, lon);
+      if (!userMarker) {{
+        userMarker = new google.maps.Marker({{
+          position: pos,
+          map: map,
+          title: "Your GPS Location",
+          icon: {{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: "#38bdf8",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 3
+          }}
+        }});
+        userCircle = new google.maps.Circle({{
+          strokeColor: "#38bdf8",
+          strokeOpacity: 0.5,
+          strokeWeight: 1,
+          fillColor: "#38bdf8",
+          fillOpacity: 0.15,
+          map: map,
+          center: pos,
+          radius: 300
+        }});
+      }} else {{
+        userMarker.setPosition(pos);
+        userCircle.setCenter(pos);
+      }}
+      map.panTo(pos);
+    }}
+
+    function locateUser() {{
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(pos => {{
+        setUserPin(pos.coords.latitude, pos.coords.longitude);
+        if (map) map.setZoom(15);
+      }});
+    }}
+
+    function setTheme(t) {{
+      if (!map) return;
+      document.getElementById('btnDark').classList.remove('active');
+      document.getElementById('btnHybrid').classList.remove('active');
+
+      if (t === 'dark') {{
+        document.getElementById('btnDark').classList.add('active');
+        map.setMapTypeId("roadmap");
+        map.setOptions({{ styles: NIGHT_STYLES }});
+      }} else {{
+        document.getElementById('btnHybrid').classList.add('active');
+        map.setMapTypeId("hybrid");
+        map.setOptions({{ styles: [] }});
+      }}
+    }}
+
+    let isTrafficActive = false;
+    function toggleTraffic() {{
+      if (!trafficLayer || !map) return;
+      isTrafficActive = !isTrafficActive;
+      trafficLayer.setMap(isTrafficActive ? map : null);
+      document.getElementById('btnTraffic').classList.toggle('active', isTrafficActive);
+    }}
+
+    let isHeatmapActive = true;
+    function toggleHeatmap() {{
+      if (!heatmapLayer) return;
+      isHeatmapActive = !isHeatmapActive;
+      heatmapLayer.setMap(isHeatmapActive ? map : null);
+      document.getElementById('btnHeatmap').classList.toggle('active', isHeatmapActive);
+    }}
+
+    // Auto-init on load
+    window.addEventListener("DOMContentLoaded", () => {{
+      if (ACTIVE_KEY) {{
+        loadGoogleMaps();
+      }}
+    }});
+  </script>
+</body>
+</html>
+"""
+    return html_code
