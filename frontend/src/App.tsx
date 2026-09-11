@@ -587,7 +587,7 @@ export default function App() {
                       size: 'small' as const,
                       popup: {
                         title: `🛡️ ${s.name}`,
-                        content: `Classification: ${s.type} • Active 24/7 guarded security perimeter.`
+                        content: `Security: ${s.description} • Active 24/7 guarded security perimeter.`
                       },
                       raw: { lat: s.lat, lon: s.lon, premises: 'Police Picket & Safe Buffer' }
                     }))

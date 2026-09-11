@@ -117,7 +117,9 @@ const SearchControl = ({ onSearch }: { onSearch?: (res: any) => void }) => {
       if (results.length > 0) {
         const { lat, lon, display_name } = results[0];
         const latLng = [parseFloat(lat), parseFloat(lon)];
-        map.flyTo(latLng, 13);
+        const location = latLng;
+        const zoom = 13;
+        map.setView([location[0], location[1]] as [number, number], zoom);
         onSearch && onSearch({ latLng, name: display_name });
       }
     } catch (error) {

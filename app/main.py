@@ -546,18 +546,184 @@ st.markdown("""
     </div>
 </div>
 
-<!-- Once UI Hero Banner Card -->
-<div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px 28px; margin-bottom: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);">
-    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #22d3ee; font-size: 10.5px; font-family: 'Geist Mono', monospace; font-weight: 700; text-transform: uppercase; margin-bottom: 10px;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22d3ee;"></span>
-        PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+<!-- Multi-Layered Parallax Scrolling Hero Banner -->
+<div class="parallax-hero-wrapper">
+    <style>
+        .parallax-hero-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            background: #080c14;
+        }
+        .parallax-hero {
+            position: relative;
+            min-height: 360px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 44px 34px 50px 34px;
+            overflow: hidden;
+        }
+        .parallax-layer-1 {
+            position: absolute;
+            inset: -25px;
+            background: radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.15) 0%, transparent 48%),
+                        #080c14;
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1.2px, transparent 0),
+                radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.18) 0%, transparent 48%),
+                radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.15) 0%, transparent 48%);
+            background-size: 28px 28px, auto, auto;
+            pointer-events: none;
+            will-change: transform;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .parallax-layer-2 {
+            position: absolute;
+            bottom: -15px;
+            left: -25px;
+            right: -25px;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1600&auto=format&fit=crop&q=80') center bottom / cover no-repeat;
+            opacity: 0.18;
+            mix-blend-mode: screen;
+            filter: contrast(1.4) brightness(0.7);
+            pointer-events: none;
+            will-change: transform;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .parallax-layer-3 {
+            position: relative;
+            z-index: 10;
+            max-width: 960px;
+            will-change: transform;
+            transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .parallax-layer-4 {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(8, 12, 20, 0.15) 0%, rgba(8, 12, 20, 0.82) 80%, #080c14 100%);
+            pointer-events: none;
+            z-index: 5;
+        }
+        .parallax-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            font-size: 10.5px;
+            font-family: 'Geist Mono', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 12px;
+        }
+        .parallax-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+        .parallax-title {
+            font-size: clamp(2rem, 3.6vw, 2.9rem);
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            color: #ffffff;
+            margin: 0 0 12px 0;
+            line-height: 1.18;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.85);
+            background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .parallax-desc {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.65;
+            margin: 0 0 18px 0;
+            max-width: 880px;
+        }
+        .parallax-chips {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .parallax-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(14, 18, 26, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-family: 'Geist Mono', monospace;
+            color: #e2e8f0;
+        }
+    </style>
+
+    <div class="parallax-hero" id="parallaxHero">
+        <div class="parallax-layer-1" id="pLayer1"></div>
+        <div class="parallax-layer-2" id="pLayer2"></div>
+        <div class="parallax-layer-4"></div>
+        <div class="parallax-layer-3" id="pLayer3">
+            <div class="parallax-badge">
+                <span class="parallax-badge-dot"></span>
+                PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+            </div>
+            <h1 class="parallax-title">
+                Algorithmic Crime Forensics & Autonomous Agent Deterrence
+            </h1>
+            <p class="parallax-desc">
+                Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
+            </p>
+            <div class="parallax-chips">
+                <span class="parallax-chip"><b style="color: #38bdf8;">15</b> Police Districts</span>
+                <span class="parallax-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
+                <span class="parallax-chip"><b style="color: #f59e0b;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
+                <span class="parallax-chip"><b style="color: #a78bfa;">60fps</b> Interactive Movement Radar</span>
+            </div>
+        </div>
     </div>
-    <h1 style="font-size: 2.1rem; font-weight: 900; color: #ffffff; letter-spacing: -0.03em; margin: 0 0 8px 0; line-height: 1.2;">
-        Algorithmic Crime Forensics & Autonomous Agent Deterrence
-    </h1>
-    <p style="font-size: 13.5px; color: #94a3b8; max-width: 900px; margin: 0; line-height: 1.6;">
-        Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
-    </p>
+
+    <script>
+        (function() {
+            const hero = document.getElementById('parallaxHero');
+            const l1 = document.getElementById('pLayer1');
+            const l2 = document.getElementById('pLayer2');
+            const l3 = document.getElementById('pLayer3');
+            if (!hero || !l1 || !l2 || !l3) return;
+
+            hero.addEventListener('mousemove', function(e) {
+                const rect = hero.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+                l1.style.transform = 'translate3d(' + (x * 12) + 'px, ' + (y * 12) + 'px, 0)';
+                l2.style.transform = 'translate3d(' + (x * -24) + 'px, ' + (y * -16) + 'px, 0) scale(1.03)';
+                l3.style.transform = 'translate3d(' + (x * 14) + 'px, ' + (y * 8) + 'px, 0)';
+            });
+
+            hero.addEventListener('mouseleave', function() {
+                l1.style.transform = 'translate3d(0, 0, 0)';
+                l2.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                l3.style.transform = 'translate3d(0, 0, 0)';
+            });
+        })();
+    </script>
 </div>
 """, unsafe_allow_html=True)
 
