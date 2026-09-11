@@ -2077,7 +2077,7 @@ def create_google_maps_sentinel_html(hotspots_df=None, initial_user_lat=None, in
               <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Primary Crime: <b>${{h.crime}}</b></div>
               <div style="font-size: 11px; color: #64748b;">Incidents Logged: <b>${{h.count}}</b></div>
               <div style="margin-top: 6px; font-weight: 700; font-size: 11px; color: ${{isHigh ? '#dc2626' : '#d97706'}};">
-                Risk Score: ${(h.risk * 100).toFixed(0)}% (${{isHigh ? 'HIGH DANGER' : 'MODERATE'}})
+                Risk Score: ${{(h.risk * 100).toFixed(0)}}% (${{isHigh ? 'HIGH DANGER' : 'MODERATE'}})
               </div>
             </div>
           `;
