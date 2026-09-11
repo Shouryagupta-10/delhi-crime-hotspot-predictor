@@ -554,6 +554,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         .badge-danger {{ background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); }}
         .badge-safe {{ background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5); }}
         .badge-transit {{ background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }}
+        .badge-poi {{ background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }}
         
         /* Pills & Action Buttons */
         .pill-group {{
@@ -1267,7 +1268,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           {{ id: "S4", name: "India Gate & Kartavya Path", district: "New Delhi", lat: 28.6129, lon: 77.2295, desc: "Central Reserve & Drone Surveillance", riskScore: 0.20, image: "{landmark_images['India Gate']}" }}
         ];
         
-        // Comprehensive Delhi NCT Landmark & Hotspot Index for Instant Predictive Search
+        // Comprehensive Delhi NCT Landmark, Colony, Hub & Hotspot Index for Instant 0ms Predictive Search
         const DELHI_LOCATIONS = [
           {{ name: "Rajiv Chowk Metro Station", district: "Connaught Place, Central Delhi", lat: 28.6328, lon: 77.2197, type: "transit", badge: "High Risk Hotspot", badgeClass: "badge-danger" }},
           {{ name: "Connaught Place (CP Inner Circle)", district: "New Delhi", lat: 28.6315, lon: 77.2167, type: "commercial", badge: "Commercial Hub", badgeClass: "badge-transit" }},
@@ -1283,16 +1284,52 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           {{ name: "Delhi Cantt Defense Area", district: "South-West Delhi", lat: 28.5898, lon: 77.1325, type: "safe", badge: "Safe Corridor", badgeClass: "badge-safe" }},
           {{ name: "Civil Lines VIP & Raj Niwas", district: "North Delhi", lat: 28.6820, lon: 77.2180, type: "safe", badge: "Safe Corridor", badgeClass: "badge-safe" }},
           {{ name: "Dwarka Sector 10 & 21", district: "South-West Delhi", lat: 28.5815, lon: 77.0583, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Dwarka Mor & Sector 14", district: "South-West Delhi", lat: 28.6190, lon: 77.0330, type: "colony", badge: "Sub-City Hub", badgeClass: "badge-transit" }},
           {{ name: "Rohini Sector 13 & 14", district: "North-West Delhi", lat: 28.7160, lon: 77.1147, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Rohini West & Sector 7, 8, 9", district: "North-West Delhi", lat: 28.7050, lon: 77.1210, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
           {{ name: "Jahangirpuri Corridor", district: "North-West Delhi", lat: 28.7259, lon: 77.1685, type: "corridor", badge: "High Risk Corridor", badgeClass: "badge-danger" }},
           {{ name: "Lajpat Nagar Central Market", district: "South-East Delhi", lat: 28.5677, lon: 77.2433, type: "market", badge: "Commercial Market", badgeClass: "badge-transit" }},
-          {{ name: "Vasant Kunj Promenade", district: "South Delhi", lat: 28.5412, lon: 77.1558, type: "commercial", badge: "Commercial Corridor", badgeClass: "badge-transit" }},
+          {{ name: "Vasant Kunj Promenade & Ambience Mall", district: "South Delhi", lat: 28.5412, lon: 77.1558, type: "commercial", badge: "Commercial Corridor", badgeClass: "badge-transit" }},
+          {{ name: "Vasant Vihar & Priya Complex", district: "South Delhi", lat: 28.5603, lon: 77.1610, type: "colony", badge: "Residential / Lifestyle", badgeClass: "badge-transit" }},
           {{ name: "Janakpuri District Centre", district: "West Delhi", lat: 28.6289, lon: 77.0788, type: "commercial", badge: "Transit & Market", badgeClass: "badge-transit" }},
-          {{ name: "Pitampura TV Tower Environs", district: "North-West Delhi", lat: 28.6989, lon: 77.1407, type: "colony", badge: "Commercial & Residential", badgeClass: "badge-transit" }},
+          {{ name: "Pitampura TV Tower & Netaji Subhash Place (NSP)", district: "North-West Delhi", lat: 28.6989, lon: 77.1407, type: "commercial", badge: "Commercial & Food Hub", badgeClass: "badge-transit" }},
           {{ name: "Nehru Place Commercial Hub", district: "South-East Delhi", lat: 28.5492, lon: 77.2527, type: "commercial", badge: "IT & Commercial", badgeClass: "badge-transit" }},
-          {{ name: "Mayur Vihar Phase 1 & 2", district: "East Delhi", lat: 28.6083, lon: 77.2967, type: "colony", badge: "Residential District", badgeClass: "badge-transit" }},
+          {{ name: "Mayur Vihar Phase 1, 2 & 3", district: "East Delhi", lat: 28.6083, lon: 77.2967, type: "colony", badge: "Residential District", badgeClass: "badge-transit" }},
           {{ name: "South Extension Part 1 & 2", district: "South Delhi", lat: 28.5724, lon: 77.2215, type: "market", badge: "Shopping Ring", badgeClass: "badge-transit" }},
-          {{ name: "Rajouri Garden Main Market", district: "West Delhi", lat: 28.6477, lon: 77.1219, type: "market", badge: "Shopping District", badgeClass: "badge-transit" }}
+          {{ name: "Rajouri Garden Main Market & Club Road", district: "West Delhi", lat: 28.6477, lon: 77.1219, type: "market", badge: "Shopping & Dining", badgeClass: "badge-transit" }},
+          {{ name: "Greater Kailash 1 (GK 1 M Block)", district: "South Delhi", lat: 28.5529, lon: 77.2384, type: "market", badge: "Lifestyle & Dining", badgeClass: "badge-transit" }},
+          {{ name: "Greater Kailash 2 (GK 2 M Block)", district: "South Delhi", lat: 28.5350, lon: 77.2430, type: "market", badge: "Lifestyle & Dining", badgeClass: "badge-transit" }},
+          {{ name: "Khan Market", district: "Central New Delhi", lat: 28.6003, lon: 77.2270, type: "market", badge: "Upscale Hub", badgeClass: "badge-safe" }},
+          {{ name: "Defence Colony (Def Col Market)", district: "South Delhi", lat: 28.5728, lon: 77.2325, type: "colony", badge: "Dining Hub", badgeClass: "badge-transit" }},
+          {{ name: "Punjabi Bagh Club Road", district: "West Delhi", lat: 28.6692, lon: 77.1265, type: "colony", badge: "Food & Nightlife", badgeClass: "badge-transit" }},
+          {{ name: "Green Park & Hauz Khas Enclave", district: "South Delhi", lat: 28.5589, lon: 77.2064, type: "colony", badge: "South Delhi Center", badgeClass: "badge-transit" }},
+          {{ name: "Malviya Nagar & Shivalik", district: "South Delhi", lat: 28.5360, lon: 77.2105, type: "colony", badge: "Commercial & Residential", badgeClass: "badge-transit" }},
+          {{ name: "Shahdara & GT Road", district: "Shahdara / East Delhi", lat: 28.6734, lon: 77.2910, type: "transit", badge: "High Density East", badgeClass: "badge-danger" }},
+          {{ name: "Laxmi Nagar & Vikas Marg", district: "East Delhi", lat: 28.6310, lon: 77.2776, type: "market", badge: "Student & Commercial Hub", badgeClass: "badge-transit" }},
+          {{ name: "Preet Vihar & Karkardooma Court", district: "East Delhi", lat: 28.6420, lon: 77.2970, type: "colony", badge: "Commercial / Residential", badgeClass: "badge-transit" }},
+          {{ name: "Patel Nagar (East & West)", district: "Central Delhi", lat: 28.6508, lon: 77.1654, type: "colony", badge: "Central Residential", badgeClass: "badge-transit" }},
+          {{ name: "Kirti Nagar & Furniture Market", district: "West Delhi", lat: 28.6547, lon: 77.1432, type: "commercial", badge: "Commercial Hub", badgeClass: "badge-transit" }},
+          {{ name: "Paschim Vihar & Jwala Heri Market", district: "West Delhi", lat: 28.6738, lon: 77.0987, type: "colony", badge: "West Delhi Colony", badgeClass: "badge-transit" }},
+          {{ name: "Uttam Nagar & East Metro", district: "West Delhi", lat: 28.6219, lon: 77.0589, type: "transit", badge: "High Density Transit", badgeClass: "badge-danger" }},
+          {{ name: "Paharganj & New Delhi Railway Station (NDLS)", district: "Central Delhi", lat: 28.6430, lon: 77.2140, type: "transit", badge: "High Density Area", badgeClass: "badge-danger" }},
+          {{ name: "Old Delhi Railway Station & Daryaganj", district: "Central Delhi", lat: 28.6590, lon: 77.2340, type: "transit", badge: "Historic Core", badgeClass: "badge-transit" }},
+          {{ name: "Sarojini Nagar Market", district: "South Delhi", lat: 28.5775, lon: 77.1983, type: "market", badge: "High Density Market", badgeClass: "badge-danger" }},
+          {{ name: "Lodhi Colony & Lodhi Art District", district: "New Delhi", lat: 28.5878, lon: 77.2250, type: "colony", badge: "Heritage & Art", badgeClass: "badge-safe" }},
+          {{ name: "Kalkaji & Kalkaji Mandir Environs", district: "South-East Delhi", lat: 28.5398, lon: 77.2612, type: "colony", badge: "Residential / Commercial", badgeClass: "badge-transit" }},
+          {{ name: "Govindpuri & Tughlakabad Ext", district: "South-East Delhi", lat: 28.5280, lon: 77.2670, type: "colony", badge: "High Density", badgeClass: "badge-danger" }},
+          {{ name: "Alaknanda & CR Park (Chittaranjan Park)", district: "South Delhi", lat: 28.5385, lon: 77.2470, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Mehrauli & Qutub Minar Complex", district: "South Delhi", lat: 28.5244, lon: 77.1855, type: "monument", badge: "Heritage Corridor", badgeClass: "badge-transit" }},
+          {{ name: "Chattarpur Enclave & Mandir", district: "South Delhi", lat: 28.5020, lon: 77.1780, type: "colony", badge: "South Delhi Enclave", badgeClass: "badge-transit" }},
+          {{ name: "Narela & Bawana Industrial Environs", district: "North Delhi", lat: 28.8500, lon: 77.0900, type: "corridor", badge: "Outer Delhi Zone", badgeClass: "badge-danger" }},
+          {{ name: "Najafgarh & Dichaon Kalan", district: "South-West Delhi", lat: 28.6130, lon: 76.9850, type: "colony", badge: "Outer West Delhi", badgeClass: "badge-transit" }},
+          {{ name: "Burari & Timarpur", district: "North Delhi", lat: 28.7500, lon: 77.2000, type: "colony", badge: "North Delhi Zone", badgeClass: "badge-transit" }},
+          {{ name: "Model Town & Gujranwala Town", district: "North Delhi", lat: 28.7020, lon: 77.1930, type: "colony", badge: "North Delhi Enclave", badgeClass: "badge-transit" }},
+          {{ name: "Shalimar Bagh & Ashok Vihar", district: "North-West Delhi", lat: 28.7050, lon: 77.1620, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Geeta Colony & Gandhi Nagar Market", district: "East Delhi", lat: 28.6530, lon: 77.2750, type: "market", badge: "Textile Market", badgeClass: "badge-transit" }},
+          {{ name: "Dilshad Garden & Vivek Vihar", district: "Shahdara", lat: 28.6780, lon: 77.3190, type: "colony", badge: "Shahdara Enclave", badgeClass: "badge-transit" }},
+          {{ name: "Okhla Industrial Area (Phases 1, 2, 3)", district: "South-East Delhi", lat: 28.5300, lon: 77.2750, type: "commercial", badge: "Industrial Hub", badgeClass: "badge-transit" }},
+          {{ name: "Jasola Vihar & Apollo Hospital Environs", district: "South-East Delhi", lat: 28.5410, lon: 77.2910, type: "colony", badge: "Medical & Business Hub", badgeClass: "badge-transit" }},
+          {{ name: "Delhi Aerocity & IGI Airport T1/T3", district: "South-West Delhi", lat: 28.5562, lon: 77.1210, type: "transit", badge: "Airport & Hospitality Hub", badgeClass: "badge-safe" }}
         ];
         
         const SIMULATION_ROUTE = [
@@ -1577,13 +1614,30 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         let selectedIndex = -1;
         let currentSuggestions = [];
         
-        function renderSuggestions(list) {{
-          currentSuggestions = list;
+        function renderSuggestions(list, isSearchingRemote) {{
+          currentSuggestions = list || [];
           selectedIndex = -1;
           
           if (!list || list.length === 0) {{
-            searchDropdown.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #94a3b8; text-align: center;">No matching locations found in Delhi</div>`;
-            searchDropdown.style.display = 'block';
+            if (isSearchingRemote) {{
+              searchDropdown.innerHTML = `
+                <div style="padding: 14px; font-size: 11px; color: #38bdf8; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span style="display:inline-block; animation: spin 1s linear infinite;">⏳</span>
+                  <span>Searching all Delhi colonies, shops & places...</span>
+                </div>
+              `;
+              searchDropdown.style.display = 'block';
+            }} else {{
+              searchDropdown.innerHTML = `
+                <div style="padding: 12px; font-size: 11px; color: #94a3b8; text-align: center;">
+                  No direct match found in Delhi.<br>
+                  <span style="color: #38bdf8; font-size: 10px; cursor: pointer; text-decoration: underline;" onclick="executeSearch()">
+                    🔍 Press Enter or Search to scan full Delhi NCR map
+                  </span>
+                </div>
+              `;
+              searchDropdown.style.display = 'block';
+            }}
             return;
           }}
           
@@ -1591,7 +1645,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           list.forEach((item, idx) => {{
             html += `
               <div class="dropdown-item" id="sugg-item-${{idx}}" onclick="selectSuggestion(${{idx}})">
-                <span class="dropdown-icon">${{item.badgeClass === 'badge-danger' ? '🚨' : (item.badgeClass === 'badge-safe' ? '🛡️' : '📍')}}</span>
+                <span class="dropdown-icon">${{item.badgeClass === 'badge-danger' ? '🚨' : (item.badgeClass === 'badge-safe' ? '🛡️' : (item.badgeClass === 'badge-poi' ? '🏪' : '📍'))}}</span>
                 <div class="dropdown-info">
                   <div class="dropdown-title">${{item.name}}</div>
                   <div class="dropdown-subtitle">${{item.district}}</div>
@@ -1600,6 +1654,14 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               </div>
             `;
           }});
+          
+          if (isSearchingRemote) {{
+            html += `
+              <div style="padding: 6px 12px; font-size: 9.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.05); border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                ⚡ Scanning live OpenStreetMap & Delhi database...
+              </div>
+            `;
+          }}
           
           searchDropdown.innerHTML = html;
           searchDropdown.style.display = 'block';
@@ -1620,72 +1682,114 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         async function fetchNominatimMatches(query) {{
           try {{
             const q = query.trim();
-            if (!q) return [];
+            if (!q || q.length < 2) return [];
             
-            // Format search term with Delhi NCT context if not already present
+            const results = [];
+            const seen = new Set();
+            
+            // Helper to add unique Delhi results
+            const addResult = (name, district, lat, lon, badge, badgeClass) => {{
+              const key = `${{name.toLowerCase()}}_${{lat.toFixed(3)}}_${{lon.toFixed(3)}}`;
+              if (!seen.has(key)) {{
+                seen.add(key);
+                results.push({{ name, district: district || 'Delhi NCR', lat, lon, badge: badge || 'Delhi NCT', badgeClass: badgeClass || 'badge-transit' }});
+              }}
+            }};
+            
+            // Format search term
             const cleanQ = q.replace(/,/g, ' ').replace(/\s+/g, ' ');
-            const searchTerm = cleanQ.toLowerCase().includes('delhi') ? cleanQ : `${{cleanQ}}, Delhi`;
+            const hasDelhi = cleanQ.toLowerCase().includes('delhi');
+            const searchTermDelhi = hasDelhi ? cleanQ : `${{cleanQ}}, Delhi`;
             
-            // 1. Primary OpenStreetMap Nominatim with relaxed Delhi NCR bounding box
-            const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&viewbox=76.80,28.95,77.45,28.35&bounded=0&limit=8&q=${{encodeURIComponent(searchTerm)}}`;
-            
-            let data = [];
+            // 1. Photon API with Delhi geographic bias (lat 28.6139, lon 77.2090)
+            // Photon excels at cafes, shops, POIs, alleys, and commercial outlets
             try {{
-              const res = await fetch(osmUrl, {{ headers: {{ 'Accept-Language': 'en' }} }});
-              if (res.ok) data = await res.json();
-            }} catch (e) {{
-              console.warn('Nominatim primary failed, using Photon fallback:', e);
+              const pController = new AbortController();
+              const pTimeout = setTimeout(() => pController.abort(), 2500);
+              const photonUrl = `https://photon.komoot.io/api/?q=${{encodeURIComponent(cleanQ)}}&lat=28.6139&lon=77.2090&limit=10`;
+              const pres = await fetch(photonUrl, {{ signal: pController.signal }});
+              clearTimeout(pTimeout);
+              if (pres.ok) {{
+                const pdata = await pres.json();
+                if (pdata && pdata.features) {{
+                  pdata.features.forEach(f => {{
+                    const c = f.geometry.coordinates;
+                    // Delhi NCR bounding coordinates (Lat 28.15 - 29.15, Lon 76.60 - 77.70)
+                    if (c[1] >= 28.15 && c[1] <= 29.15 && c[0] >= 76.60 && c[0] <= 77.70) {{
+                      const p = f.properties;
+                      const title = p.name || p.street || cleanQ;
+                      const sub = [p.district, p.city || p.locality || 'Delhi', p.state].filter(Boolean).join(', ');
+                      const typeDesc = p.osm_value ? p.osm_value.replace(/_/g, ' ') : 'Place';
+                      addResult(title, sub, c[1], c[0], typeDesc.toUpperCase(), 'badge-poi');
+                    }}
+                  }});
+                }}
+              }}
+            }} catch (pe) {{
+              console.warn('Photon query note:', pe);
             }}
             
-            // 2. Fallback or complement with Komoot Photon OSM API (ultra-fast, fuzzy, covers all alleys & colonies)
-            if (!data || data.length === 0) {{
+            // 2. OpenStreetMap Nominatim with relaxed Delhi NCR bounding viewbox
+            try {{
+              const nController = new AbortController();
+              const nTimeout = setTimeout(() => nController.abort(), 2500);
+              const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&viewbox=76.80,28.95,77.45,28.35&bounded=0&limit=8&q=${{encodeURIComponent(searchTermDelhi)}}`;
+              const nres = await fetch(osmUrl, {{ 
+                headers: {{ 'Accept-Language': 'en' }},
+                signal: nController.signal 
+              }});
+              clearTimeout(nTimeout);
+              if (nres.ok) {{
+                const ndata = await nres.json();
+                if (ndata && Array.isArray(ndata)) {{
+                  ndata.forEach(d => {{
+                    const lat = parseFloat(d.lat);
+                    const lon = parseFloat(d.lon);
+                    if (lat >= 28.15 && lat <= 29.15 && lon >= 76.60 && lon <= 77.70) {{
+                      const parts = d.display_name.split(',');
+                      const title = parts[0].trim();
+                      const district = parts.slice(1, 4).join(',').trim();
+                      addResult(title, district, lat, lon, d.type ? d.type.toUpperCase() : 'Delhi NCT', 'badge-transit');
+                    }}
+                  }});
+                }}
+              }}
+            }} catch (ne) {{
+              console.warn('Nominatim query note:', ne);
+            }}
+            
+            // 3. Fallback: Raw query Nominatim if query did not contain Delhi
+            if (results.length === 0 && !hasDelhi) {{
               try {{
-                const photonUrl = `https://photon.komoot.io/api/?q=${{encodeURIComponent(searchTerm)}}&lat=28.6139&lon=77.2090&limit=8`;
-                const pres = await fetch(photonUrl);
-                if (pres.ok) {{
-                  const pdata = await pres.json();
-                  if (pdata && pdata.features) {{
-                    return pdata.features
-                      .filter(f => {{
-                        const coords = f.geometry.coordinates;
-                        // Filter to Delhi NCR region (Lat 28.3 - 28.95, Lon 76.8 - 77.5)
-                        return coords[1] >= 28.20 && coords[1] <= 29.05 && coords[0] >= 76.70 && coords[0] <= 77.60;
-                      }})
-                      .map(f => {{
-                        const p = f.properties;
-                        const name = p.name || p.street || q;
-                        const sub = [p.district, p.city || 'Delhi', p.state].filter(Boolean).join(', ');
-                        return {{
-                          name: name,
-                          district: sub || 'Delhi NCT',
-                          lat: f.geometry.coordinates[1],
-                          lon: f.geometry.coordinates[0],
-                          badge: 'Delhi Location',
-                          badgeClass: 'badge-safe'
-                        }};
-                      }});
+                const rController = new AbortController();
+                const rTimeout = setTimeout(() => rController.abort(), 2000);
+                const rawUrl = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&limit=6&q=${{encodeURIComponent(cleanQ)}}`;
+                const rres = await fetch(rawUrl, {{ 
+                  headers: {{ 'Accept-Language': 'en' }},
+                  signal: rController.signal 
+                }});
+                clearTimeout(rTimeout);
+                if (rres.ok) {{
+                  const rdata = await rres.json();
+                  if (rdata && Array.isArray(rdata)) {{
+                    rdata.forEach(d => {{
+                      const lat = parseFloat(d.lat);
+                      const lon = parseFloat(d.lon);
+                      if (lat >= 28.15 && lat <= 29.15 && lon >= 76.60 && lon <= 77.70) {{
+                        const parts = d.display_name.split(',');
+                        const title = parts[0].trim();
+                        const district = parts.slice(1, 4).join(',').trim();
+                        addResult(title, district, lat, lon, 'Delhi NCR', 'badge-transit');
+                      }}
+                    }});
                   }}
                 }}
-              }} catch (pe) {{
-                console.warn('Photon fallback notice:', pe);
+              }} catch (re) {{
+                console.warn('Raw Nominatim fallback note:', re);
               }}
             }}
             
-            if (data && data.length > 0) {{
-              return data.map(d => {{
-                const parts = d.display_name.split(',');
-                const title = parts[0].trim();
-                const district = parts.slice(1, 4).join(',').trim();
-                return {{
-                  name: title,
-                  district: district || 'Delhi NCT',
-                  lat: parseFloat(d.lat),
-                  lon: parseFloat(d.lon),
-                  badge: 'Delhi NCT',
-                  badgeClass: 'badge-transit'
-                }};
-              }});
-            }}
+            return results;
           }} catch (e) {{
             console.warn('Location search error:', e);
           }}
@@ -1703,12 +1807,23 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           // 1. Instant local match from Delhi index
           const localMatches = getPredictiveMatches(query);
-          renderSuggestions(localMatches);
           
-          // 2. Debounce remote search to discover any location/colony/street in Delhi
+          // If local matches exist, show them right away while remote query fires
+          if (localMatches.length > 0) {{
+            renderSuggestions(localMatches, true);
+          }} else {{
+            // Show loading placeholder instead of flashing "No matching locations"
+            renderSuggestions([], true);
+          }}
+          
+          // 2. Debounce remote search across live OpenStreetMap & Komoot Photon
           if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
           searchDebounceTimer = setTimeout(async () => {{
             const remoteMatches = await fetchNominatimMatches(query);
+            
+            // Re-check input value in case user continued typing
+            if (searchInput.value.trim() !== query.trim()) return;
+            
             if (remoteMatches && remoteMatches.length > 0) {{
               // Merge & deduplicate by name
               const names = new Set(localMatches.map(m => m.name.toLowerCase()));
@@ -1719,9 +1834,11 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                   names.add(rm.name.toLowerCase());
                 }}
               }});
-              renderSuggestions(combined.slice(0, 8));
+              renderSuggestions(combined.slice(0, 10), false);
+            }} else {{
+              renderSuggestions(localMatches, false);
             }}
-          }}, 200);
+          }}, 250);
         }});
         
         // Keyboard navigation for autocomplete list
@@ -1802,18 +1919,27 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           // Live search across all Delhi locations
           const btn = document.getElementById('searchActionBtn');
-          btn.innerText = '⌛';
+          const origBtnText = btn.innerHTML;
+          btn.innerHTML = '⌛';
           btn.disabled = true;
           
+          // Show search in dropdown
+          renderSuggestions([], true);
+          
           fetchNominatimMatches(query).then(matches => {{
-            btn.innerText = 'Search';
+            btn.innerHTML = origBtnText;
             btn.disabled = false;
             if (matches && matches.length > 0) {{
               focusLocationOnMap(matches[0].lat, matches[0].lon, matches[0].name, matches[0].district);
               searchDropdown.style.display = 'none';
             }} else {{
-              alert(`Could not find "${{query}}" in Delhi. Try entering a colony, landmark, or metro station name (e.g. Rohini, Dwarka, Janakpuri, Lajpat Nagar, Mayur Vihar).`);
+              // Best fuzzy fallback: locate central Delhi hub with clear notification
+              renderSuggestions([], false);
+              alert(`Could not pinpoint "${{query}}" exactly in OpenStreetMap Delhi records. Try searching with a landmark, metro station, or market near it (e.g. Connaught Place, Hauz Khas, Dwarka, Saket).`);
             }}
+          }}).catch(() => {{
+            btn.innerHTML = origBtnText;
+            btn.disabled = false;
           }});
         }};
         
