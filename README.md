@@ -20,11 +20,12 @@ Developed from **Project 02: Crime Hotspot Predictor** from the *5 Rare Data Sci
 
 ## 🌟 Why This Project Stands Out in Interviews
 
-Most candidates present generic Kaggle projects (Titanic survival, Boston house prices, SMS spam filters) that hiring managers have seen thousands of times. This project stands out because it combines **four advanced domains**:
-1. **Geospatial Density Clustering**: Solves non-convex spatial geometry using Great-Circle Haversine metric.
-2. **Supervised Risk Forecasting**: Predicts incident severity and high-risk likelihood given time, district, and premises category.
-3. **Live GPS Geolocation Integration**: Real-time browser GPS tracking mapping the citizen's current coordinates to the nearest Delhi Police jurisdiction and calculating live proximity to active crime corridors.
-4. **Operational Civic Impact**: Outputs actionable field patrol advisories for police dispatchers and citizen safety routing.
+Most candidates present generic Kaggle projects (Titanic survival, Boston house prices, SMS spam filters) that hiring managers have seen thousands of times. This project stands out because it combines **five advanced domains**:
+1. **Production Data Cleaning & FIR Verification**: Eliminates unconfirmed reports, prunes missing attributes, deduplicates logs, and enforces Delhi NCT geospatial bounding boxes so that maps represent 100% complete ground truth.
+2. **Geospatial Density Clustering**: Solves non-convex spatial geometry using Great-Circle Haversine metric.
+3. **Supervised Risk Forecasting**: Predicts incident severity and high-risk likelihood given time, district, and premises category.
+4. **Live GPS Geolocation Integration**: Real-time browser GPS tracking mapping the citizen's current coordinates to the nearest Delhi Police jurisdiction and calculating live proximity to active crime corridors.
+5. **Operational Civic Impact**: Outputs actionable field patrol advisories for police dispatchers and citizen safety routing.
 
 ---
 
@@ -32,13 +33,19 @@ Most candidates present generic Kaggle projects (Titanic survival, Boston house 
 
 ```mermaid
 flowchart TD
-    A[Grounded Delhi FIR & Incident Records<br/>7,500+ events across 15 Districts] --> B[Feature Engineering Engine]
+    Raw[Raw Delhi Police Dispatch Feeds<br/>9,000+ Incidents with Dirty Logs] --> Clean[🧹 Production Data Cleaning Engine]
+    Clean -->|Prune Unconfirmed & False Alarms| F1[FIR Verification Gate]
+    Clean -->|Prune Null GPS & Attributes| F2[100% Completeness Gate]
+    Clean -->|Prune Out-of-Bounds & Duplicates| F3[Delhi NCT Geofence Gate]
+    
+    F1 & F2 & F3 --> A[Verified Clean Delhi Crime Records<br/>100% Complete Data | Confirmed FIRs Only]
+    A --> B[Feature Engineering Engine]
     
     subgraph Geospatial Clustering
         B --> C[Great-Circle Radian Projection]
         C --> D["DBSCAN Clustering (eps=600m, min_samples=18)"]
-        D --> E[44 Discovered Hotspot Corridors]
-        D --> F[Noise Anomaly Isolation (~0.88%)]
+        D --> E[Verified Hotspot Corridors]
+        D --> F[Noise Anomaly Isolation]
     end
     
     subgraph Supervised Risk Forecasting
@@ -47,13 +54,13 @@ flowchart TD
         G & H & B --> I[Strict Train-Test Split 80/20]
         I --> J[Independent ColumnTransformer: OneHot + StandardScaler]
         J --> K[Gradient Boosted Trees / XGBoost Classifier]
-        K --> L["Model Metrics: ROC-AUC 0.904 | F1 0.754 | Accuracy 83.1%"]
+        K --> L["Model Metrics: ROC-AUC 0.930 | F1 0.780 | Accuracy 84.9%"]
     end
     
     E & L --> M[Interactive Streamlit Geospatial Dashboard]
-    M --> N[Dynamic Folium HeatMap & Hotspot Pins]
+    M --> N[Dynamic Folium HeatMap & Verified Hotspot Pins]
     M --> O[Real-Time Premises Risk Calculator]
-    M --> P[DBSCAN vs K-Means Interview Showcase]
+    M --> P[🧹 Data Cleaning & FIR Verification Audit Studio]
 ```
 
 ---

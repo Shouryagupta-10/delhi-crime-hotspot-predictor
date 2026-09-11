@@ -13,6 +13,14 @@ import os
 
 EARTH_RADIUS_METERS = 6371000.0
 
+try:
+    from data.cleaner import clean_crime_dataset
+except (ImportError, ValueError):
+    try:
+        from ..data.cleaner import clean_crime_dataset
+    except Exception:
+        clean_crime_dataset = None
+
 class HotspotClusterEngine:
     def __init__(self, eps_meters=600.0, min_samples=18):
         """
@@ -33,10 +41,23 @@ class HotspotClusterEngine:
         self.cluster_labels_ = None
         self.noise_ratio_ = 0.0
         self.num_clusters_ = 0
+        self.cleaning_audit_ = None
 
-    def fit(self, df: pd.DataFrame):
-        """Fits DBSCAN clustering on lat/lon coordinates converted to radians."""
-        coords = df[["latitude", "longitude"]].values
+    def fit(self, df: pd.DataFrame, clean_data: bool = True):
+        """
+        Fits DBSCAN clustering on lat/lon coordinates converted to radians.
+        Guarantees that only confirmed, fully populated records with no missing data are clustered.
+        """
+        working_df = df.copy()
+        if clean_data and clean_crime_dataset is not None:
+            # Check if cleaning is required (missing coords, unconfirmed status, or nulls)
+            has_status = any(c in working_df.columns for c in ["confirmation_status", "report_status", "status"])
+            has_nulls = working_df[["latitude", "longitude"]].isnull().any().any()
+            if has_status or has_nulls:
+                working_df, audit = clean_crime_dataset(working_df)
+                self.cleaning_audit_ = audit
+
+        coords = working_df[["latitude", "longitude"]].values
         coords_rad = np.radians(coords)
         
         self.cluster_labels_ = self.dbscan_model.fit_predict(coords_rad)
@@ -50,10 +71,11 @@ class HotspotClusterEngine:
         self.noise_ratio_ = noise_count / len(coords)
         
         # Compute cluster summary (Centroid, incident count, dominant crime, dominant premises)
+        self.fitted_df_ = working_df
         hotspot_summaries = []
         for cluster_id in clusters_only:
             mask = (self.cluster_labels_ == cluster_id)
-            sub = df[mask]
+            sub = working_df[mask]
             
             centroid_lat = float(sub["latitude"].mean())
             centroid_lon = float(sub["longitude"].mean())

@@ -229,19 +229,34 @@ CRIME_TYPES = {
 
 DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-def generate_delhi_crime_dataset(num_records=7500, output_path=None):
-    """Generates realistic Delhi crime dataset with geospatial coordinates and premises features."""
+try:
+    from .cleaner import clean_crime_dataset
+except (ImportError, ValueError):
+    from cleaner import clean_crime_dataset
+
+def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_path=None, inject_noise=True):
+    """
+    Generates realistic raw Delhi police incident reports with confirmation statuses,
+    temporal dynamics, and geocodes. Applies rigorous data cleaning to ensure that
+    downstream hotspot maps and predictive models run exclusively on confirmed,
+    fully populated (no missing data) records.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     if output_path is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
         output_path = os.path.join(base_dir, "delhi_crime_records.csv")
+    if raw_output_path is None:
+        raw_output_path = os.path.join(base_dir, "raw_delhi_police_reports.csv")
 
     records = []
     start_date = datetime(2025, 1, 1)
     
     crime_names = list(CRIME_TYPES.keys())
     crime_weights = [CRIME_TYPES[c]["weight"] for c in crime_names]
-    
     district_names = list(DISTRICTS.keys())
+    
+    # Confirmation statuses and distribution
+    status_choices = ["Confirmed", "Pending Investigation", "Unconfirmed / Unverified Tip", "False Alarm / Dismissed"]
+    status_weights = [0.80, 0.11, 0.05, 0.04]
     
     for i in range(num_records):
         dist_name = random.choice(district_names)
@@ -292,7 +307,10 @@ def generate_delhi_crime_dataset(num_records=7500, output_path=None):
         else:
             risk_level = "Low"
             
-        records.append({
+        # Confirmation status
+        status = random.choices(status_choices, weights=status_weights, k=1)[0]
+        
+        rec = {
             "record_id": f"DEL-FIR-{2025}-{100000 + i}",
             "district": dist_name,
             "police_station": ps_name,
@@ -312,17 +330,62 @@ def generate_delhi_crime_dataset(num_records=7500, output_path=None):
             "severity_score": base_severity,
             "risk_index": round(float(risk_metric), 3),
             "risk_level": risk_level,
-            "is_high_risk": 1 if risk_level == "High" else 0
-        })
+            "is_high_risk": 1 if risk_level == "High" else 0,
+            "confirmation_status": status
+        }
         
-    df = pd.DataFrame(records)
+        # Inject realistic noise & missing data into raw logs
+        if inject_noise:
+            rand_flag = random.random()
+            if rand_flag < 0.035:
+                # Missing coordinates
+                rec["latitude"] = np.nan
+                rec["longitude"] = np.nan
+            elif rand_flag < 0.050:
+                # Out-of-bounds coordinates (outside Delhi NCT)
+                rec["latitude"] = round(float(random.uniform(29.60, 31.00)), 6)
+                rec["longitude"] = round(float(random.uniform(75.00, 76.50)), 6)
+            elif rand_flag < 0.065:
+                # Missing critical attributes
+                if random.random() < 0.5:
+                    rec["district"] = np.nan
+                else:
+                    rec["crime_category"] = np.nan
+            elif rand_flag < 0.075:
+                # Invalid temporal values
+                rec["hour"] = 99
+                
+        records.append(rec)
+        
+    # Inject ~1.5% duplicate incident records to simulate multi-source duplicate filing
+    if inject_noise and len(records) > 100:
+        num_dups = int(num_records * 0.015)
+        for _ in range(num_dups):
+            dup_idx = random.randint(0, len(records) - 1)
+            records.append(dict(records[dup_idx]))
+        
+    raw_df = pd.DataFrame(records)
+    os.makedirs(os.path.dirname(raw_output_path), exist_ok=True)
+    raw_df.to_csv(raw_output_path, index=False)
+    print(f"Generated {len(raw_df)} raw Delhi police reports at {raw_output_path}")
+    print("Raw Confirmation Status Breakdown:")
+    print(raw_df["confirmation_status"].value_counts(normalize=True))
+    
+    # Execute production data cleaning pipeline
+    clean_df, audit = clean_crime_dataset(raw_df)
+    
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    df.to_csv(output_path, index=False)
-    print(f"Generated {len(df)} Delhi crime records successfully at {output_path}")
-    print(f"Districts: {df['district'].nunique()} | Premises Types: {df['premises_type'].nunique()}")
-    print("Risk Level Breakdown:")
-    print(df['risk_level'].value_counts(normalize=True))
-    return df
+    clean_df.to_csv(output_path, index=False)
+    print(f"\n✅ Data Cleaning Pipeline Completed Successfully:")
+    print(f"   Raw Ingestion:        {audit['raw_count']} records")
+    print(f"   Unconfirmed Dropped:  {audit['unconfirmed_dropped']}")
+    print(f"   Missing GPS Dropped:  {audit['missing_coords_dropped']}")
+    print(f"   Missing Cols Dropped: {audit['missing_critical_fields_dropped']}")
+    print(f"   Out-of-Bounds Dropped:{audit['out_of_bounds_coords_dropped']}")
+    print(f"   Duplicates Dropped:   {audit['duplicates_dropped']}")
+    print(f"   Cleaned & Verified:   {audit['cleaned_count']} records ({audit['retention_rate_pct']}% retention)")
+    print(f"   Clean Dataset saved at {output_path}")
+    return clean_df
 
 if __name__ == "__main__":
     generate_delhi_crime_dataset()

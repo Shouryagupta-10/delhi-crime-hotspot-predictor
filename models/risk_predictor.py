@@ -26,6 +26,14 @@ try:
 except (ImportError, ValueError):
     from cluster_engine import HotspotClusterEngine
 
+try:
+    from data.cleaner import clean_crime_dataset
+except (ImportError, ValueError):
+    try:
+        from ..data.cleaner import clean_crime_dataset
+    except Exception:
+        clean_crime_dataset = None
+
 class DelhiCrimeRiskPredictor:
     def __init__(self, use_xgboost=True):
         self.use_xgboost = use_xgboost
@@ -72,6 +80,10 @@ class DelhiCrimeRiskPredictor:
         """End-to-end training, validation, and serialization following ML best practices."""
         df = pd.read_csv(csv_path)
         
+        # Ensure only confirmed, complete records with no missing data are trained on
+        if clean_crime_dataset is not None:
+            df, _ = clean_crime_dataset(df)
+            
         # Feature engineering
         engineered_df = self.engineer_features(df, fit_cluster=True)
         
