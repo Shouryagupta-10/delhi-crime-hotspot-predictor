@@ -614,12 +614,11 @@ with kpi5:
     st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
-tab1, tab_clean, tab_pred, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab_clean, tab_pred, tab2, tab4, tab5 = st.tabs([
     "🗺️ Interactive Hotspot Map",
     "🧹 Data Cleaning & FIR Verification",
     "🚔 Predictive Policing & Tactics",
     "⚡ Real-Time Premises Risk Scorer",
-    "🔬 DBSCAN vs K-Means (Interview Defense)",
     "📊 District & Temporal Analytics",
     "🔥 x402 Protocol & Algorand Agent"
 ])

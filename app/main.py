@@ -792,12 +792,11 @@ with kpi5:
     st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
-tab1, tab_clean, tab_pred, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab_clean, tab_pred, tab2, tab4, tab5 = st.tabs([
     "🗺️ Interactive Hotspot Map",
     "🧹 Data Cleaning & FIR Verification",
     "🚔 Predictive Policing & Tactics",
     "⚡ Real-Time Premises Risk Scorer",
-    "🔬 DBSCAN vs K-Means (Interview Defense)",
     "📊 District & Temporal Analytics",
     "🔥 x402 Protocol & Algorand Agent"
 ])
@@ -1229,8 +1228,8 @@ with tab2:
             st.markdown("- **IPC 379 (BNS 303)**: Unattended Vehicle Theft in Perimeter Parking")
             st.markdown("- **IPC 392 / 394 (BNS 309)**: Robbery / Extortion along unlit transit corridors")
 
-# --- TAB 3: DBSCAN VS K-MEANS INTERVIEW DEFENSE ---
-with tab3:
+# DBSCAN tab removed
+if False:
     st.subheader("Algorithmic Defense: Why DBSCAN Over K-Means for Crime Hotspots?")
     st.markdown("""
     > **Core Interview Talking Point from Curriculum:**
