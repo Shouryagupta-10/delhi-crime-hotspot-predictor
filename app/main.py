@@ -654,37 +654,29 @@ with tab1:
                 horizontal=True
             )
         with zoom_tb_col:
-            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
-            z1, z2, z3, z4, z_in, z_out = st.columns(6)
+            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
+            z1, z2, z3, z4 = st.columns(4)
             with z1:
-                if st.button("🗺️ City (11x)", use_container_width=True, help="Full Delhi NCT Overview"):
+                if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
                     st.session_state["map_zoom"] = 11
                     st.rerun()
             with z2:
-                if st.button("🏙️ District (13x)", use_container_width=True, help="District Jurisdiction View"):
+                if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
                     st.session_state["map_zoom"] = 13
                     st.rerun()
             with z3:
-                if st.button("🚨 Corridor (15x)", use_container_width=True, help="DBSCAN Hotspot Cluster Core"):
+                if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
                     st.session_state["map_zoom"] = 15
                     st.rerun()
             with z4:
-                if st.button("🔎 Street (17x)", use_container_width=True, help="Street & Premises Detail"):
+                if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
                     st.session_state["map_zoom"] = 17
-                    st.rerun()
-            with z_in:
-                if st.button("➕ In", use_container_width=True, help="Step Zoom In"):
-                    st.session_state["map_zoom"] = min(19, st.session_state.get("map_zoom", 13) + 1)
-                    st.rerun()
-            with z_out:
-                if st.button("➖ Out", use_container_width=True, help="Step Zoom Out"):
-                    st.session_state["map_zoom"] = max(9, st.session_state.get("map_zoom", 13) - 1)
                     st.rerun()
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
         if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with Once UI styling, clustering, & search
+            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,
                 initial_user_lat=user_lat,
@@ -692,7 +684,7 @@ with tab1:
                 initial_zoom=current_zoom,
                 incidents_df=filtered_df
             )
-            st.components.v1.html(smooth_html, height=680)
+            st.components.v1.html(smooth_html, height=720)
         else:
             # Folium Map with returned_objects=[] to eliminate re-run lag
             crime_map = create_delhi_crime_map(

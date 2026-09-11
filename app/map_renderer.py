@@ -209,8 +209,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
     """
     Generates a standalone, silky-smooth 60fps Leaflet HTML/JS component
     matching the Once UI / Magic Portfolio dark glassmorphic design system:
-    - Multiple Basemaps: CARTO Dark Matter (default), Esri Satellite, CARTO Voyager
-    - Live OpenStreetMap Nominatim place search in Delhi NCT
+    - Dedicated Top Navbar positioned OUTSIDE and above the map canvas (uncluttered view)
+    - Predictive Live Search with instant autocomplete dropdown for Delhi NCT
+    - Watermark-free Basemaps: Esri Dark Canvas (default), Esri Satellite, OpenStreetMap
     - Marker Clustering for individual crime incidents (Leaflet.markercluster)
     - Rich Hotspot & Safe Haven popups with real Unsplash Delhi landmark imagery
     - Continuous navigator.geolocation.watchPosition tracking with live radar pulse
@@ -243,7 +244,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             d_name = str(r.get('district', 'Delhi'))
             p_name = str(r.get('dominant_premises', 'Hotspot'))
             
-            # Match photo
             img = landmark_images["default"]
             for k in landmark_images:
                 if k.lower() in d_name.lower() or k.lower() in p_name.lower():
@@ -264,7 +264,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                 "image": img
             })
     else:
-        # Grounded default centroids with verified photos
         hotspot_records = [
             {"id": "H1", "name": "Rajiv Chowk Metro & Inner Circle", "district": "New Delhi", "lat": 28.6328, "lon": 77.2197, "crime": "Robbery & Snatching", "premises": "Transit Hub", "riskScore": 0.84, "riskLevel": "HIGH", "incidents": 342, "image": landmark_images["Rajiv Chowk"]},
             {"id": "H2", "name": "Kashmere Gate Terminal", "district": "North", "lat": 28.6675, "lon": 77.2285, "crime": "Luggage Theft & Robbery", "premises": "Interstate Transit", "riskScore": 0.88, "riskLevel": "HIGH", "incidents": 419, "image": landmark_images["Kashmere Gate"]},
@@ -276,10 +275,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             {"id": "H8", "name": "Saket Mall Corridor", "district": "South", "lat": 28.5284, "lon": 77.2185, "crime": "Vehicle Theft", "premises": "Commercial Mall", "riskScore": 0.52, "riskLevel": "MEDIUM", "incidents": 165, "image": landmark_images["Saket"]},
         ]
 
-    # Sample incidents for clustering
     incident_records = []
     if incidents_df is not None and not incidents_df.empty:
-        sample_size = min(450, len(incidents_df))
+        sample_size = min(400, len(incidents_df))
         sample_df = incidents_df.sample(n=sample_size, random_state=42) if len(incidents_df) > sample_size else incidents_df
         for _, r in sample_df.iterrows():
             try:
@@ -309,14 +307,15 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>Rakshak.ai Advanced Once UI Sentinel Map</title>
+      <title>Rakshak.ai Clean Sentinel Map</title>
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
       <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
       <style>
-        body, html {{ 
+        * {{ box-sizing: border-box; }}
+        html, body {{ 
           margin: 0; 
           padding: 0; 
           height: 100%; 
@@ -326,138 +325,329 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           color: #f8fafc; 
           overflow: hidden; 
         }}
-        #map {{ 
-          height: 100%; 
-          width: 100%; 
-          background: #080c14; 
-          background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
-          background-size: 28px 28px;
+        
+        /* Master Layout Container */
+        .map-app-container {{
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          width: 100%;
+          padding: 8px 10px;
+          gap: 8px;
         }}
         
-        .radar-pulse-marker {{
-          animation: pulse 2s infinite;
-        }}
-        @keyframes pulse {{
-          0% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.8); }}
-          70% {{ transform: scale(1.18); box-shadow: 0 0 0 22px rgba(6, 182, 212, 0); }}
-          100% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }}
-        }}
-        
-        .hud-panel {{
-          position: absolute;
-          z-index: 1000;
-          background: rgba(13, 17, 26, 0.88);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
+        /* Top Navigation Bar: POSITIONED CLEANLY OUTSIDE THE MAP */
+        .map-navbar {{
+          flex-shrink: 0;
+          background: rgba(14, 18, 26, 0.96);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
           padding: 8px 14px;
-          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-          font-size: 11.5px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+          position: relative;
+          z-index: 10000;
         }}
         
-        .top-hud {{ 
-          top: 10px; 
-          left: 12px; 
-          right: 12px; 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          flex-wrap: wrap; 
-          gap: 8px; 
-        }}
-        
-        .bottom-hud {{ 
-          bottom: 10px; 
-          left: 12px; 
-          right: 12px; 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          flex-wrap: wrap; 
-          gap: 8px; 
-        }}
-        
-        .hud-group {{
+        .nav-section {{
           display: flex;
           align-items: center;
           gap: 6px;
-          flex-wrap: wrap;
         }}
         
-        .btn {{
+        .nav-section-title {{
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin-right: 2px;
+        }}
+        
+        /* Predictive Search Box & Autocomplete Dropdown */
+        .search-container {{
+          position: relative;
+          flex: 1;
+          min-width: 240px;
+          max-width: 380px;
+        }}
+        
+        .search-box {{
+          display: flex;
+          align-items: center;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 9999px;
+          padding: 4px 6px 4px 12px;
+          gap: 6px;
+          transition: all 0.2s ease;
+        }}
+        .search-box:focus-within {{
+          border-color: #38bdf8;
+          box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+          background: rgba(15, 23, 42, 0.95);
+        }}
+        
+        .search-lens {{
+          font-size: 13px;
+          color: #94a3b8;
+        }}
+        
+        .search-input {{
+          background: transparent;
+          border: none;
+          outline: none;
+          color: #f8fafc;
+          font-size: 12px;
+          font-family: inherit;
+          width: 100%;
+        }}
+        .search-input::placeholder {{
+          color: #64748b;
+        }}
+        
+        .search-clear-btn {{
+          background: none;
+          border: none;
+          color: #94a3b8;
+          font-size: 12px;
+          cursor: pointer;
+          padding: 2px 6px;
+        }}
+        .search-clear-btn:hover {{
+          color: #fff;
+        }}
+        
+        .btn-go {{
+          background: linear-gradient(135deg, #0284c7, #0d9488);
+          border: 1px solid #38bdf8;
+          color: #fff;
+          border-radius: 9999px;
+          padding: 4px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s;
+        }}
+        .btn-go:hover {{
+          filter: brightness(1.15);
+          transform: scale(1.02);
+        }}
+        
+        /* Floating Autocomplete Dropdown */
+        .predictive-dropdown {{
+          position: absolute;
+          top: calc(100% + 6px);
+          left: 0;
+          right: 0;
+          background: rgba(11, 15, 25, 0.97);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 12px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.2);
+          overflow: hidden;
+          z-index: 99999;
+          max-height: 280px;
+          overflow-y: auto;
+        }}
+        
+        .dropdown-header {{
+          font-size: 9.5px;
+          font-weight: 800;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 8px 12px 4px 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }}
+        
+        .dropdown-item {{
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          cursor: pointer;
+          transition: background 0.15s;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }}
+        .dropdown-item:last-child {{
+          border-bottom: none;
+        }}
+        .dropdown-item:hover, .dropdown-item.active-item {{
+          background: rgba(56, 189, 248, 0.12);
+        }}
+        
+        .dropdown-icon {{
+          font-size: 15px;
+          flex-shrink: 0;
+        }}
+        
+        .dropdown-info {{
+          flex: 1;
+          min-width: 0;
+        }}
+        .dropdown-title {{
+          font-size: 12px;
+          font-weight: 700;
+          color: #f1f5f9;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }}
+        .dropdown-subtitle {{
+          font-size: 10px;
+          color: #94a3b8;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-top: 1px;
+        }}
+        
+        .dropdown-badge {{
+          font-size: 9px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 9999px;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        }}
+        .badge-danger {{ background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); }}
+        .badge-safe {{ background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5); }}
+        .badge-transit {{ background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }}
+        
+        /* Pills & Action Buttons */
+        .pill-group {{
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }}
+        
+        .pill-btn {{
           background: rgba(255, 255, 255, 0.05);
           color: #cbd5e1;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 9999px;
+          padding: 5px 11px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          user-select: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }}
+        .pill-btn:hover {{
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+          border-color: rgba(255, 255, 255, 0.25);
+        }}
+        .pill-btn.active {{
+          background: #0284c7 !important;
+          border-color: #38bdf8 !important;
+          color: #fff !important;
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.45) !important;
+        }}
+        
+        .action-btn {{
+          background: rgba(255, 255, 255, 0.05);
+          color: #e2e8f0;
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 9999px;
           padding: 5px 12px;
           font-size: 11px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.15s ease;
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          user-select: none;
         }}
-        .btn:hover {{ 
-          background: rgba(255, 255, 255, 0.12); 
-          color: #ffffff; 
-          border-color: rgba(255, 255, 255, 0.25);
-          transform: translateY(-1px);
+        .action-btn:hover {{
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
         }}
-        .btn:active {{
-          transform: translateY(0);
+        .action-btn.sim-btn {{
+          background: rgba(217, 119, 6, 0.2);
+          border-color: rgba(245, 158, 11, 0.5);
+          color: #fde68a;
         }}
-        
-        .btn-active {{ 
-          background: #0284c7 !important; 
-          border-color: #38bdf8 !important; 
-          color: #ffffff !important; 
-          box-shadow: 0 0 14px rgba(56, 189, 248, 0.4) !important;
-        }}
-        .btn-sim {{ 
-          background: rgba(217, 119, 6, 0.2); 
-          border-color: rgba(245, 158, 11, 0.5); 
-          color: #fde68a; 
-        }}
-        .btn-sim:hover {{
+        .action-btn.sim-btn:hover {{
           background: #d97706;
           color: #fff;
         }}
-        .btn-search {{
-          background: linear-gradient(135deg, #0284c7, #0d9488);
-          border-color: #38bdf8;
+        .action-btn.sim-btn.active {{
+          background: #d97706;
           color: #fff;
+          box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
         }}
         
-        .search-box {{
+        /* Clean Map Viewport Wrapper */
+        .map-viewport {{
+          flex: 1;
+          position: relative;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          min-height: 0;
+          background: #080c14;
+        }}
+        #map {{ 
+          height: 100%; 
+          width: 100%; 
+          background: #080c14; 
+        }}
+        
+        /* Floating Status Pill inside Map (Minimalist, Top Left) */
+        .floating-status-pill {{
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 1000;
           display: flex;
           align-items: center;
-          background: rgba(15, 23, 42, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          gap: 8px;
+          background: rgba(13, 17, 26, 0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 9999px;
-          padding: 2px 8px 2px 12px;
-          gap: 6px;
-        }}
-        .search-input {{
-          background: transparent;
-          border: none;
-          outline: none;
-          color: #f8fafc;
-          font-size: 11px;
-          width: 170px;
-          font-family: inherit;
-        }}
-        .search-input::placeholder {{
-          color: #64748b;
+          padding: 5px 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+          pointer-events: none;
         }}
         
-        /* Floating Zoom Dock on Right */
-        .zoom-dock {{
+        .threat-tag {{
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 9999px;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }}
+        .tag-high {{ background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.6); }}
+        .tag-med {{ background: rgba(245, 158, 11, 0.25); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.6); }}
+        .tag-safe {{ background: rgba(16, 185, 129, 0.25); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.6); }}
+        
+        .status-subtext {{
+          font-size: 11px;
+          color: #cbd5e1;
+          font-weight: 600;
+        }}
+        
+        /* Floating Zoom Dock (Right Edge) */
+        .floating-zoom-dock {{
           position: absolute;
-          top: 76px;
-          right: 14px;
+          top: 12px;
+          right: 12px;
           z-index: 1000;
           display: flex;
           flex-direction: column;
@@ -467,34 +657,31 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 12px;
           padding: 5px;
-          box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }}
-        .zoom-dock-btn {{
-          width: 34px;
-          height: 34px;
+        .zoom-btn {{
+          width: 32px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: rgba(255, 255, 255, 0.05);
           color: #f8fafc;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          font-size: 15px;
+          border-radius: 7px;
+          font-size: 14px;
           font-weight: 800;
           cursor: pointer;
           transition: all 0.15s ease-in-out;
         }}
-        .zoom-dock-btn:hover {{
+        .zoom-btn:hover {{
           background: #0284c7;
           border-color: #38bdf8;
           color: #fff;
           transform: scale(1.08);
         }}
-        .zoom-dock-btn:active {{
-          transform: scale(0.94);
-        }}
-        .zoom-badge {{
-          font-size: 9.5px;
+        .zoom-indicator {{
+          font-size: 9px;
           font-weight: 800;
           text-align: center;
           color: #38bdf8;
@@ -503,22 +690,76 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           user-select: none;
         }}
         
-        .threat-tag {{
-          font-weight: 800;
-          padding: 3px 10px;
-          border-radius: 9999px;
-          font-size: 10.5px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          display: inline-flex;
+        /* Bottom Telemetry Bar inside Map */
+        .bottom-telemetry {{
+          position: absolute;
+          bottom: 10px;
+          left: 12px;
+          right: 12px;
+          z-index: 1000;
+          display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 4px;
+          flex-wrap: wrap;
+          gap: 8px;
+          background: rgba(13, 17, 26, 0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          padding: 6px 14px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+          font-size: 11px;
         }}
-        .tag-high {{ background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.6); }}
-        .tag-med {{ background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.6); }}
-        .tag-safe {{ background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.6); }}
         
-        /* Once UI Popup Overrides */
+        .telemetry-readouts {{
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }}
+        .tel-item {{
+          display: flex;
+          flex-direction: column;
+        }}
+        .tel-label {{
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748b;
+          letter-spacing: 0.04em;
+        }}
+        .val-cyan {{ font-family: monospace; color: #38bdf8; }}
+        .val-purple {{ font-family: monospace; color: #a78bfa; }}
+        .val-green {{ font-family: monospace; color: #4ade80; }}
+        
+        .telemetry-legend {{
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 10.5px;
+          font-weight: 600;
+        }}
+        .legend-dot {{
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 3px;
+        }}
+        .dot-red {{ background: #ef4444; box-shadow: 0 0 6px #ef4444; }}
+        .dot-amber {{ background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }}
+        .dot-green {{ background: #10b981; box-shadow: 0 0 6px #10b981; }}
+        
+        /* Pulse Marker */
+        .radar-pulse-marker {{
+          animation: pulse 2s infinite;
+        }}
+        @keyframes pulse {{
+          0% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.8); }}
+          70% {{ transform: scale(1.18); box-shadow: 0 0 0 20px rgba(6, 182, 212, 0); }}
+          100% {{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }}
+        }}
+        
+        /* Once UI Popups */
         .leaflet-popup-content-wrapper {{ 
           background: #0b0f19 !important; 
           color: #f8fafc !important; 
@@ -528,13 +769,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           overflow: hidden !important;
           box-shadow: 0 16px 36px rgba(0,0,0,0.7) !important;
         }}
-        .leaflet-popup-content {{
-          margin: 0 !important;
-          line-height: 1.4 !important;
-        }}
-        .leaflet-popup-tip {{ 
-          background: #0b0f19 !important; 
-        }}
+        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.4 !important; }}
+        .leaflet-popup-tip {{ background: #0b0f19 !important; }}
         .leaflet-container a.leaflet-popup-close-button {{
           color: #ffffff !important;
           top: 8px !important;
@@ -549,7 +785,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           border: 1px solid rgba(255,255,255,0.2) !important;
         }}
         
-        /* Custom Clusters */
         .cluster-pill {{
           display: flex;
           align-items: center;
@@ -563,74 +798,103 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
       </style>
     </head>
     <body>
-      <div id="map"></div>
-      
-      <!-- Top HUD Bar: Search, Basemaps, Layer Filters -->
-      <div class="hud-panel top-hud">
-        <!-- Search and Proximity Tag -->
-        <div class="hud-group">
-          <span id="threatBadge" class="threat-tag tag-safe">🛡️ SAFE BUFFER ZONE</span>
+      <div class="map-app-container">
+        
+        <!-- Top Navbar: OUTSIDE the map viewport -->
+        <header class="map-navbar">
           
-          <div class="search-box">
-            <input id="mapSearchInput" class="search-input" type="text" placeholder="Search Delhi area, metro..." onkeydown="if(event.key==='Enter') searchLocation()" />
-            <button id="btnSearch" class="btn btn-search" style="padding: 3px 8px; font-size: 10px;" onclick="searchLocation()">Go</button>
+          <!-- Predictive Search Box -->
+          <div class="search-container">
+            <div class="search-box">
+              <span class="search-lens">🔍</span>
+              <input 
+                id="mapSearchInput" 
+                class="search-input" 
+                type="text" 
+                placeholder="Search Delhi (e.g. Rajiv Chowk, Hauz Khas)..." 
+                autocomplete="off" 
+              />
+              <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearchInput()" style="display:none;">✕</button>
+              <button id="searchActionBtn" class="btn-go" onclick="executeSearch()">Search</button>
+            </div>
+            
+            <!-- Autocomplete Suggestions Menu -->
+            <div id="predictiveDropdown" class="predictive-dropdown" style="display:none;"></div>
           </div>
-        </div>
+          
+          <!-- Basemap Toggle Group -->
+          <div class="nav-section">
+            <span class="nav-section-title">BASEMAP:</span>
+            <div class="pill-group">
+              <button id="btnLayerDark" class="pill-btn active" onclick="switchBasemap('dark')">🌑 Dark</button>
+              <button id="btnLayerSat" class="pill-btn" onclick="switchBasemap('satellite')">🛰️ Satellite</button>
+              <button id="btnLayerStreet" class="pill-btn" onclick="switchBasemap('street')">🗺️ Street</button>
+            </div>
+          </div>
+          
+          <!-- Layer Filters -->
+          <div class="nav-section">
+            <span class="nav-section-title">LAYERS:</span>
+            <div class="pill-group">
+              <button id="btnAll" class="pill-btn active" onclick="setLayerFilter('ALL')">All</button>
+              <button id="btnHigh" class="pill-btn" onclick="setLayerFilter('HIGH')">🔴 High Risk</button>
+              <button id="btnSafe" class="pill-btn" onclick="setLayerFilter('SAFE')">🟢 Safe Havens</button>
+              <button id="btnClusterToggle" class="pill-btn active" onclick="toggleIncidentClusters()">📌 Pins</button>
+            </div>
+          </div>
+          
+          <!-- Action Controls -->
+          <div class="nav-section">
+            <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()">🚀 Sim GPS</button>
+            <button class="action-btn" onclick="centerOnMe()">📍 Me</button>
+          </div>
+          
+        </header>
         
-        <!-- Basemap Switchers -->
-        <div class="hud-group">
-          <span style="color: #64748b; font-size: 10.5px; font-weight: 700;">BASEMAP:</span>
-          <button id="btnLayerDark" class="btn btn-active" onclick="switchBasemap('dark')">🌑 Dark</button>
-          <button id="btnLayerSat" class="btn" onclick="switchBasemap('satellite')">🛰️ Satellite</button>
-          <button id="btnLayerStreet" class="btn" onclick="switchBasemap('street')">🗺️ Street</button>
-        </div>
-
-        <!-- Layer Filters & Action Controls -->
-        <div class="hud-group">
-          <button id="btnAll" class="btn btn-active" onclick="setLayerFilter('ALL')">All</button>
-          <button id="btnHigh" class="btn" onclick="setLayerFilter('HIGH')">🔴 High Risk</button>
-          <button id="btnSafe" class="btn" onclick="setLayerFilter('SAFE')">🟢 Safe Havens</button>
-          <button id="btnClusterToggle" class="btn btn-active" onclick="toggleIncidentClusters()">📌 Clusters</button>
-          <button id="btnSim" class="btn btn-sim" onclick="toggleSimulation()">🚀 Sim GPS</button>
-          <button class="btn" onclick="centerOnMe()">📍 Me</button>
-        </div>
-      </div>
-      
-      <!-- Dedicated Floating Zoom Controls Dock -->
-      <div class="zoom-dock" title="Geospatial Zoom Controls">
-        <button class="zoom-dock-btn" onclick="zoomInMap()" title="Zoom In (+ / scroll up)">➕</button>
-        <div id="zoomLevelDock" class="zoom-badge">{init_zoom}x</div>
-        <button class="zoom-dock-btn" onclick="zoomOutMap()" title="Zoom Out (- / scroll down)">➖</button>
-        <button class="zoom-dock-btn" style="font-size: 12px;" onclick="resetZoomMap()" title="Reset to Default Zoom ({init_zoom}x)">🔄</button>
-        <button class="zoom-dock-btn" style="font-size: 12px;" onclick="fitAllHotspots()" title="Fit All Delhi Hotspots in View">🗺️</button>
-      </div>
-      
-      <!-- Bottom HUD Bar: Live Telemetry Readouts -->
-      <div class="hud-panel bottom-hud">
-        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-          <div>
-            <span style="color: #64748b; font-size: 9.5px; display: block; font-weight: 700;">GPS COORDINATES</span>
-            <b id="gpsCoordsText" style="font-family: monospace; color: #38bdf8;">{init_lat:.4f}°N, {init_lon:.4f}°E</b>
+        <!-- Clean Map Canvas Viewport -->
+        <main class="map-viewport">
+          <div id="map"></div>
+          
+          <!-- Floating Status Capsule -->
+          <div class="floating-status-pill">
+            <span id="threatBadge" class="threat-tag tag-safe">🛡️ SAFE BUFFER ZONE</span>
+            <span id="closestHotspotText" class="status-subtext">Scanning nearby corridors...</span>
           </div>
-          <div>
-            <span style="color: #64748b; font-size: 9.5px; display: block; font-weight: 700;">MAP ZOOM</span>
-            <b id="gpsZoomText" style="font-family: monospace; color: #a78bfa;">{init_zoom}x (District)</b>
+          
+          <!-- Dedicated Floating Zoom Dock -->
+          <div class="floating-zoom-dock" title="Geospatial Zoom Controls">
+            <button class="zoom-btn" onclick="zoomInMap()" title="Zoom In (+ / scroll up)">➕</button>
+            <div id="zoomLevelDock" class="zoom-indicator">{init_zoom}x</div>
+            <button class="zoom-btn" onclick="zoomOutMap()" title="Zoom Out (- / scroll down)">➖</button>
+            <button class="zoom-btn" style="font-size: 12px;" onclick="resetZoomMap()" title="Reset to Default Zoom">🔄</button>
+            <button class="zoom-btn" style="font-size: 12px;" onclick="fitAllHotspots()" title="Fit All Delhi Hotspots in View">🗺️</button>
           </div>
-          <div>
-            <span style="color: #64748b; font-size: 9.5px; display: block; font-weight: 700;">PROXIMITY RADAR</span>
-            <b id="closestHotspotText" style="color: #e2e8f0;">Scanning perimeter...</b>
-          </div>
-          <div>
-            <span style="color: #64748b; font-size: 9.5px; display: block; font-weight: 700;">ACCURACY</span>
-            <b id="gpsAccText" style="font-family: monospace; color: #4ade80;">&plusmn;15m</b>
-          </div>
-        </div>
-        
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 10.5px; font-weight: 600;">
-          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444;"></span> High (&ge;60%)</span>
-          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 6px #f59e0b;"></span> Med (45-60%)</span>
-          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981;"></span> Safe (&lt;45%)</span>
-        </div>
+          
+          <!-- Bottom Telemetry Bar -->
+          <footer class="bottom-telemetry">
+            <div class="telemetry-readouts">
+              <div class="tel-item">
+                <span class="tel-label">GPS COORDS</span>
+                <b id="gpsCoordsText" class="val-cyan">{init_lat:.4f}°N, {init_lon:.4f}°E</b>
+              </div>
+              <div class="tel-item">
+                <span class="tel-label">MAP ZOOM</span>
+                <b id="gpsZoomText" class="val-purple">{init_zoom}x (District)</b>
+              </div>
+              <div class="tel-item">
+                <span class="tel-label">PRECISION</span>
+                <b id="gpsAccText" class="val-green">&plusmn;15m</b>
+              </div>
+            </div>
+            
+            <div class="telemetry-legend">
+              <span><span class="legend-dot dot-red"></span> High (&ge;60%)</span>
+              <span><span class="legend-dot dot-amber"></span> Med (45-60%)</span>
+              <span><span class="legend-dot dot-green"></span> Safe (&lt;45%)</span>
+            </div>
+          </footer>
+          
+        </main>
       </div>
       
       <script>
@@ -641,6 +905,34 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           {{ id: "S2", name: "Delhi Cantt Defense Corridor", district: "South-West", lat: 28.5898, lon: 77.1325, desc: "Military Police & Regulated Access Zone", riskScore: 0.15, image: "{landmark_images['Delhi Cantt']}" }},
           {{ id: "S3", name: "Civil Lines VIP & Raj Niwas Enclave", district: "North", lat: 28.6820, lon: 77.2180, desc: "High-Density Patrol & Secure Perimeter", riskScore: 0.18, image: "{landmark_images['Civil Lines']}" }},
           {{ id: "S4", name: "India Gate & Kartavya Path", district: "New Delhi", lat: 28.6129, lon: 77.2295, desc: "Central Reserve & Drone Surveillance", riskScore: 0.20, image: "{landmark_images['India Gate']}" }}
+        ];
+        
+        // Comprehensive Delhi NCT Landmark & Hotspot Index for Instant Predictive Search
+        const DELHI_LOCATIONS = [
+          {{ name: "Rajiv Chowk Metro Station", district: "Connaught Place, Central Delhi", lat: 28.6328, lon: 77.2197, type: "transit", badge: "High Risk Hotspot", badgeClass: "badge-danger" }},
+          {{ name: "Connaught Place (CP Inner Circle)", district: "New Delhi", lat: 28.6315, lon: 77.2167, type: "commercial", badge: "Commercial Hub", badgeClass: "badge-transit" }},
+          {{ name: "Kashmere Gate ISBT & Terminal", district: "North Delhi", lat: 28.6675, lon: 77.2285, type: "transit", badge: "Critical Hotspot", badgeClass: "badge-danger" }},
+          {{ name: "Seelampur Market Corridor", district: "North-East Delhi", lat: 28.6644, lon: 77.2711, type: "market", badge: "Critical Hotspot", badgeClass: "badge-danger" }},
+          {{ name: "Anand Vihar Railway & Bus Terminal", district: "Shahdara / East Delhi", lat: 28.6469, lon: 77.3160, type: "transit", badge: "High Risk Hotspot", badgeClass: "badge-danger" }},
+          {{ name: "Chandni Chowk Main Bazaar", district: "Central / Old Delhi", lat: 28.6562, lon: 77.2301, type: "market", badge: "High Density Area", badgeClass: "badge-danger" }},
+          {{ name: "Hauz Khas Village & Lake", district: "South Delhi", lat: 28.5535, lon: 77.1945, type: "colony", badge: "Lifestyle Hub", badgeClass: "badge-transit" }},
+          {{ name: "Karol Bagh Commercial Environs", district: "Central Delhi", lat: 28.6517, lon: 77.1906, type: "market", badge: "Medium Risk", badgeClass: "badge-transit" }},
+          {{ name: "Saket Select Citywalk & Malls", district: "South Delhi", lat: 28.5284, lon: 77.2185, type: "commercial", badge: "Retail Corridor", badgeClass: "badge-transit" }},
+          {{ name: "India Gate & Kartavya Path", district: "New Delhi", lat: 28.6129, lon: 77.2295, type: "monument", badge: "Safe Corridor", badgeClass: "badge-safe" }},
+          {{ name: "Chanakyapuri Diplomatic Enclave", district: "New Delhi", lat: 28.5983, lon: 77.1912, type: "safe", badge: "Safe Corridor", badgeClass: "badge-safe" }},
+          {{ name: "Delhi Cantt Defense Area", district: "South-West Delhi", lat: 28.5898, lon: 77.1325, type: "safe", badge: "Safe Corridor", badgeClass: "badge-safe" }},
+          {{ name: "Civil Lines VIP & Raj Niwas", district: "North Delhi", lat: 28.6820, lon: 77.2180, type: "safe", badge: "Safe Corridor", badgeClass: "badge-safe" }},
+          {{ name: "Dwarka Sector 10 & 21", district: "South-West Delhi", lat: 28.5815, lon: 77.0583, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Rohini Sector 13 & 14", district: "North-West Delhi", lat: 28.7160, lon: 77.1147, type: "colony", badge: "Residential Hub", badgeClass: "badge-transit" }},
+          {{ name: "Jahangirpuri Corridor", district: "North-West Delhi", lat: 28.7259, lon: 77.1685, type: "corridor", badge: "High Risk Corridor", badgeClass: "badge-danger" }},
+          {{ name: "Lajpat Nagar Central Market", district: "South-East Delhi", lat: 28.5677, lon: 77.2433, type: "market", badge: "Commercial Market", badgeClass: "badge-transit" }},
+          {{ name: "Vasant Kunj Promenade", district: "South Delhi", lat: 28.5412, lon: 77.1558, type: "commercial", badge: "Commercial Corridor", badgeClass: "badge-transit" }},
+          {{ name: "Janakpuri District Centre", district: "West Delhi", lat: 28.6289, lon: 77.0788, type: "commercial", badge: "Transit & Market", badgeClass: "badge-transit" }},
+          {{ name: "Pitampura TV Tower Environs", district: "North-West Delhi", lat: 28.6989, lon: 77.1407, type: "colony", badge: "Commercial & Residential", badgeClass: "badge-transit" }},
+          {{ name: "Nehru Place Commercial Hub", district: "South-East Delhi", lat: 28.5492, lon: 77.2527, type: "commercial", badge: "IT & Commercial", badgeClass: "badge-transit" }},
+          {{ name: "Mayur Vihar Phase 1 & 2", district: "East Delhi", lat: 28.6083, lon: 77.2967, type: "colony", badge: "Residential District", badgeClass: "badge-transit" }},
+          {{ name: "South Extension Part 1 & 2", district: "South Delhi", lat: 28.5724, lon: 77.2215, type: "market", badge: "Shopping Ring", badgeClass: "badge-transit" }},
+          {{ name: "Rajouri Garden Main Market", district: "West Delhi", lat: 28.6477, lon: 77.1219, type: "market", badge: "Shopping District", badgeClass: "badge-transit" }}
         ];
         
         const SIMULATION_ROUTE = [
@@ -677,19 +969,29 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           touchZoom: true
         }});
         
-        // Tile Layers
+        // Watermark-free Basemap Tile Layers
+        const esriDarkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+          maxZoom: 19,
+          maxNativeZoom: 16
+        }});
+        const esriDarkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+          maxZoom: 19,
+          maxNativeZoom: 16
+        }});
+        const darkLayerGroup = L.layerGroup([esriDarkBase, esriDarkRef]);
+        
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+          maxZoom: 19
+        }});
+        
+        const streetLayer = L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+          maxZoom: 19
+        }});
+        
         const tileLayers = {{
-          dark: L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-            maxZoom: 19,
-            subdomains: 'abcd'
-          }}),
-          satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
-            maxZoom: 19
-          }}),
-          street: L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-            maxZoom: 19,
-            subdomains: 'abcd'
-          }})
+          dark: darkLayerGroup,
+          satellite: satelliteLayer,
+          street: streetLayer
         }};
         
         let currentBasemap = 'dark';
@@ -701,9 +1003,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           tileLayers[layerName].addTo(map);
           tileLayers[layerName].bringToBack();
           currentBasemap = layerName;
-          document.getElementById('btnLayerDark').classList.toggle('btn-active', layerName === 'dark');
-          document.getElementById('btnLayerSat').classList.toggle('btn-active', layerName === 'satellite');
-          document.getElementById('btnLayerStreet').classList.toggle('btn-active', layerName === 'street');
+          document.getElementById('btnLayerDark').classList.toggle('active', layerName === 'dark');
+          document.getElementById('btnLayerSat').classList.toggle('active', layerName === 'satellite');
+          document.getElementById('btnLayerStreet').classList.toggle('active', layerName === 'street');
         }};
         
         setTimeout(() => {{ map.invalidateSize(); }}, 200);
@@ -732,7 +1034,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           showCoverageOnHover: false,
           iconCreateFunction: function(cluster) {{
             const count = cluster.getChildCount();
-            let size = count < 15 ? 32 : (count < 40 ? 38 : 44);
+            let size = count < 15 ? 30 : (count < 40 ? 36 : 42);
             let glow = count < 15 ? 'rgba(56, 189, 248, 0.5)' : (count < 40 ? 'rgba(245, 158, 11, 0.5)' : 'rgba(239, 68, 68, 0.6)');
             let bg = count < 15 ? '#0284c7' : (count < 40 ? '#d97706' : '#dc2626');
             return L.divIcon({{
@@ -782,17 +1084,16 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           const btn = document.getElementById('btnClusterToggle');
           if (showIncidents) {{
             map.addLayer(incidentClusterGroup);
-            btn.classList.add('btn-active');
+            btn.classList.add('active');
           }} else {{
             map.removeLayer(incidentClusterGroup);
-            btn.classList.remove('btn-active');
+            btn.classList.remove('active');
           }}
         }};
         
         function renderZones(filter) {{
           markersGroup.clearLayers();
           
-          // Hotspots
           HOTSPOTS.forEach(h => {{
             if (filter === 'SAFE') return;
             if (filter === 'HIGH' && h.riskLevel !== 'HIGH') return;
@@ -801,7 +1102,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             const color = isHigh ? '#ef4444' : '#f59e0b';
             const radius = isHigh ? 380 : 250;
             
-            // Danger circle
             L.circle([h.lat, h.lon], {{
               radius: radius,
               color: color,
@@ -811,7 +1111,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               dashArray: isHigh ? undefined : '5, 5'
             }}).addTo(markersGroup);
             
-            // Marker Pin
             const pinHtml = `
               <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
                 <div style="width:28px; height:28px; border-radius:50%; background:${{isHigh ? '#dc2626' : '#d97706'}}; box-shadow:0 0 12px ${{color}}; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; border: 2px solid #fff;">
@@ -825,7 +1124,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             const icon = L.divIcon({{ html: pinHtml, className: '', iconSize: [42, 42], iconAnchor: [21, 21] }});
             const m = L.marker([h.lat, h.lon], {{ icon: icon }}).addTo(markersGroup);
             
-            // Rich Popup with Real Unsplash Image
             m.bindPopup(`
               <div style="width: 250px; font-family: -apple-system, sans-serif;">
                 <div style="position: relative; height: 115px; width: 100%; overflow: hidden; background: #1e293b;">
@@ -850,7 +1148,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             `);
           }});
           
-          // Safe Havens
           if (filter === 'ALL' || filter === 'SAFE') {{
             SAFE_ZONES.forEach(s => {{
               L.circle([s.lat, s.lon], {{
@@ -902,70 +1199,238 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           }}
         }}
         
-        // OpenStreetMap Nominatim Live Search
+        // PREDICTIVE AUTOCOMPLETE SEARCH SYSTEM
         let searchMarker = null;
-        window.searchLocation = async function() {{
-          const input = document.getElementById('mapSearchInput');
-          const query = (input.value || '').trim();
-          if (!query) return;
-
-          const btn = document.getElementById('btnSearch');
-          const origText = btn.innerText;
-          btn.innerText = '⌛';
-          btn.disabled = true;
-
+        let searchDebounceTimer = null;
+        const searchInput = document.getElementById('mapSearchInput');
+        const searchDropdown = document.getElementById('predictiveDropdown');
+        const clearBtn = document.getElementById('searchClearBtn');
+        let selectedIndex = -1;
+        let currentSuggestions = [];
+        
+        function renderSuggestions(list) {{
+          currentSuggestions = list;
+          selectedIndex = -1;
+          
+          if (!list || list.length === 0) {{
+            searchDropdown.innerHTML = `<div style="padding: 12px; font-size: 11px; color: #94a3b8; text-align: center;">No matching locations found in Delhi</div>`;
+            searchDropdown.style.display = 'block';
+            return;
+          }}
+          
+          let html = `<div class="dropdown-header">MATCHING LOCATIONS IN DELHI NCT</div>`;
+          list.forEach((item, idx) => {{
+            html += `
+              <div class="dropdown-item" id="sugg-item-${{idx}}" onclick="selectSuggestion(${{idx}})">
+                <span class="dropdown-icon">${{item.badgeClass === 'badge-danger' ? '🚨' : (item.badgeClass === 'badge-safe' ? '🛡️' : '📍')}}</span>
+                <div class="dropdown-info">
+                  <div class="dropdown-title">${{item.name}}</div>
+                  <div class="dropdown-subtitle">${{item.district}}</div>
+                </div>
+                ${{item.badge ? `<span class="dropdown-badge ${{item.badgeClass}}">${{item.badge}}</span>` : ''}}
+              </div>
+            `;
+          }});
+          
+          searchDropdown.innerHTML = html;
+          searchDropdown.style.display = 'block';
+        }}
+        
+        function getPredictiveMatches(query) {{
+          const q = query.trim().toLowerCase();
+          if (!q) return [];
+          
+          // Match local high-priority index first (0ms instantaneous response!)
+          const localMatches = DELHI_LOCATIONS.filter(loc => 
+            loc.name.toLowerCase().includes(q) || 
+            loc.district.toLowerCase().includes(q)
+          );
+          return localMatches;
+        }}
+        
+        async function fetchNominatimMatches(query) {{
           try {{
-            const searchTerm = query.toLowerCase().includes('delhi') ? query : query + ', Delhi, India';
-            const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(searchTerm) + '&limit=1';
+            const q = query.trim().toLowerCase();
+            const searchTerm = q.includes('delhi') ? q : q + ' Delhi';
+            const url = 'https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&viewbox=76.8,28.4,77.4,28.9&bounded=0&limit=5&q=' + encodeURIComponent(searchTerm);
             const res = await fetch(url);
             const data = await res.json();
             
             if (data && data.length > 0) {{
-              const item = data[0];
-              const lat = parseFloat(item.lat);
-              const lon = parseFloat(item.lon);
-              
-              if (searchMarker) map.removeLayer(searchMarker);
-              
-              const sIcon = L.divIcon({{
-                html: `
-                  <div style="display:flex; flex-direction:column; align-items:center;">
-                    <div style="width:32px; height:32px; border-radius:50%; background: linear-gradient(135deg, #0284c7, #10b981); box-shadow: 0 0 16px #38bdf8; display:flex; align-items:center; justify-content:center; font-size:16px; border: 2px solid #fff;">
-                      📍
-                    </div>
-                    <div style="background:#0b0f19; color:#38bdf8; border:1px solid #0284c7; border-radius:4px; font-size:9.5px; font-weight:800; padding:1px 5px; margin-top:2px; white-space:nowrap; max-width:130px; overflow:hidden; text-overflow:ellipsis;">
-                      ${{item.display_name.split(',')[0]}}
-                    </div>
-                  </div>
-                `,
-                className: '',
-                iconSize: [40, 48],
-                iconAnchor: [20, 24]
-              }});
-              
-              searchMarker = L.marker([lat, lon], {{ icon: sIcon, zIndexOffset: 950 }}).addTo(map);
-              searchMarker.bindPopup(`
-                <div style="width: 220px; padding: 10px; font-family: -apple-system, sans-serif;">
-                  <b style="color: #38bdf8; font-size: 11px;">📍 SEARCH RESULT</b>
-                  <h4 style="margin: 4px 0; font-size: 13px; color: #fff;">${{item.display_name.split(',')[0]}}</h4>
-                  <p style="color: #94a3b8; font-size: 10.5px; margin: 4px 0 8px 0;">${{item.display_name}}</p>
-                  <button onclick="updateUserPosition(${{lat}}, ${{lon}}, 20); map.flyTo([${{lat}}, ${{lon}}], 15);" style="width:100%; background:#0284c7; border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700; cursor:pointer;">
-                    🎯 Set as My Location
-                  </button>
-                </div>
-              `).openPopup();
-              
-              map.flyTo([lat, lon], 15, {{ duration: 1.2 }});
-            }} else {{
-              alert('Location not found in Delhi. Try "Connaught Place", "Dwarka Sector 10", "Rohini", or "Hauz Khas".');
+              return data.map(d => ({{
+                name: d.display_name.split(',')[0],
+                district: d.display_name.split(',').slice(1, 4).join(',').trim(),
+                lat: parseFloat(d.lat),
+                lon: parseFloat(d.lon),
+                badge: 'OpenStreetMap',
+                badgeClass: 'badge-transit'
+              }}));
             }}
-          }} catch (err) {{
-            console.error('Search error:', err);
-          }} finally {{
-            btn.innerText = origText;
-            btn.disabled = false;
+          }} catch (e) {{
+            console.warn('OSM search error:', e);
+          }}
+          return [];
+        }}
+        
+        searchInput.addEventListener('input', (e) => {{
+          const query = e.target.value;
+          clearBtn.style.display = query ? 'block' : 'none';
+          
+          if (!query.trim()) {{
+            searchDropdown.style.display = 'none';
+            return;
+          }}
+          
+          // 1. Instant local match
+          const localMatches = getPredictiveMatches(query);
+          renderSuggestions(localMatches);
+          
+          // 2. Debounce remote search to complement suggestions
+          if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = setTimeout(async () => {{
+            const remoteMatches = await fetchNominatimMatches(query);
+            if (remoteMatches && remoteMatches.length > 0) {{
+              // Merge & deduplicate by name
+              const names = new Set(localMatches.map(m => m.name.toLowerCase()));
+              const combined = [...localMatches];
+              remoteMatches.forEach(rm => {{
+                if (!names.has(rm.name.toLowerCase())) {{
+                  combined.push(rm);
+                  names.add(rm.name.toLowerCase());
+                }}
+              }});
+              renderSuggestions(combined.slice(0, 7));
+            }}
+          }}, 250);
+        }});
+        
+        // Keyboard navigation for autocomplete list
+        searchInput.addEventListener('keydown', (e) => {{
+          if (searchDropdown.style.display === 'none') {{
+            if (e.key === 'Enter') executeSearch();
+            return;
+          }}
+          
+          if (e.key === 'ArrowDown') {{
+            e.preventDefault();
+            if (currentSuggestions.length > 0) {{
+              selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
+              highlightSelectedItem();
+            }}
+          }} else if (e.key === 'ArrowUp') {{
+            e.preventDefault();
+            if (currentSuggestions.length > 0) {{
+              selectedIndex = (selectedIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+              highlightSelectedItem();
+            }}
+          }} else if (e.key === 'Enter') {{
+            e.preventDefault();
+            if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {{
+              selectSuggestion(selectedIndex);
+            }} else {{
+              executeSearch();
+            }}
+          }} else if (e.key === 'Escape') {{
+            searchDropdown.style.display = 'none';
+          }}
+        }});
+        
+        function highlightSelectedItem() {{
+          document.querySelectorAll('.dropdown-item').forEach((el, idx) => {{
+            el.classList.toggle('active-item', idx === selectedIndex);
+          }});
+        }}
+        
+        window.selectSuggestion = function(idx) {{
+          const item = currentSuggestions[idx];
+          if (!item) return;
+          
+          searchInput.value = item.name;
+          searchDropdown.style.display = 'none';
+          clearBtn.style.display = 'block';
+          
+          focusLocationOnMap(item.lat, item.lon, item.name, item.district);
+        }};
+        
+        window.clearSearchInput = function() {{
+          searchInput.value = '';
+          searchDropdown.style.display = 'none';
+          clearBtn.style.display = 'none';
+          if (searchMarker) {{
+            map.removeLayer(searchMarker);
+            searchMarker = null;
           }}
         }};
+        
+        window.executeSearch = function() {{
+          const query = searchInput.value.trim();
+          if (!query) return;
+          
+          // Check if matches local top item
+          const local = getPredictiveMatches(query);
+          if (local.length > 0) {{
+            focusLocationOnMap(local[0].lat, local[0].lon, local[0].name, local[0].district);
+            searchDropdown.style.display = 'none';
+            return;
+          }}
+          
+          // Otherwise fetch remote
+          const btn = document.getElementById('searchActionBtn');
+          btn.innerText = '⌛';
+          btn.disabled = true;
+          
+          fetchNominatimMatches(query).then(matches => {{
+            btn.innerText = 'Search';
+            btn.disabled = false;
+            if (matches && matches.length > 0) {{
+              focusLocationOnMap(matches[0].lat, matches[0].lon, matches[0].name, matches[0].district);
+              searchDropdown.style.display = 'none';
+            }} else {{
+              alert('Location not found in Delhi. Try typing "Rajiv Chowk", "Dwarka", or "Hauz Khas".');
+            }}
+          }});
+        }};
+        
+        function focusLocationOnMap(lat, lon, title, subtitle) {{
+          if (searchMarker) map.removeLayer(searchMarker);
+          
+          const sIcon = L.divIcon({{
+            html: `
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                <div style="width:34px; height:34px; border-radius:50%; background: linear-gradient(135deg, #0284c7, #10b981); box-shadow: 0 0 20px #38bdf8; display:flex; align-items:center; justify-content:center; font-size:17px; border: 2px solid #fff;">
+                  📍
+                </div>
+                <div style="background:#0b0f19; color:#38bdf8; border:1px solid #0284c7; border-radius:4px; font-size:10px; font-weight:800; padding:2px 6px; margin-top:2px; white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
+                  ${{title}}
+                </div>
+              </div>
+            `,
+            className: '',
+            iconSize: [40, 48],
+            iconAnchor: [20, 24]
+          }});
+          
+          searchMarker = L.marker([lat, lon], {{ icon: sIcon, zIndexOffset: 950 }}).addTo(map);
+          searchMarker.bindPopup(`
+            <div style="width: 230px; padding: 10px 12px; font-family: -apple-system, sans-serif;">
+              <span style="color: #38bdf8; font-size: 10.5px; font-weight: 800; text-transform: uppercase;">📍 TARGET LOCATION</span>
+              <h4 style="margin: 4px 0 2px 0; font-size: 13px; color: #fff;">${{title}}</h4>
+              <p style="color: #94a3b8; font-size: 11px; margin: 2px 0 8px 0;">${{subtitle || 'Delhi NCT'}}</p>
+              <button onclick="updateUserPosition(${{lat}}, ${{lon}}, 15); map.flyTo([${{lat}}, ${{lon}}], 16);" style="width:100%; background:#0284c7; border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:5px 8px; font-size:11px; font-weight:700; cursor:pointer;">
+                🎯 Set as My Location
+              </button>
+            </div>
+          `).openPopup();
+          
+          map.flyTo([lat, lon], 16, {{ duration: 1.2 }});
+        }}
+        
+        // Hide dropdown on click outside
+        document.addEventListener('click', (e) => {{
+          if (!e.target.closest('.search-container')) {{
+            searchDropdown.style.display = 'none';
+          }}
+        }});
         
         function updateUserPosition(lat, lon, accuracy) {{
           currentUserPos = {{ lat, lon }};
@@ -975,7 +1440,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           document.getElementById('gpsCoordsText').innerText = `${{lat.toFixed(4)}}°N, ${{lon.toFixed(4)}}°E`;
           document.getElementById('gpsAccText').innerText = `&plusmn;${{Math.round(accuracy)}}m`;
           
-          // Calculate closest hotspot
           let closest = null;
           let minDist = Infinity;
           HOTSPOTS.forEach(h => {{
@@ -991,19 +1455,18 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           if (minDist <= 400 && closest.riskLevel === 'HIGH') {{
             badge.className = 'threat-tag tag-high';
-            badge.innerText = '🚨 DANGER: HIGH RISK CORRIDOR';
-            txt.innerHTML = `Within <b>${{minDist}}m</b> of <b>${{closest.name.split(' - ')[1] || closest.name}}</b> (${{Math.round(closest.riskScore*100)}}%)`;
+            badge.innerText = '🚨 DANGER';
+            txt.innerHTML = `Within <b>${{minDist}}m</b> of ${{closest.name.split(' - ')[1] || closest.name}} (${{Math.round(closest.riskScore*100)}}%)`;
           }} else if (minDist <= 750) {{
             badge.className = 'threat-tag tag-med';
-            badge.innerText = '⚠️ CAUTION ZONE';
-            txt.innerHTML = `Within <b>${{minDist}}m</b> of <b>${{closest.name.split(' - ')[1] || closest.name}}</b>`;
+            badge.innerText = '⚠️ CAUTION';
+            txt.innerHTML = `Within <b>${{minDist}}m</b> of ${{closest.name.split(' - ')[1] || closest.name}}`;
           }} else {{
             badge.className = 'threat-tag tag-safe';
-            badge.innerText = '🛡️ SAFE BUFFER ZONE';
-            txt.innerHTML = `Nearest hotspot: <b>${{(minDist/1000).toFixed(2)}} km away</b> (${{closest.name.split(' ')[0]}})`;
+            badge.innerText = '🛡️ SAFE BUFFER';
+            txt.innerHTML = `Nearest hotspot: <b>${{(minDist/1000).toFixed(2)}} km</b> (${{closest.name.split(' ')[0]}})`;
           }}
           
-          // User Marker
           const userRadarHtml = `
             <div style="position:relative; display:flex; align-items:center; justify-content:center;">
               <div class="radar-pulse-marker" style="width:24px; height:24px; border-radius:50%; background:#06b6d4; border:2px solid #fff; display:flex; align-items:center; justify-content:center; font-size:12px;">
@@ -1036,11 +1499,10 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           map.panTo([lat, lon], {{ animate: true, duration: 0.8 }});
         }}
         
-        // Initial render
+        // Initial setup
         renderZones('ALL');
         updateUserPosition({init_lat}, {init_lon}, 20);
         
-        // Continuous Live Tracking
         if (navigator.geolocation) {{
           navigator.geolocation.watchPosition(
             pos => {{
@@ -1053,12 +1515,11 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           );
         }}
         
-        // Filter handler
         window.setLayerFilter = function(f) {{
           activeFilter = f;
-          document.getElementById('btnAll').classList.toggle('btn-active', f === 'ALL');
-          document.getElementById('btnHigh').classList.toggle('btn-active', f === 'HIGH');
-          document.getElementById('btnSafe').classList.toggle('btn-active', f === 'SAFE');
+          document.getElementById('btnAll').classList.toggle('active', f === 'ALL');
+          document.getElementById('btnHigh').classList.toggle('active', f === 'HIGH');
+          document.getElementById('btnSafe').classList.toggle('active', f === 'SAFE');
           renderZones(f);
         }};
         
@@ -1066,7 +1527,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           map.flyTo([currentUserPos.lat, currentUserPos.lon], 15, {{ duration: 1.2 }});
         }};
         
-        // Zoom Controls & Dynamic Readout
         window.zoomInMap = function() {{
           map.zoomIn();
         }};
@@ -1103,7 +1563,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         map.on('zoomend', updateZoomDisplay);
         updateZoomDisplay();
         
-        // Keyboard Shortcuts
         window.addEventListener('keydown', (e) => {{
           if (e.target.tagName === 'INPUT') return;
           if (e.key === '+' || e.key === '=') zoomInMap();
@@ -1112,7 +1571,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           else if (e.key.toLowerCase() === 'f') fitAllHotspots();
         }});
         
-        // Simulation Mode
         let simTimer = null;
         let simIdx = 0;
         window.toggleSimulation = function() {{
@@ -1121,12 +1579,12 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             clearInterval(simTimer);
             simTimer = null;
             btn.innerText = '🚀 Sim GPS';
-            btn.classList.remove('btn-active');
+            btn.classList.remove('active');
             return;
           }}
           
           btn.innerText = '⏹️ Stop Sim';
-          btn.classList.add('btn-active');
+          btn.classList.add('active');
           simIdx = 0;
           const p0 = SIMULATION_ROUTE[0];
           updateUserPosition(p0.lat, p0.lon, 15);
