@@ -4,27 +4,39 @@ Renders choropleths, density heatmaps, and DBSCAN hotspot corridor polygons/circ
 """
 
 import folium
-from folium.plugins import HeatMap, MarkerCluster, LocateControl
+from folium.plugins import HeatMap, MarkerCluster, LocateControl, Fullscreen
 
 DELHI_CENTER = [28.6139, 77.2090]
 
-def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None):
+def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None, zoom_level=None):
     """
     Renders an interactive Folium map with OpenStreetMap/CartoDB tiles,
     crime density heatmap, DBSCAN cluster centroids, premises incident pins,
-    and GPS user location tracking.
+    and GPS user location tracking with dynamic zoom controls.
     """
     # If user location is active, center on user, else default Delhi center
     center_loc = [user_location[0], user_location[1]] if user_location else DELHI_CENTER
-    zoom_lvl = 13 if user_location else 11
+    if zoom_level is not None:
+        zoom_lvl = int(zoom_level)
+    else:
+        zoom_lvl = 13 if user_location else 11
 
     m = folium.Map(
         location=center_loc,
         zoom_start=zoom_lvl,
         tiles="CartoDB positron",
         control_scale=True,
-        prefer_canvas=True
+        prefer_canvas=True,
+        zoom_control=True
     )
+
+    # Fullscreen control for immersive zooming
+    Fullscreen(
+        position="topleft",
+        title="Expand to Fullscreen View",
+        title_cancel="Exit Fullscreen",
+        force_separate_button=True
+    ).add_to(m)
 
     # GPS Browser Locate Control Plugin with continuous tracking
     LocateControl(
@@ -193,12 +205,13 @@ def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, sho
     return m
 
 
-def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None, initial_user_lon=None):
+def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None, initial_user_lon=None, initial_zoom=13):
     """
     Generates a standalone, silky-smooth 60fps Leaflet HTML/JS component
     with continuous navigator.geolocation.watchPosition movement tracking,
     movement breadcrumbs trail, real-time proximity radar to Delhi crime hotspots,
-    visual area risk zones (High Risk vs Safe Havens), and route movement simulation.
+    visual area risk zones (High Risk vs Safe Havens), route movement simulation,
+    and responsive, dedicated Zoom In / Zoom Out and Camera Focus controls.
     """
     import json
 
@@ -234,6 +247,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
     hotspots_json = json.dumps(hotspot_records)
     init_lat = initial_user_lat if initial_user_lat else 28.6328
     init_lon = initial_user_lon if initial_user_lon else 77.2197
+    init_zoom = int(initial_zoom) if initial_zoom else 13
 
     html_code = f"""
     <!DOCTYPE html>
@@ -281,10 +295,65 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           font-weight: 700;
           cursor: pointer;
           transition: all 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
         }}
         .btn:hover {{ background: #334155; color: #fff; }}
         .btn-active {{ background: #059669 !important; border-color: #10b981 !important; color: #fff !important; }}
         .btn-sim {{ background: #d97706; border-color: #f59e0b; color: #fff; }}
+        .btn-zoom {{ background: #0f766e; border-color: #14b8a6; color: #fff; }}
+        .btn-zoom:hover {{ background: #0d9488; }}
+        
+        /* Floating Zoom Dock on Right */
+        .zoom-dock {{
+          position: absolute;
+          top: 74px;
+          right: 14px;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          background: rgba(15, 23, 42, 0.94);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(51, 65, 85, 0.85);
+          border-radius: 10px;
+          padding: 6px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.55);
+        }}
+        .zoom-dock-btn {{
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #1e293b;
+          color: #f8fafc;
+          border: 1px solid #475569;
+          border-radius: 7px;
+          font-size: 16px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.15s ease-in-out;
+        }}
+        .zoom-dock-btn:hover {{
+          background: #0284c7;
+          border-color: #38bdf8;
+          color: #fff;
+          transform: scale(1.06);
+        }}
+        .zoom-dock-btn:active {{
+          transform: scale(0.94);
+        }}
+        .zoom-badge {{
+          font-size: 10px;
+          font-weight: 800;
+          text-align: center;
+          color: #38bdf8;
+          padding: 2px 0;
+          font-family: monospace;
+          user-select: none;
+        }}
         
         .threat-tag {{
           font-weight: 800;
@@ -314,21 +383,38 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           </div>
         </div>
         
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <button id="btnAll" class="btn btn-active" onclick="setLayerFilter('ALL')">All Zones</button>
           <button id="btnHigh" class="btn" onclick="setLayerFilter('HIGH')">🔴 High Risk Only</button>
           <button id="btnSafe" class="btn" onclick="setLayerFilter('SAFE')">🟢 Safe Havens Only</button>
           <button id="btnSim" class="btn btn-sim" onclick="toggleSimulation()">🚀 Simulate Movement</button>
           <button class="btn" onclick="centerOnMe()">📍 Center</button>
+          <!-- Quick Zoom Buttons in Top HUD -->
+          <button class="btn btn-zoom" onclick="zoomInMap()" title="Zoom In (+ key or scroll)">➕ Zoom In</button>
+          <button class="btn btn-zoom" onclick="zoomOutMap()" title="Zoom Out (- key or scroll)">➖ Zoom Out</button>
+          <button class="btn" onclick="resetZoomMap()" title="Reset to Default Zoom">🔄 Reset ({init_zoom}x)</button>
         </div>
+      </div>
+      
+      <!-- Dedicated Floating Zoom Controls Dock -->
+      <div class="zoom-dock" title="Geospatial Zoom Controls">
+        <button class="zoom-dock-btn" onclick="zoomInMap()" title="Zoom In (+ / scroll up)">➕</button>
+        <div id="zoomLevelDock" class="zoom-badge">{init_zoom}x</div>
+        <button class="zoom-dock-btn" onclick="zoomOutMap()" title="Zoom Out (- / scroll down)">➖</button>
+        <button class="zoom-dock-btn" style="font-size: 13px;" onclick="resetZoomMap()" title="Reset to Default Zoom ({init_zoom}x)">🔄</button>
+        <button class="zoom-dock-btn" style="font-size: 13px;" onclick="fitAllHotspots()" title="Fit All Delhi Hotspots in View">🗺️</button>
       </div>
       
       <!-- Bottom HUD Bar -->
       <div class="hud-panel bottom-hud">
-        <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
           <div>
             <span style="color: #64748b; font-size: 10px; display: block;">GPS MOVEMENT</span>
             <b id="gpsCoordsText" style="font-family: monospace; color: #38bdf8;">{init_lat:.4f}°N, {init_lon:.4f}°E</b>
+          </div>
+          <div>
+            <span style="color: #64748b; font-size: 10px; display: block;">MAP ZOOM</span>
+            <b id="gpsZoomText" style="font-family: monospace; color: #a78bfa;">{init_zoom}x (District)</b>
           </div>
           <div>
             <span style="color: #64748b; font-size: 10px; display: block;">PRECISION RADIUS</span>
@@ -378,21 +464,22 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }}
         
-        // Init Map
+        // Init Map with explicit zoom and gesture controls
         const map = L.map('map', {{
           center: [{init_lat}, {init_lon}],
-          zoom: 13,
+          zoom: {init_zoom},
           zoomControl: false,
           attributionControl: false,
-          preferCanvas: true
+          preferCanvas: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          touchZoom: true
         }});
         
         L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
           maxZoom: 19,
           subdomains: 'abcd'
         }}).addTo(map);
-        
-        L.control.zoom({{ position: 'topright' }}).addTo(map);
         
         setTimeout(() => {{ map.invalidateSize(); }}, 200);
         window.addEventListener('resize', () => {{ map.invalidateSize(); }});
@@ -597,6 +684,56 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         window.centerOnMe = function() {{
           map.flyTo([currentUserPos.lat, currentUserPos.lon], 15, {{ duration: 1.2 }});
         }};
+        
+        // Zoom Controls & Dynamic Readout
+        window.zoomInMap = function() {{
+          map.zoomIn();
+        }};
+        
+        window.zoomOutMap = function() {{
+          map.zoomOut();
+        }};
+        
+        window.resetZoomMap = function() {{
+          map.setView([currentUserPos.lat, currentUserPos.lon], {init_zoom}, {{ animate: true, duration: 0.8 }});
+        }};
+        
+        window.fitAllHotspots = function() {{
+          if (HOTSPOTS && HOTSPOTS.length > 0) {{
+            const bounds = L.latLngBounds(HOTSPOTS.map(h => [h.lat, h.lon]));
+            map.fitBounds(bounds, {{ padding: [60, 60], animate: true, duration: 1.0 }});
+          }}
+        }};
+        
+        function updateZoomDisplay() {{
+          const z = map.getZoom();
+          let zLabel = `${{z}}x`;
+          if (z <= 11) zLabel += " (City Wide)";
+          else if (z <= 13) zLabel += " (District)";
+          else if (z <= 15) zLabel += " (Hotspot Core)";
+          else zLabel += " (Street Detail)";
+          
+          const dock = document.getElementById('zoomLevelDock');
+          if (dock) dock.innerText = `${{z}}x`;
+          const text = document.getElementById('gpsZoomText');
+          if (text) text.innerText = zLabel;
+        }}
+        
+        map.on('zoomend', updateZoomDisplay);
+        updateZoomDisplay();
+        
+        // Keyboard Shortcuts for Zooming
+        window.addEventListener('keydown', (e) => {{
+          if (e.key === '+' || e.key === '=') {{
+            zoomInMap();
+          }} else if (e.key === '-' || e.key === '_') {{
+            zoomOutMap();
+          }} else if (e.key === '0') {{
+            resetZoomMap();
+          }} else if (e.key.toLowerCase() === 'f') {{
+            fitAllHotspots();
+          }}
+        }});
         
         // Simulation Mode
         let simTimer = null;

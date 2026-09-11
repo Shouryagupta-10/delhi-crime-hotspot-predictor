@@ -345,12 +345,21 @@ selected_day = st.sidebar.selectbox(
     ["All Days", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 )
 
-# Map Options
 st.sidebar.markdown("---")
-st.sidebar.subheader("Map Layer Controls")
+st.sidebar.subheader("Map Layer & Zoom Controls")
 show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
 show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
 show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
+
+map_zoom_sidebar = st.sidebar.slider(
+    "Map Zoom Scale",
+    min_value=10,
+    max_value=18,
+    value=st.session_state.get("map_zoom", 13),
+    step=1,
+    help="Adjust initial zoom (11=City, 13=District, 15=Hotspot, 17=Street)"
+)
+st.session_state["map_zoom"] = map_zoom_sidebar
 
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
@@ -464,19 +473,51 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        map_mode = st.radio(
-            "Select Map Experience:",
-            ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS, Breadcrumbs & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
-            index=0,
-            horizontal=True
-        )
+        map_col, zoom_tb_col = st.columns([1.5, 1.8])
+        with map_col:
+            map_mode = st.radio(
+                "Select Map Experience:",
+                ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
+                index=0,
+                horizontal=True
+            )
+        with zoom_tb_col:
+            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #475569; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
+            z1, z2, z3, z4, z_in, z_out = st.columns(6)
+            with z1:
+                if st.button("🗺️ City (11x)", use_container_width=True, help="Full Delhi NCT Overview"):
+                    st.session_state["map_zoom"] = 11
+                    st.rerun()
+            with z2:
+                if st.button("🏙️ District (13x)", use_container_width=True, help="District Jurisdiction View"):
+                    st.session_state["map_zoom"] = 13
+                    st.rerun()
+            with z3:
+                if st.button("🚨 Corridor (15x)", use_container_width=True, help="DBSCAN Hotspot Cluster Core"):
+                    st.session_state["map_zoom"] = 15
+                    st.rerun()
+            with z4:
+                if st.button("🔎 Street (17x)", use_container_width=True, help="Street & Premises Detail"):
+                    st.session_state["map_zoom"] = 17
+                    st.rerun()
+            with z_in:
+                if st.button("➕ In", use_container_width=True, help="Step Zoom In"):
+                    st.session_state["map_zoom"] = min(19, st.session_state.get("map_zoom", 13) + 1)
+                    st.rerun()
+            with z_out:
+                if st.button("➖ Out", use_container_width=True, help="Step Zoom Out"):
+                    st.session_state["map_zoom"] = max(9, st.session_state.get("map_zoom", 13) - 1)
+                    st.rerun()
+
+        current_zoom = st.session_state.get("map_zoom", 13)
 
         if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine
+            # Native hardware-accelerated 60fps Leaflet engine with dedicated zoom dock and HUD controls
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,
                 initial_user_lat=user_lat,
-                initial_user_lon=user_lon
+                initial_user_lon=user_lon,
+                initial_zoom=current_zoom
             )
             st.components.v1.html(smooth_html, height=640)
         else:
@@ -487,7 +528,8 @@ with tab1:
                 show_heatmap=show_heat,
                 show_hotspots=show_spots,
                 show_pins=show_incidents,
-                user_location=(user_lat, user_lon) if user_lat else None
+                user_location=(user_lat, user_lon) if user_lat else None,
+                zoom_level=current_zoom
             )
             st_folium(crime_map, width=None, height=580, returned_objects=[])
         
