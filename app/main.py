@@ -489,15 +489,7 @@ selected_day = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Map Layer & Zoom Controls")
-show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
-show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
-show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔮 Predictive Policing")
-show_future_heatmap = st.sidebar.checkbox("Generate Future Crime Heatmap (Next 24H)", value=False)
-
+st.sidebar.subheader("Map View Scale")
 map_zoom_sidebar = st.sidebar.slider(
     "Map Zoom Scale",
     min_value=10,
@@ -507,28 +499,6 @@ map_zoom_sidebar = st.sidebar.slider(
     help="Adjust initial zoom (11=City, 13=District, 15=Hotspot, 17=Street)"
 )
 st.session_state["map_zoom"] = map_zoom_sidebar
-
-with st.sidebar.expander("🌍 Google Maps Key (Optional)", expanded=False):
-    st.markdown(
-        "<div style='font-size: 11px; color: #10b981; margin-bottom: 6px; font-weight: 600;'>"
-        "✓ The default Sentinel Radar is 100% Free (OpenStreetMap & ESRI Satellite with 0 keys required)."
-        "</div>",
-        unsafe_allow_html=True
-    )
-    gmaps_api_input = st.text_input(
-        "Google Maps API Key (Optional)",
-        value=st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", "")),
-        type="password",
-        help="Optional: Only needed if you switch to Google Maps mode. Default map is 100% free."
-    )
-    if gmaps_api_input:
-        st.session_state["google_maps_api_key"] = gmaps_api_input
-    st.markdown(
-        "<div style='font-size: 11px; color: #94a3b8; margin-top: 4px;'>"
-        "Need a key? Get one on <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
-        "</div>",
-        unsafe_allow_html=True
-    )
 
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
@@ -707,104 +677,50 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        map_col, zoom_tb_col = st.columns([1.5, 1.8])
-        with map_col:
-            map_mode = st.radio(
-                "Select Map Experience:",
-                [
-                    "⚡ Sentinel 60fps Radar & Satellite (100% Free • OpenStreetMap & ESRI)",
-                    "🗺️ Static Density Heatmap (Folium)",
-                    "🌍 Google Maps Platform (Optional • Requires API Key)"
-                ],
-                index=0,
-                horizontal=True
-            )
-        with zoom_tb_col:
-            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
-            z1, z2, z3, z4 = st.columns(4)
-            with z1:
-                if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
-                    st.session_state["map_zoom"] = 11
-                    st.rerun()
-            with z2:
-                if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
-                    st.session_state["map_zoom"] = 13
-                    st.rerun()
-            with z3:
-                if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
-                    st.session_state["map_zoom"] = 15
-                    st.rerun()
-            with z4:
-                if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
-                    st.session_state["map_zoom"] = 17
-                    st.rerun()
+        st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 6px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
+        z1, z2, z3, z4, z_space = st.columns([1, 1, 1, 1, 2])
+        with z1:
+            if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
+                st.session_state["map_zoom"] = 11
+                st.rerun()
+        with z2:
+            if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
+                st.session_state["map_zoom"] = 13
+                st.rerun()
+        with z3:
+            if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
+                st.session_state["map_zoom"] = 15
+                st.rerun()
+        with z4:
+            if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
+                st.session_state["map_zoom"] = 17
+                st.rerun()
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
-        if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
-            smooth_html = create_smooth_realtime_leaflet_html(
-                hotspots_df=cluster_engine.hotspots_df,
-                initial_user_lat=user_lat,
-                initial_user_lon=user_lon,
-                initial_zoom=current_zoom,
-                incidents_df=filtered_df
-            )
-            # Cruip Showcase Terminal Header
-            st.markdown("""
+        # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
+        smooth_html = create_smooth_realtime_leaflet_html(
+            hotspots_df=cluster_engine.hotspots_df,
+            initial_user_lat=user_lat,
+            initial_user_lon=user_lon,
+            initial_zoom=current_zoom,
+            incidents_df=filtered_df
+        )
+        # Cruip Showcase Terminal Header
+        st.markdown("""
 <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
-    </div>
-    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-        60 FPS TELEMETRY • ZERO API KEY REQUIRED
-    </div>
+<div style="display: flex; align-items: center; gap: 8px;">
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+    <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
+</div>
+<div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
+    60 FPS TELEMETRY • ZERO API KEY REQUIRED
+</div>
 </div>
 """, unsafe_allow_html=True)
-            st.components.v1.html(smooth_html, height=720)
-        elif map_mode.startswith("🌍"):
-            active_key = st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", ""))
-            gmaps_html = create_google_maps_sentinel_html(
-                hotspots_df=cluster_engine.hotspots_df,
-                initial_user_lat=user_lat,
-                initial_user_lon=user_lon,
-                initial_zoom=current_zoom,
-                incidents_df=filtered_df,
-                api_key=active_key
-            )
-            # Cruip Showcase Terminal Header
-            st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-google-maps.live • Google Maps Platform Vector Night 3D & 360° Street View</span>
-    </div>
-    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25);">
-        GOOGLE MAPS PLATFORM • OPTIONAL API KEY
-    </div>
-</div>
-""", unsafe_allow_html=True)
-            st.components.v1.html(gmaps_html, height=750)
-            st.caption("Google Maps")
-        else:
-            # Folium Map with returned_objects=[] to eliminate re-run lag
-            crime_map = create_delhi_crime_map(
-                filtered_df,
-                hotspots_df=cluster_engine.hotspots_df,
-                show_heatmap=show_heat,
-                show_hotspots=show_spots,
-                show_pins=show_incidents,
-                user_location=(user_lat, user_lon) if user_lat else None,
-                show_future_heatmap=show_future_heatmap,
-                predictor=predictor,
-                zoom_level=current_zoom
-            )
-            st_folium(crime_map, width=None, height=580, returned_objects=[])
+        st.components.v1.html(smooth_html, height=720)
         
         # Hotspots Table
         st.markdown("### Top Identified DBSCAN Crime Hotspots")
