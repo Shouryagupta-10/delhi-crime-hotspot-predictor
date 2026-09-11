@@ -631,13 +631,13 @@ with tab1:
     
     if is_clean_mode:
         st.markdown("""
-        <div style="background: #F0FDF4; border-left: 5px solid #16A34A; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #166534;">
+        <div style="background: rgba(16, 185, 129, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 5px solid #10b981; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #6ee7b7; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
             <b>🛡️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div style="background: #FFFBEB; border-left: 5px solid #D97706; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #92400E;">
+        <div style="background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 5px solid #f59e0b; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #fde68a; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
             <b>⚠️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
         </div>
         """, unsafe_allow_html=True)
@@ -654,7 +654,7 @@ with tab1:
                 horizontal=True
             )
         with zoom_tb_col:
-            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #475569; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
             z1, z2, z3, z4, z_in, z_out = st.columns(6)
             with z1:
                 if st.button("🗺️ City (11x)", use_container_width=True, help="Full Delhi NCT Overview"):
@@ -684,14 +684,15 @@ with tab1:
         current_zoom = st.session_state.get("map_zoom", 13)
 
         if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with dedicated zoom dock and HUD controls
+            # Native hardware-accelerated 60fps Leaflet engine with Once UI styling, clustering, & search
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,
                 initial_user_lat=user_lat,
                 initial_user_lon=user_lon,
-                initial_zoom=current_zoom
+                initial_zoom=current_zoom,
+                incidents_df=filtered_df
             )
-            st.components.v1.html(smooth_html, height=640)
+            st.components.v1.html(smooth_html, height=680)
         else:
             # Folium Map with returned_objects=[] to eliminate re-run lag
             crime_map = create_delhi_crime_map(
@@ -736,11 +737,11 @@ with tab_clean:
 
     # Executive Pipeline Flow / Summary Card
     st.markdown("""
-    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-        <div style="font-weight: 700; color: #1E293B; font-size: 15px; margin-bottom: 6px;">
+    <div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);">
+        <div style="font-weight: 700; color: #f8fafc; font-size: 15px; margin-bottom: 8px;">
             🛡️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
         </div>
-        <div style="color: #475569; font-size: 13px; line-height: 1.5;">
+        <div style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
             In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
             false alarms, or records with missing coordinates leak into density estimators like DBSCAN, cluster centroids warp and police patrols 
             are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter.
