@@ -8,7 +8,7 @@ from folium.plugins import HeatMap, MarkerCluster, LocateControl, Fullscreen
 
 DELHI_CENTER = [28.6139, 77.2090]
 
-def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None, zoom_level=None):
+def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None, show_future_heatmap=False, predictor=None, zoom_level=None):
     """
     Renders an interactive Folium map with OpenStreetMap/CartoDB tiles,
     crime density heatmap, DBSCAN cluster centroids, premises incident pins,
@@ -84,6 +84,38 @@ def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, sho
             icon=folium.Icon(color="blue", icon="home", prefix="fa")
         ).add_to(user_group)
         user_group.add_to(m)
+            # 1.5 Future Predictive Heatmap Layer (AI generated grid for tomorrow)
+    if show_future_heatmap and predictor and predictor.is_trained:
+        import numpy as np
+        from datetime import datetime, timedelta
+        
+        future_heat_data = []
+        # Predict for tomorrow at 22:00 (Night time high-risk window)
+        tomorrow = datetime.now() + timedelta(days=1)
+        future_day = tomorrow.strftime("%A")
+        future_hour = 22 
+        
+        # Create a spatial grid over Delhi to predict future crimes
+        lat_min, lat_max = 28.40, 28.88
+        lon_min, lon_max = 76.85, 77.35
+        
+        for lat_grid in np.arange(lat_min, lat_max, 0.015):
+            for lon_grid in np.arange(lon_min, lon_max, 0.015):
+                risk_res = predictor.predict_risk("New Delhi", "Street & Public Roadways", future_hour, future_day, lat_grid, lon_grid)
+                
+                # Only plot points that have a high likelihood of future crime
+                if risk_res["high_risk_probability"] > 50.0:
+                    future_heat_data.append([lat_grid, lon_grid, risk_res["high_risk_probability"] / 100.0])
+        
+        if future_heat_data:
+            HeatMap(
+                future_heat_data,
+                radius=25,
+                blur=20,
+                max_zoom=13,
+                min_opacity=0.5,
+                gradient={0.4: "#8B5CF6", 0.7: "#D946EF", 1.0: "#EC4899"} # Futuristic Purple/Pink
+            ).add_to(folium.FeatureGroup(name="🔮 Future Crime Predictions").add_to(m))
     
     # 1. HeatMap Layer
     if show_heatmap and not df_filtered.empty:
