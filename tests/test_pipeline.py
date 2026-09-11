@@ -16,8 +16,11 @@ if PROJECT_ROOT not in sys.path:
 
 from data.generate_delhi_data import generate_delhi_crime_dataset, DISTRICTS
 from data.cleaner import clean_crime_dataset, CrimeDataCleaner
+from data.multi_city_ingestion import MultiCityIngestionEngine, generate_sample_external_dataset, CITY_REGISTRY
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from models.risk_predictor import DelhiCrimeRiskPredictor
+from models.time_series_forecaster import SpatioTemporalForecaster
+import json
 
 class TestDelhiCrimePipeline(unittest.TestCase):
     @classmethod
@@ -156,5 +159,63 @@ class TestDelhiCrimePipeline(unittest.TestCase):
         self.assertIsNotNone(engine.cleaning_audit_)
         self.assertGreater(engine.cleaning_audit_["unconfirmed_dropped"], 0)
 
+    def test_08_four_tier_risk_stratification(self):
+        """Validates that risk level categories contain 4 distinct tiers matching Slide 3."""
+        tiers_present = set(self.df["risk_level"].unique())
+        # All 4 levels should be represented
+        self.assertTrue(tiers_present.issubset({"Low", "Medium", "High", "Very High"}))
+        self.assertIn("Very High", tiers_present)
+        self.assertIn("High", tiers_present)
+        self.assertIn("Medium", tiers_present)
+
+    def test_09_delhi_districts_geojson_validity(self):
+        """Validates that delhi_districts.geojson contains 15 district polygons covering Delhi NCT."""
+        geojson_path = os.path.join(PROJECT_ROOT, "data", "delhi_districts.geojson")
+        self.assertTrue(os.path.exists(geojson_path), "delhi_districts.geojson must exist")
+        
+        with open(geojson_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        self.assertEqual(data.get("type"), "FeatureCollection")
+        features = data.get("features", [])
+        self.assertEqual(len(features), 15, "GeoJSON must define all 15 Delhi Police Districts")
+        
+        districts_in_geo = [f["properties"]["district"] for f in features]
+        for d in DISTRICTS.keys():
+            self.assertIn(d, districts_in_geo, f"District {d} missing in GeoJSON")
+
+    def test_10_time_series_forecasting(self):
+        """Validates spatio-temporal longitudinal forecasting engine functionality."""
+        forecaster = SpatioTemporalForecaster()
+        forecaster.fit(self.df)
+        self.assertTrue(forecaster.is_fitted)
+        
+        # Test 24-hour diurnal profile
+        hourly_profile = forecaster.forecast_district_hourly("New Delhi")
+        self.assertEqual(len(hourly_profile), 24)
+        self.assertTrue(all("predicted_risk_tier" in h for h in hourly_profile))
+        
+        # Test 14-day future trend projection with confidence intervals
+        trend_df = forecaster.forecast_future_trend("New Delhi", forecast_days=14)
+        self.assertEqual(len(trend_df), 14)
+        self.assertTrue("predicted_crimes" in trend_df.columns)
+        self.assertTrue("lower_ci" in trend_df.columns)
+        self.assertTrue("upper_ci" in trend_df.columns)
+        self.assertTrue((trend_df["upper_ci"] >= trend_df["lower_ci"]).all())
+
+    def test_11_multi_city_ingestion_and_geofencing(self):
+        """Validates multi-city ingestion adapter and dynamic geofencing (Slide 6 scalability)."""
+        engine = MultiCityIngestionEngine(city_name="Chicago (Open Portal)")
+        raw_chicago = generate_sample_external_dataset(city="Chicago (Open Portal)", num_rows=100)
+        cleaned_df, audit = engine.validate_and_geofence(raw_chicago)
+        
+        self.assertGreater(len(cleaned_df), 0)
+        self.assertEqual(audit["target_city"], "Chicago (Open Portal)")
+        self.assertEqual(cleaned_df["city"].iloc[0], "Chicago (Open Portal)")
+        self.assertTrue("latitude" in cleaned_df.columns)
+        self.assertTrue("longitude" in cleaned_df.columns)
+        self.assertTrue("crime_category" in cleaned_df.columns)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

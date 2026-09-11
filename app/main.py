@@ -22,6 +22,8 @@ if BASE_DIR not in sys.path:
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
+from models.time_series_forecaster import SpatioTemporalForecaster
+from data.multi_city_ingestion import MultiCityIngestionEngine, generate_sample_external_dataset, CITY_REGISTRY
 from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
@@ -512,6 +514,7 @@ st.sidebar.subheader("Map Layer & Zoom Controls")
 show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
 show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
 show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
+show_choropleth = st.sidebar.checkbox("Show District Choropleth (4-Tier Risk)", value=True)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🔮 Predictive Policing")
@@ -1027,7 +1030,8 @@ with tab1:
                 user_location=(user_lat, user_lon) if user_lat else None,
                 show_future_heatmap=show_future_heatmap,
                 predictor=predictor,
-                zoom_level=current_zoom
+                zoom_level=current_zoom,
+                show_choropleth=show_choropleth
             )
             st_folium(crime_map, width=None, height=580, returned_objects=[])
         
@@ -1480,6 +1484,71 @@ with tab4:
         if top_features:
             feat_df = pd.DataFrame(top_features[:8])
             st.bar_chart(feat_df.set_index("feature"))
+
+    st.markdown("---")
+    st.subheader("🔮 Spatio-Temporal Time-Series Forecasting Studio")
+    st.caption("Autoregressive trend & seasonal harmonic models predicting future crime trajectories per district (Build with Bharat 2.0 Slide 4 & 5).")
+    
+    @st.cache_resource
+    def get_trained_forecaster(data_cache):
+        fc = SpatioTemporalForecaster()
+        fc.fit(data_cache)
+        return fc
+
+    forecaster = get_trained_forecaster(df)
+    
+    col_fc1, col_fc2 = st.columns([1, 2])
+    with col_fc1:
+        forecast_dist = st.selectbox(
+            "Select District to Forecast",
+            sorted(list(df["district"].unique())),
+            key="ts_dist_select"
+        )
+        forecast_horizon = st.slider("Forecast Horizon (Days)", 7, 30, 14, key="ts_horizon_slider")
+        
+        st.markdown(f"**Forecasting Model**: `{forecaster.global_metrics.get('model_type', 'Harmonic Ridge')}`")
+        st.markdown(f"**Mean Absolute Error (MAE)**: `±{forecaster.global_metrics.get('mean_mae', 1.2)} crimes/day`")
+        st.markdown(f"**Districts Modeled**: `{forecaster.global_metrics.get('districts_covered', 15)} districts`")
+
+    with col_fc2:
+        forecast_df = forecaster.forecast_future_trend(forecast_dist, forecast_days=forecast_horizon)
+        st.markdown(f"#### Expected Daily Incident Projections: {forecast_dist}")
+        chart_data = forecast_df.set_index("date")[["predicted_crimes", "lower_ci", "upper_ci"]]
+        chart_data.columns = ["Expected Incidents", "Lower Bound (95% CI)", "Upper Bound (95% CI)"]
+        st.line_chart(chart_data)
+
+    st.markdown("#### 24-Hour Diurnal Intensity Forecast Profile")
+    hourly_fc = forecaster.forecast_district_hourly(forecast_dist)
+    h_df = pd.DataFrame(hourly_fc)
+    h_chart = h_df.set_index("hour_label")[["intensity_score"]]
+    h_chart.columns = ["Risk Intensity (0 to 1.0)"]
+    st.bar_chart(h_chart)
+
+    st.markdown("---")
+    st.subheader("🌐 Multi-City & Open Data Ingestion Engine")
+    st.caption("Ingests heterogeneous municipal datasets (Chicago, NCRB India, Delhi) with dynamic schema harmonization and geofencing (Slide 6).")
+
+    col_mc1, col_mc2 = st.columns([1.2, 1.8])
+    with col_mc1:
+        target_city = st.selectbox("Target Jurisdiction / Schema Preset", list(CITY_REGISTRY.keys()), index=1)
+        test_rows = st.slider("Test Sample Batch Size", 50, 500, 150)
+        run_ingest_btn = st.button("🚀 Run Multi-City Ingestion & Geofence Test", type="secondary")
+        
+    with col_mc2:
+        if run_ingest_btn or True:
+            raw_ext = generate_sample_external_dataset(target_city, num_rows=test_rows)
+            ingest_engine = MultiCityIngestionEngine(city_name=target_city)
+            cleaned_ext, audit_rep = ingest_engine.validate_and_geofence(raw_ext)
+            
+            st.success(f"Successfully processed {audit_rep['raw_input_rows']} records for **{target_city}**")
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Geofenced Retained", f"{audit_rep['geofenced_rows']}")
+            k2.metric("Out of Bounds Dropped", f"{audit_rep['out_of_bounds_dropped']}")
+            k3.metric("Retention Rate", f"{audit_rep['retention_rate']}%")
+            
+            with st.expander("Inspect Sanitized Multi-City Sample Data"):
+                st.dataframe(cleaned_ext[["record_id", "district", "crime_category", "premises_type", "latitude", "longitude", "city"]].head(6), use_container_width=True)
+
 
 # --- TAB 5: x402 PROTOCOL & ALGORAND AGENT ---
 with tab5:

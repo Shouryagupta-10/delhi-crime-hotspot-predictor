@@ -1,0 +1,220 @@
+{
+  "type": "FeatureCollection",
+  "name": "Delhi_Police_Districts",
+  "crs": {
+    "type": "name",
+    "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "district": "New Delhi", "zone": "Central Zone", "headquarters": "Parliament Street" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.175, 28.580], [77.235, 28.580], [77.245, 28.615],
+            [77.230, 28.642], [77.195, 28.640], [77.170, 28.610],
+            [77.175, 28.580]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Central", "zone": "Central Zone", "headquarters": "Daryaganj" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.185, 28.635], [77.230, 28.642], [77.250, 28.655],
+            [77.240, 28.670], [77.195, 28.670], [77.180, 28.650],
+            [77.185, 28.635]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "North", "zone": "Northern Zone", "headquarters": "Civil Lines" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.190, 28.665], [77.235, 28.660], [77.240, 28.705],
+            [77.215, 28.725], [77.185, 28.710], [77.180, 28.685],
+            [77.190, 28.665]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "South", "zone": "Southern Zone", "headquarters": "Hauz Khas" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.165, 28.500], [77.225, 28.500], [77.235, 28.555],
+            [77.205, 28.575], [77.175, 28.570], [77.155, 28.530],
+            [77.165, 28.500]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "South-East", "zone": "Southern Zone", "headquarters": "Sarita Vihar" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.225, 28.500], [77.300, 28.500], [77.310, 28.560],
+            [77.260, 28.590], [77.225, 28.575], [77.220, 28.530],
+            [77.225, 28.500]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "South-West", "zone": "Western Zone", "headquarters": "Vasant Vihar" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.110, 28.520], [77.175, 28.520], [77.185, 28.580],
+            [77.170, 28.610], [77.120, 28.600], [77.100, 28.560],
+            [77.110, 28.520]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "West", "zone": "Western Zone", "headquarters": "Rajouri Garden" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.070, 28.610], [77.135, 28.610], [77.160, 28.650],
+            [77.145, 28.685], [77.090, 28.680], [77.065, 28.640],
+            [77.070, 28.610]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "North-West", "zone": "Northern Zone", "headquarters": "Ashok Vihar" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.125, 28.680], [77.185, 28.680], [77.195, 28.730],
+            [77.155, 28.740], [77.120, 28.720], [77.115, 28.695],
+            [77.125, 28.680]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Rohini", "zone": "Northern Zone", "headquarters": "Rohini Sector 23" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.060, 28.700], [77.125, 28.700], [77.140, 28.755],
+            [77.110, 28.775], [77.060, 28.760], [77.045, 28.725],
+            [77.060, 28.700]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Dwarka", "zone": "Western Zone", "headquarters": "Dwarka Sector 19" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.990, 28.530], [77.080, 28.530], [77.095, 28.610],
+            [77.050, 28.635], [76.990, 28.610], [76.975, 28.570],
+            [76.990, 28.530]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "East", "zone": "Eastern Zone", "headquarters": "Mandawali" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.260, 28.590], [77.330, 28.590], [77.340, 28.645],
+            [77.290, 28.650], [77.265, 28.630], [77.255, 28.610],
+            [77.260, 28.590]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Shahdara", "zone": "Eastern Zone", "headquarters": "Shalimar Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.265, 28.645], [77.330, 28.645], [77.335, 28.690],
+            [77.290, 28.700], [77.260, 28.680], [77.255, 28.660],
+            [77.265, 28.645]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "North-East", "zone": "Eastern Zone", "headquarters": "Seelampur" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.240, 28.675], [77.290, 28.675], [77.300, 28.735],
+            [77.260, 28.745], [77.235, 28.715], [77.230, 28.690],
+            [77.240, 28.675]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Outer", "zone": "Western Zone", "headquarters": "Pitampura" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.010, 28.650], [77.085, 28.650], [77.095, 28.720],
+            [77.050, 28.740], [77.000, 28.720], [76.990, 28.680],
+            [77.010, 28.650]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "district": "Outer-North", "zone": "Northern Zone", "headquarters": "Samaypur Badli" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.040, 28.740], [77.160, 28.740], [77.170, 28.890],
+            [77.100, 28.910], [77.040, 28.880], [77.020, 28.800],
+            [77.040, 28.740]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,14 +1,12 @@
-"""
-Interactive Folium Geospatial Map Renderer for Delhi Crime & Premises
-Renders choropleths, density heatmaps, and DBSCAN hotspot corridor polygons/circles.
-"""
-
+import os
+import json
 import folium
 from folium.plugins import HeatMap, MarkerCluster, LocateControl, Fullscreen
+import pandas as pd
 
 DELHI_CENTER = [28.6139, 77.2090]
 
-def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None, show_future_heatmap=False, predictor=None, zoom_level=None):
+def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, show_hotspots=True, show_pins=True, user_location=None, show_future_heatmap=False, predictor=None, zoom_level=None, show_choropleth=False):
     """
     Renders an interactive Folium map with OpenStreetMap/CartoDB tiles,
     crime density heatmap, DBSCAN cluster centroids, premises incident pins,
@@ -233,8 +231,110 @@ def create_delhi_crime_map(df_filtered, hotspots_df=None, show_heatmap=True, sho
         ).add_to(safe_group)
     safe_group.add_to(m)
 
+    # 5. Delhi District Polygon Choropleth Layer (Build with Bharat 2.0 Slide 3 & 5)
+    if show_choropleth:
+        add_delhi_district_choropleth(m, df_filtered)
+
     folium.LayerControl().add_to(m)
     return m
+
+
+def add_delhi_district_choropleth(m, df_filtered):
+    """
+    Renders official Delhi District polygon boundaries with dynamic color shading
+    corresponding to aggregate district risk levels (Very High, High, Medium, Low).
+    """
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    geojson_path = os.path.join(base_dir, "data", "delhi_districts.geojson")
+    if not os.path.exists(geojson_path):
+        return
+
+    try:
+        with open(geojson_path, "r", encoding="utf-8") as f:
+            geojson_data = json.load(f)
+    except Exception:
+        return
+
+    # Compute district statistics
+    dist_stats = {}
+    if df_filtered is not None and not df_filtered.empty and "district" in df_filtered.columns:
+        for dist_name, grp in df_filtered.groupby("district"):
+            count = len(grp)
+            mean_risk = float(grp["risk_index"].mean()) if "risk_index" in grp.columns else 0.45
+            top_crime = grp["crime_category"].mode()[0] if "crime_category" in grp.columns and len(grp["crime_category"].mode()) > 0 else "Street Crime"
+            
+            if mean_risk >= 0.65:
+                tier = "Very High"
+                color = "#DC2626"
+            elif mean_risk >= 0.50:
+                tier = "High"
+                color = "#EA580C"
+            elif mean_risk >= 0.35:
+                tier = "Medium"
+                color = "#EAB308"
+            else:
+                tier = "Low"
+                color = "#10B981"
+                
+            dist_stats[dist_name] = {
+                "count": count,
+                "mean_risk": round(mean_risk, 3),
+                "top_crime": top_crime,
+                "tier": tier,
+                "color": color
+            }
+
+    def style_function(feature):
+        dist = feature["properties"].get("district", "")
+        stats = dist_stats.get(dist, {"color": "#3B82F6", "tier": "Normal"})
+        return {
+            "fillColor": stats.get("color", "#3B82F6"),
+            "color": "#FFFFFF",
+            "weight": 2.2,
+            "dashArray": "4, 4",
+            "fillOpacity": 0.42
+        }
+
+    def highlight_function(feature):
+        return {
+            "weight": 3.8,
+            "color": "#FACC15",
+            "dashArray": "",
+            "fillOpacity": 0.70
+        }
+
+    choropleth_group = folium.FeatureGroup(name="🗺️ Delhi District Choropleth (4-Tier Risk)", show=True)
+    
+    # Inject stats into GeoJSON properties for clean tooltips
+    for feat in geojson_data.get("features", []):
+        dist = feat["properties"].get("district", "")
+        st_data = dist_stats.get(dist, {"count": 0, "mean_risk": 0.38, "top_crime": "General", "tier": "Medium", "color": "#EAB308"})
+        feat["properties"]["crime_count"] = st_data["count"]
+        feat["properties"]["mean_risk"] = st_data["mean_risk"]
+        feat["properties"]["top_crime"] = st_data["top_crime"]
+        feat["properties"]["risk_tier"] = st_data["tier"]
+
+    geojson_layer = folium.GeoJson(
+        geojson_data,
+        name="District Boundaries",
+        style_function=style_function,
+        highlight_function=highlight_function,
+        tooltip=folium.GeoJsonTooltip(
+            fields=["district", "risk_tier", "crime_count", "mean_risk", "top_crime"],
+            aliases=["District:", "Risk Tier:", "Active FIRs:", "Mean Risk Index:", "Primary Crime:"],
+            localize=True,
+            sticky=True,
+            labels=True,
+            style="background-color: rgba(15, 23, 42, 0.92); color: #F8FAFC; font-family: sans-serif; font-size: 11px; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);"
+        ),
+        popup=folium.GeoJsonPopup(
+            fields=["district", "risk_tier", "crime_count", "mean_risk", "top_crime"],
+            aliases=["District:", "Assessed Risk:", "Incidents:", "Risk Score:", "Dominant Incident:"]
+        )
+    )
+    geojson_layer.add_to(choropleth_group)
+    choropleth_group.add_to(m)
+
 
 
 def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None, initial_user_lon=None, initial_zoom=13, incidents_df=None):

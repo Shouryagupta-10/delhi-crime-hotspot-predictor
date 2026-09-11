@@ -300,9 +300,11 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
         risk_metric = (base_severity / 5.0) * 0.4 + (premises_risk_score * 0.35) + (is_night * 0.15) + (is_weekend * 0.10)
         risk_metric = min(1.0, max(0.0, risk_metric + np.random.normal(0, 0.05)))
         
-        if risk_metric >= 0.65:
+        if risk_metric >= 0.72:
+            risk_level = "Very High"
+        elif risk_metric >= 0.52:
             risk_level = "High"
-        elif risk_metric >= 0.42:
+        elif risk_metric >= 0.35:
             risk_level = "Medium"
         else:
             risk_level = "Low"
@@ -330,7 +332,7 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
             "severity_score": base_severity,
             "risk_index": round(float(risk_metric), 3),
             "risk_level": risk_level,
-            "is_high_risk": 1 if risk_level == "High" else 0,
+            "is_high_risk": 1 if risk_level in ["High", "Very High"] else 0,
             "confirmation_status": status
         }
         
@@ -376,7 +378,7 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
     
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     clean_df.to_csv(output_path, index=False)
-    print(f"\n✅ Data Cleaning Pipeline Completed Successfully:")
+    print(f"\n[OK] Data Cleaning Pipeline Completed Successfully:")
     print(f"   Raw Ingestion:        {audit['raw_count']} records")
     print(f"   Unconfirmed Dropped:  {audit['unconfirmed_dropped']}")
     print(f"   Missing GPS Dropped:  {audit['missing_coords_dropped']}")

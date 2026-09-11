@@ -206,21 +206,30 @@ class DelhiCrimeRiskPredictor:
         
         prob = float(self.pipeline.predict_proba(sample_df)[0, 1])
         
-        if prob >= 0.60:
-            level = "CRITICAL / HIGH RISK"
-            color = "#EF4444"
-            advisory = "Intensify PCR patrolling, activate CCTV corridor tracking, deploy anti-snatching motorcycle squad."
-        elif prob >= 0.35:
+        if prob >= 0.75:
+            tier = "Very High"
+            level = "CRITICAL / VERY HIGH RISK"
+            color = "#DC2626"
+            advisory = "Urgent: Deploy armed PCR mobile picket, establish static choke-point barricades, dispatch motorcycle Cheetah squad."
+        elif prob >= 0.52:
+            tier = "High"
+            level = "HIGH RISK"
+            color = "#EA580C"
+            advisory = "Intensify patrol beat frequency, coordinate CCTV corridor tracking, increase frisking at transit exits."
+        elif prob >= 0.32:
+            tier = "Medium"
             level = "MODERATE RISK"
-            color = "#F59E0B"
-            advisory = "Regular beat patrol vigilance, verify perimeter lighting, monitor crowded transit pedestrian exits."
+            color = "#EAB308"
+            advisory = "Maintain active beat presence, verify illumination of pedestrian walkways, perform periodic log checks."
         else:
+            tier = "Low"
             level = "LOW / NORMAL RISK"
             color = "#10B981"
             advisory = "Standard community policing, routine log checks, perimeter surveillance."
             
         return {
             "high_risk_probability": round(prob * 100.0, 1),
+            "risk_tier": tier,
             "risk_level": level,
             "risk_color": color,
             "dist_to_hotspot_km": round(dist_to_hotspot, 2),
