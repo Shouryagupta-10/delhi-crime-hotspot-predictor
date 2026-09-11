@@ -513,6 +513,10 @@ show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
 show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
 show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔮 Predictive Policing")
+show_future_heatmap = st.sidebar.checkbox("Generate Future Crime Heatmap (Next 24H)", value=False)
+
 map_zoom_sidebar = st.sidebar.slider(
     "Map Zoom Scale",
     min_value=10,
@@ -523,18 +527,24 @@ map_zoom_sidebar = st.sidebar.slider(
 )
 st.session_state["map_zoom"] = map_zoom_sidebar
 
-with st.sidebar.expander("🌍 Google Maps Platform Key", expanded=False):
+with st.sidebar.expander("🌍 Google Maps Key (Optional)", expanded=False):
+    st.markdown(
+        "<div style='font-size: 11px; color: #10b981; margin-bottom: 6px; font-weight: 600;'>"
+        "✓ The default Sentinel Radar is 100% Free (OpenStreetMap & ESRI Satellite with 0 keys required)."
+        "</div>",
+        unsafe_allow_html=True
+    )
     gmaps_api_input = st.text_input(
-        "Google Maps API Key",
+        "Google Maps API Key (Optional)",
         value=st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", "")),
         type="password",
-        help="Enter your Google Maps Platform API key with Maps JavaScript API, Places API, and Geocoding API enabled. If blank, you can also connect directly within the map."
+        help="Optional: Only needed if you switch to Google Maps mode. Default map is 100% free."
     )
     if gmaps_api_input:
         st.session_state["google_maps_api_key"] = gmaps_api_input
     st.markdown(
         "<div style='font-size: 11px; color: #94a3b8; margin-top: 4px;'>"
-        "Need a key? Get one on the <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
+        "Need a key? Get one on <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
         "</div>",
         unsafe_allow_html=True
     )
@@ -927,9 +937,9 @@ with tab1:
             map_mode = st.radio(
                 "Select Map Experience:",
                 [
-                    "🌍 Google Maps Platform (Vector Night, 360° Street View, Traffic & Places)",
-                    "⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)",
-                    "🗺️ Static Density Heatmap (Folium)"
+                    "⚡ Sentinel 60fps Radar & Satellite (100% Free • OpenStreetMap & ESRI)",
+                    "🗺️ Static Density Heatmap (Folium)",
+                    "🌍 Google Maps Platform (Optional • Requires API Key)"
                 ],
                 index=0,
                 horizontal=True
@@ -956,7 +966,31 @@ with tab1:
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
-        if map_mode.startswith("🌍"):
+        if map_mode.startswith("⚡"):
+            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
+            smooth_html = create_smooth_realtime_leaflet_html(
+                hotspots_df=cluster_engine.hotspots_df,
+                initial_user_lat=user_lat,
+                initial_user_lon=user_lon,
+                initial_zoom=current_zoom,
+                incidents_df=filtered_df
+            )
+            # Cruip Showcase Terminal Header
+            st.markdown("""
+<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
+        60 FPS TELEMETRY • ZERO API KEY REQUIRED
+    </div>
+</div>
+""", unsafe_allow_html=True)
+            st.components.v1.html(smooth_html, height=720)
+        elif map_mode.startswith("🌍"):
             active_key = st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", ""))
             gmaps_html = create_google_maps_sentinel_html(
                 hotspots_df=cluster_engine.hotspots_df,
@@ -976,36 +1010,12 @@ with tab1:
         <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-google-maps.live • Google Maps Platform Vector Night 3D & 360° Street View</span>
     </div>
     <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25);">
-        GOOGLE MAPS PLATFORM • 60 FPS VECTOR
+        GOOGLE MAPS PLATFORM • OPTIONAL API KEY
     </div>
 </div>
 """, unsafe_allow_html=True)
             st.components.v1.html(gmaps_html, height=750)
             st.caption("Google Maps")
-        elif map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
-            smooth_html = create_smooth_realtime_leaflet_html(
-                hotspots_df=cluster_engine.hotspots_df,
-                initial_user_lat=user_lat,
-                initial_user_lon=user_lon,
-                initial_zoom=current_zoom,
-                incidents_df=filtered_df
-            )
-            # Cruip Showcase Terminal Header
-            st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Delhi NCT Sentinel</span>
-    </div>
-    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #818cf8; background: rgba(99, 102, 241, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(129, 140, 248, 0.25);">
-        60 FPS TELEMETRY
-    </div>
-</div>
-""", unsafe_allow_html=True)
-            st.components.v1.html(smooth_html, height=720)
         else:
             # Folium Map with returned_objects=[] to eliminate re-run lag
             crime_map = create_delhi_crime_map(
@@ -1015,6 +1025,8 @@ with tab1:
                 show_hotspots=show_spots,
                 show_pins=show_incidents,
                 user_location=(user_lat, user_lon) if user_lat else None,
+                show_future_heatmap=show_future_heatmap,
+                predictor=predictor,
                 zoom_level=current_zoom
             )
             st_folium(crime_map, width=None, height=580, returned_objects=[])

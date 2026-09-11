@@ -5,12 +5,14 @@
 [![Framework](https://img.shields.io/badge/Framework-Streamlit%20%7C%20Folium-ff4b4b.svg)](https://streamlit.io)
 [![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%7C%20XGBoost%20%7C%20Ensembles-green.svg)](https://scikit-learn.org/)
 [![Clustering](https://img.shields.io/badge/Algorithm-DBSCAN%20(Haversine)-orange.svg)](https://scikit-learn.org/)
+[![Deploy Rakshak.ai with Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=Shouryagupta-10/delhi-crime-hotspot-predictor&branch=main&main_module=app.py)
 [![Deploy with Vercel](https://img.shields.io/badge/Vercel-Live%20Production-black?logo=vercel)](https://x402-client-delta.vercel.app)
-[![Deploy with Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=Shouryagupta-10/delhi-crime-hotspot-predictor&branch=main&main_module=app/main.py)
 [![Status](https://img.shields.io/badge/Tests-Passing%20(100%25)-brightgreen.svg)]()
 
-> 🚀 **Live Production Deployment**: [**https://x402-client-delta.vercel.app**](https://x402-client-delta.vercel.app)  
-> 🌐 **GitHub Repository**: [**https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor**](https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor)
+> 🛡️ **Live Streamlit Navigator (Rakshak.ai)**: [**https://af17d20f423cc8.lhr.life**](https://af17d20f423cc8.lhr.life)  
+> 🚀 **Vercel Full-Stack Client**: [**https://x402-client-delta.vercel.app**](https://x402-client-delta.vercel.app)  
+> 🌐 **GitHub Repository**: [**https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor**](https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor)  
+> ⚡ **1-Click Streamlit Cloud Deploy**: [**Deploy app.py on Streamlit Cloud**](https://share.streamlit.io/deploy?repository=Shouryagupta-10/delhi-crime-hotspot-predictor&branch=main&main_module=app.py)
 
 A data science and civic intelligence platform built to map real-time crime hotspots and forecast premises-level security risks across all **15 Delhi Police Districts**. 
 
