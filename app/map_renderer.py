@@ -607,6 +607,21 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           background: rgba(255, 255, 255, 0.12);
           color: #fff;
         }}
+        .action-btn.live-btn {{
+          background: rgba(16, 185, 129, 0.18);
+          border-color: rgba(16, 185, 129, 0.45);
+          color: #34d399;
+        }}
+        .action-btn.live-btn:hover {{
+          background: rgba(16, 185, 129, 0.3);
+          color: #6ee7b7;
+        }}
+        .action-btn.live-btn.active {{
+          background: #059669;
+          border-color: #10b981;
+          color: #fff;
+          box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }}
         .action-btn.sim-btn {{
           background: rgba(217, 119, 6, 0.2);
           border-color: rgba(245, 158, 11, 0.5);
@@ -938,6 +953,12 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           background: rgba(255, 255, 255, 0.12);
           color: #fff;
         }}
+        .nav-action-btn.active {{
+          background: rgba(16, 185, 129, 0.25);
+          border-color: #10b981;
+          color: #34d399;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+        }}
         .nav-action-btn.btn-play {{
           background: #0284c7;
           border-color: #38bdf8;
@@ -1126,7 +1147,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           <!-- Action Controls -->
           <div class="nav-section">
             <button id="btnQuickNav" class="action-btn" style="background: linear-gradient(135deg, #0284c7, #4f46e5); border-color: #38bdf8; font-weight: 700;" onclick="openQuickRouteModal()">🧭 Route / ETA</button>
-            <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()">🚀 Sim GPS</button>
+            <button id="btnLiveGps" class="action-btn live-btn" onclick="activateLiveGpsTracking()" title="Acquire and track device real GPS location">📡 Live GPS</button>
+            <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()" title="Preview Route Simulation Demo">🎬 Sim Demo</button>
             <button class="action-btn" onclick="centerOnMe()">📍 Me</button>
           </div>
           
@@ -1141,6 +1163,11 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             <div class="nav-hud-main">
               <div id="navManeuverIcon" class="nav-maneuver-icon">⬆</div>
               <div class="nav-hud-text">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span id="navModeBadge" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; font-size: 9.5px; font-weight: 800; padding: 1px 7px; border-radius: 9999px; letter-spacing: 0.5px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span> LIVE NAVIGATION
+                  </span>
+                </div>
                 <div id="navInstruction" class="nav-instruction">Proceed along route</div>
                 <div id="navNextStreet" class="nav-next-street">Calculating street trajectory...</div>
               </div>
@@ -1155,7 +1182,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                 </div>
               </div>
               <div class="nav-hud-controls">
-                <button id="navSimPlayBtn" class="nav-action-btn btn-play" onclick="toggleNavDriveSim()" title="Drive route at 60fps">🚀 Drive</button>
+                <button id="navLiveTrackBtn" class="nav-action-btn active" onclick="activateLiveNavTracking()" title="Follow Live GPS Device Location" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399; font-weight: 700;">📡 Live</button>
+                <button id="navSimPlayBtn" class="nav-action-btn" onclick="toggleNavDriveSim()" title="Preview Route Simulation Demo" style="font-size: 11px;">🎬 Sim</button>
                 <button class="nav-action-btn" onclick="toggleNavStepsDrawer()" title="View Turn-by-Turn Steps">📋 Turns</button>
                 <button class="nav-action-btn btn-close" onclick="clearNavigationRoute(true)" title="Exit Navigation">✕</button>
               </div>
@@ -1852,6 +1880,10 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           }}
           
           map.panTo([lat, lon], {{ animate: true, duration: 0.8 }});
+          
+          if (currentNavRoute && !isDriving) {{
+            updateLiveNavProgress(lat, lon);
+          }}
         }}
         
         // ==========================================
@@ -1924,48 +1956,186 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           return pts;
         }}
 
+        function evaluateRouteSafety(coords) {{
+          // Returns safety metrics: {{ riskPenalty, minHotspotDist, penetratedHotspots, safeZoneBonus, safetyScore }}
+          let riskPenalty = 0;
+          let minHotspotDist = Infinity;
+          const penetratedSet = new Set();
+          
+          if (!coords || coords.length === 0) return {{ riskPenalty: 0, minHotspotDist: 9999, penetratedHotspots: 0, safetyScore: 100 }};
+          
+          // Sub-sample or inspect route points (every ~3-5 points to keep evaluation fast & precise)
+          const step = Math.max(1, Math.floor(coords.length / 50));
+          for (let i = 0; i < coords.length; i += step) {{
+            const pLat = coords[i][0];
+            const pLon = coords[i][1];
+            
+            // Proximity to known hotspots
+            for (let h of HOTSPOTS) {{
+              const d = calcDistMeters(pLat, pLon, h.lat, h.lon);
+              if (d < minHotspotDist) minHotspotDist = d;
+              
+              const isHigh = (h.riskLevel === 'HIGH' || h.riskScore >= 0.65);
+              const dangerRadius = isHigh ? 450 : 250;
+              
+              if (d < dangerRadius) {{
+                penetratedSet.add(h.name || `${{h.lat}},${{h.lon}}`);
+                // Exponential proximity penalty
+                const proximityFactor = Math.pow(Math.max(0, (dangerRadius - d) / dangerRadius), 1.8);
+                riskPenalty += (isHigh ? 60 : 25) * proximityFactor * (h.riskScore || 0.7);
+              }}
+            }}
+          }}
+          
+          // Bonus for passing through or near safe corridors
+          let safeZoneBonus = 0;
+          for (let s of SAFE_ZONES) {{
+            for (let i = 0; i < coords.length; i += step) {{
+              const d = calcDistMeters(coords[i][0], coords[i][1], s.lat, s.lon);
+              if (d < 500) {{
+                safeZoneBonus += 15;
+                break; // count each safe corridor once
+              }}
+            }}
+          }}
+          
+          // Overall safety score from 0 (very risky) to 100 (maximum safety)
+          const safetyScore = Math.max(15, Math.min(100, Math.round(100 - riskPenalty + safeZoneBonus)));
+          
+          return {{
+            riskPenalty: Math.round(riskPenalty * 10) / 10,
+            minHotspotDist: Math.round(minHotspotDist),
+            penetratedHotspots: penetratedSet.size,
+            safetyScore: safetyScore
+          }};
+        }}
+
         window.startNavigationTo = async function(destLat, destLon, destName, autoDrive) {{
-          const startLat = currentUserPos.lat;
-          const startLon = currentUserPos.lon;
+          if (isDriving || navDriveTimer) {{
+            clearInterval(navDriveTimer);
+            navDriveTimer = null;
+            isDriving = false;
+          }}
+          
+          const startLat = (lastLiveGpsPos) ? lastLiveGpsPos.lat : currentUserPos.lat;
+          const startLon = (lastLiveGpsPos) ? lastLiveGpsPos.lon : currentUserPos.lon;
           
           // Display HUD loading
           const hud = document.getElementById('navHud');
           hud.style.display = 'block';
-          document.getElementById('navManeuverIcon').innerText = '⌛';
-          document.getElementById('navInstruction').innerHTML = `Calculating street route to <b>${{destName}}</b>...`;
-          document.getElementById('navNextStreet').innerText = 'Querying OpenStreetMap Delhi Road Network (OSRM)...';
+          document.getElementById('navManeuverIcon').innerText = '🛡️';
+          document.getElementById('navInstruction').innerHTML = `Scanning safe corridors to <b>${{destName}}</b>...`;
+          document.getElementById('navNextStreet').innerText = 'Analyzing DBSCAN Hotspots & Road Corridors...';
           document.getElementById('navDistText').innerText = '--';
           document.getElementById('navEtaText').innerText = '--';
           
           try {{
-            // Real-time Street Navigation API (100% Free OpenStreetMap / OSRM)
-            const url = `https://router.project-osrm.org/route/v1/driving/${{startLon}},${{startLat}};${{destLon}},${{destLat}}?overview=full&geometries=geojson&steps=true`;
-            const resp = await fetch(url);
-            const data = await resp.json();
+            // 1. Fetch direct route candidates from OSRM (requesting alternatives)
+            const osrmBase = 'https://router.project-osrm.org/route/v1/driving/';
+            const directUrl = `${{osrmBase}}${{startLon}},${{startLat}};${{destLon}},${{destLat}}?overview=full&geometries=geojson&steps=true&alternatives=true`;
             
-            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {{
-              const r = data.routes[0];
-              const coords = r.geometry.coordinates.map(c => [c[1], c[0]]); // [lon, lat] -> [lat, lon]
-              const steps = r.legs[0]?.steps || [];
-              displayStreetRoute(coords, steps, r.distance, r.duration, destName, [destLat, destLon], autoDrive);
-            }} else {{
-              throw new Error('OSRM routing response not ok');
+            const candidateRoutes = [];
+            
+            try {{
+              const resp = await fetch(directUrl);
+              const data = await resp.json();
+              if (data.code === 'Ok' && data.routes && data.routes.length > 0) {{
+                data.routes.forEach((r, idx) => {{
+                  const coords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+                  const safety = evaluateRouteSafety(coords);
+                  candidateRoutes.push({{
+                    route: r,
+                    coords: coords,
+                    steps: r.legs[0]?.steps || [],
+                    distance: r.distance,
+                    duration: r.duration,
+                    safety: safety,
+                    isDetour: false,
+                    label: idx === 0 ? 'Direct Highway' : `Alternative ${{idx + 1}}`
+                  }});
+                }});
+              }}
+            }} catch (directErr) {{
+              console.warn('Direct OSRM route fetch error:', directErr);
             }}
+            
+            // 2. Proactively test safe waypoints detour if candidate direct routes penetrate hotspots or to find a safer path
+            const directPenetrations = candidateRoutes.reduce((minP, cr) => Math.min(minP, cr.safety.penetratedHotspots), Infinity);
+            if (candidateRoutes.length === 0 || directPenetrations > 0) {{
+              // Find candidate safe haven waypoints that lie generally along or flanking the path
+              for (let safeZ of SAFE_ZONES) {{
+                // Quick triangular distance check: detour should not be excessively long (< 1.85x direct distance)
+                const d1 = calcDistMeters(startLat, startLon, safeZ.lat, safeZ.lon);
+                const d2 = calcDistMeters(safeZ.lat, safeZ.lon, destLat, destLon);
+                const directDist = calcDistMeters(startLat, startLon, destLat, destLon);
+                if (d1 + d2 < directDist * 1.85 && d1 > 200 && d2 > 200) {{
+                  try {{
+                    const viaUrl = `${{osrmBase}}${{startLon}},${{startLat}};${{safeZ.lon}},${{safeZ.lat}};${{destLon}},${{destLat}}?overview=full&geometries=geojson&steps=true`;
+                    const viaResp = await fetch(viaUrl);
+                    const viaData = await viaResp.json();
+                    if (viaData.code === 'Ok' && viaData.routes && viaData.routes.length > 0) {{
+                      const vr = viaData.routes[0];
+                      const vcoords = vr.geometry.coordinates.map(c => [c[1], c[0]]);
+                      const vsafety = evaluateRouteSafety(vcoords);
+                      // Extra corridor shield bonus for deliberately routing through guarded zone
+                      vsafety.safetyScore = Math.min(100, vsafety.safetyScore + 10);
+                      const combinedSteps = (vr.legs[0]?.steps || []).concat(vr.legs[1]?.steps || []);
+                      candidateRoutes.push({{
+                        route: vr,
+                        coords: vcoords,
+                        steps: combinedSteps,
+                        distance: vr.distance,
+                        duration: vr.duration,
+                        safety: vsafety,
+                        isDetour: true,
+                        label: `Shielded via ${{safeZ.name.split(' ')[0]}}`
+                      }});
+                    }}
+                  }} catch (viaErr) {{
+                    console.warn('Detour route fetch error:', viaErr);
+                  }}
+                }}
+              }}
+            }}
+            
+            // 3. Select the SAFEST route candidate (highest safety score, minimum hotspot penetrations)
+            if (candidateRoutes.length > 0) {{
+              candidateRoutes.sort((a, b) => {{
+                // Primary: lower hotspot penetrations
+                if (a.safety.penetratedHotspots !== b.safety.penetratedHotspots) {{
+                  return a.safety.penetratedHotspots - b.safety.penetratedHotspots;
+                }}
+                // Secondary: higher safety score
+                if (b.safety.safetyScore !== a.safety.safetyScore) {{
+                  return b.safety.safetyScore - a.safety.safetyScore;
+                }}
+                // Tertiary: closer distance/time
+                return a.distance - b.distance;
+              }});
+              
+              const chosen = candidateRoutes[0];
+              console.log('🛡️ Safest Route Selected:', chosen.label, chosen.safety);
+              displayStreetRoute(chosen.coords, chosen.steps, chosen.distance, chosen.duration, destName, [destLat, destLon], autoDrive, chosen.safety);
+              return;
+            }}
+            
+            throw new Error('No OSRM routes available');
           }} catch (err) {{
-            console.warn('OSRM query failed or offline, using fallback corridor:', err);
+            console.warn('Safest routing query failed or offline, using fallback corridor:', err);
             const fallbackPoints = generateCorridorInterpolation([startLat, startLon], [destLat, destLon]);
             const estDist = calcDistMeters(startLat, startLon, destLat, destLon) * 1.28;
             const estDuration = (estDist / 8.5); // ~30 km/h
             const fallbackSteps = [
               {{ maneuver: {{ type: 'depart', modifier: 'straight' }}, name: 'Current Corridor', distance: estDist * 0.35, duration: estDuration * 0.35 }},
-              {{ maneuver: {{ type: 'turn', modifier: 'slight right' }}, name: 'Delhi Ring Road Highway', distance: estDist * 0.45, duration: estDuration * 0.45 }},
+              {{ maneuver: {{ type: 'turn', modifier: 'slight right' }}, name: 'Delhi Secure Highway Ring', distance: estDist * 0.45, duration: estDuration * 0.45 }},
               {{ maneuver: {{ type: 'arrive', modifier: '' }}, name: destName, distance: estDist * 0.2, duration: estDuration * 0.2 }}
             ];
-            displayStreetRoute(fallbackPoints, fallbackSteps, estDist, estDuration, destName, [destLat, destLon], autoDrive);
+            const fallbackSafety = evaluateRouteSafety(fallbackPoints);
+            displayStreetRoute(fallbackPoints, fallbackSteps, estDist, estDuration, destName, [destLat, destLon], autoDrive, fallbackSafety);
           }}
         }};
 
-        function displayStreetRoute(coords, steps, totalDistMeters, totalDurationSec, destName, destLatLng, autoDrive) {{
+        function displayStreetRoute(coords, steps, totalDistMeters, totalDurationSec, destName, destLatLng, autoDrive, safetyMeta) {{
           clearNavigationRoute(false);
           
           currentNavRoute = {{
@@ -1974,7 +2144,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             totalDistMeters: totalDistMeters,
             totalDurationSec: totalDurationSec,
             destName: destName,
-            destLatLng: destLatLng
+            destLatLng: destLatLng,
+            safety: safetyMeta || evaluateRouteSafety(coords)
           }};
           navDriveIdx = 0;
           
@@ -1991,9 +2162,12 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             lineJoin: 'round'
           }}).addTo(map);
           
-          // Inner glowing cyan street line snapped to roads
+          // Inner glowing safe street line (emerald green #10b981 for high safety >= 70, cyan #00f0ff otherwise)
+          const isHighSafety = (currentNavRoute.safety && currentNavRoute.safety.safetyScore >= 70);
+          const routeColor = isHighSafety ? '#10b981' : '#00f0ff';
+          
           navRoutePolyline = L.polyline(coords, {{
-            color: '#00f0ff',
+            color: routeColor,
             weight: 4.5,
             opacity: 0.95,
             lineCap: 'round',
@@ -2018,17 +2192,81 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           const bounds = L.latLngBounds(coords);
           map.fitBounds(bounds, {{ padding: [70, 70], animate: true, duration: 1.0 }});
           
-          // Populate HUD & Drawer
+          // Set HUD to LIVE SAFEST ROUTE mode & populate drawer
+          const modeBadge = document.getElementById('navModeBadge');
+          if (modeBadge) {{
+            const safetyPct = currentNavRoute.safety ? currentNavRoute.safety.safetyScore : 95;
+            const penCount = currentNavRoute.safety ? currentNavRoute.safety.penetratedHotspots : 0;
+            const badgeBg = penCount === 0 ? 'rgba(16, 185, 129, 0.22)' : 'rgba(2, 132, 199, 0.22)';
+            const badgeColor = penCount === 0 ? '#34d399' : '#38bdf8';
+            const badgeBorder = penCount === 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(56, 189, 248, 0.5)';
+            
+            modeBadge.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:${{badgeColor}}; box-shadow:0 0 8px ${{badgeColor}};"></span> 🛡️ SAFEST ROUTE &bull; ${{safetyPct}}% SHIELDED`;
+            modeBadge.style.background = badgeBg;
+            modeBadge.style.color = badgeColor;
+            modeBadge.style.borderColor = badgeBorder;
+          }}
+          const liveTrackBtn = document.getElementById('navLiveTrackBtn');
+          if (liveTrackBtn) liveTrackBtn.classList.add('active');
+          const simBtn = document.getElementById('navSimPlayBtn');
+          if (simBtn) {{
+            simBtn.innerText = '🎬 Sim';
+            simBtn.classList.remove('active');
+          }}
+          
           updateNavHUD(0);
           populateNavStepsDrawer(steps);
           document.getElementById('navHud').style.display = 'block';
+          
+          // Calculate initial live distance & ETA from current live position
+          updateLiveNavProgress(currentUserPos.lat, currentUserPos.lon);
           
           if (autoDrive) {{
             setTimeout(() => toggleNavDriveSim(), 600);
           }}
         }}
 
-        function updateNavHUD(stepIdx) {{
+        function updateLiveNavProgress(lat, lon) {{
+          if (!currentNavRoute || !currentNavRoute.coords || currentNavRoute.coords.length === 0) return;
+          const coords = currentNavRoute.coords;
+          
+          let closestIdx = 0;
+          let minDist = Infinity;
+          for (let i = 0; i < coords.length; i++) {{
+            const d = calcDistMeters(lat, lon, coords[i][0], coords[i][1]);
+            if (d < minDist) {{
+              minDist = d;
+              closestIdx = i;
+            }}
+          }}
+          
+          // Calculate remaining route distance from closestIdx to end
+          let remDist = calcDistMeters(lat, lon, coords[closestIdx][0], coords[closestIdx][1]);
+          for (let i = closestIdx; i < coords.length - 1; i++) {{
+            remDist += calcDistMeters(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
+          }}
+          
+          const destM = calcDistMeters(lat, lon, currentNavRoute.destLatLng[0], currentNavRoute.destLatLng[1]);
+          if (remDist < 35 || destM < 35) {{
+            document.getElementById('navInstruction').innerHTML = `🏁 Arrived at <b>${{currentNavRoute.destName}}</b>`;
+            document.getElementById('navManeuverIcon').innerText = '🏁';
+            document.getElementById('navNextStreet').innerText = 'Destination reached via Delhi street network';
+            document.getElementById('navDistText').innerText = '0 m';
+            document.getElementById('navEtaText').innerText = '0 min';
+            return;
+          }}
+          
+          document.getElementById('navDistText').innerText = formatDist(remDist);
+          const ratio = Math.min(1.0, remDist / Math.max(1, currentNavRoute.totalDistMeters));
+          const remSec = Math.max(60, Math.round(currentNavRoute.totalDurationSec * ratio));
+          const mins = Math.ceil(remSec / 60);
+          const arrival = new Date(Date.now() + remSec * 1000).toLocaleTimeString([], {{ hour: '2-digit', minute: '2-digit' }});
+          document.getElementById('navEtaText').innerText = `${{mins}} min (${{arrival}})`;
+          
+          findAndDisplayCurrentManeuver(lat, lon);
+        }}
+
+        function updateNavHUD(stepIdx, distToNext) {{
           if (!currentNavRoute || !currentNavRoute.steps || currentNavRoute.steps.length === 0) return;
           const steps = currentNavRoute.steps;
           const cur = steps[stepIdx] || steps[0];
@@ -2036,16 +2274,12 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           const icon = getManeuverIcon(cur.maneuver);
           const mainText = formatManeuverText(cur);
-          const subText = nxt ? `In ${{formatDist(cur.distance)}}, ${{formatManeuverText(nxt).replace(/<[^>]*>/g, '')}}` : `Approaching ${{currentNavRoute.destName}}`;
+          const stepDist = distToNext !== undefined ? distToNext : cur.distance;
+          const subText = nxt ? `In ${{formatDist(stepDist)}}, ${{formatManeuverText(nxt).replace(/<[^>]*>/g, '')}}` : `Approaching ${{currentNavRoute.destName}}`;
           
           document.getElementById('navManeuverIcon').innerText = icon;
           document.getElementById('navInstruction').innerHTML = mainText;
           document.getElementById('navNextStreet').innerText = subText;
-          
-          const mins = Math.ceil(currentNavRoute.totalDurationSec / 60);
-          const arrival = new Date(Date.now() + currentNavRoute.totalDurationSec * 1000).toLocaleTimeString([], {{ hour: '2-digit', minute: '2-digit' }});
-          document.getElementById('navEtaText').innerText = `${{mins}} min (${{arrival}})`;
-          document.getElementById('navDistText').innerText = formatDist(currentNavRoute.totalDistMeters);
         }}
 
         function findAndDisplayCurrentManeuver(lat, lon) {{
@@ -2063,7 +2297,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               }}
             }}
           }}
-          updateNavHUD(closestIdx);
+          updateNavHUD(closestIdx, minDist);
           
           const items = document.querySelectorAll('.nav-step-item');
           items.forEach((el, idx) => el.classList.toggle('active', idx === closestIdx));
@@ -2106,24 +2340,48 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           if (!currentNavRoute) return;
           const btn = document.getElementById('navSimPlayBtn');
           const simTopBtn = document.getElementById('btnSim');
+          const modeBadge = document.getElementById('navModeBadge');
+          const liveTrackBtn = document.getElementById('navLiveTrackBtn');
           
           if (isDriving) {{
             clearInterval(navDriveTimer);
             navDriveTimer = null;
             isDriving = false;
-            btn.innerText = '▶ Drive';
-            btn.classList.remove('active');
+            
+            if (btn) {{
+              btn.innerText = '🎬 Sim';
+              btn.classList.remove('active');
+            }}
             if (simTopBtn) {{
-              simTopBtn.innerText = '🚀 Sim GPS';
+              simTopBtn.innerText = '🎬 Sim Demo';
               simTopBtn.classList.remove('active');
+            }}
+            if (liveTrackBtn) liveTrackBtn.classList.add('active');
+            if (modeBadge) {{
+              modeBadge.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span> LIVE NAVIGATION';
+              modeBadge.style.color = '#34d399';
+              modeBadge.style.borderColor = 'rgba(16, 185, 129, 0.45)';
+            }}
+            
+            // Restore user marker to actual live GPS position
+            if (lastLiveGpsPos) {{
+              updateUserPosition(lastLiveGpsPos.lat, lastLiveGpsPos.lon, 20);
             }}
           }} else {{
             isDriving = true;
-            btn.innerText = '⏸ Pause';
-            btn.classList.add('active');
+            if (btn) {{
+              btn.innerText = '⏸ Pause';
+              btn.classList.add('active');
+            }}
             if (simTopBtn) {{
               simTopBtn.innerText = '⏹️ Stop Sim';
               simTopBtn.classList.add('active');
+            }}
+            if (liveTrackBtn) liveTrackBtn.classList.remove('active');
+            if (modeBadge) {{
+              modeBadge.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></span> DEMO SIMULATION';
+              modeBadge.style.color = '#fbbf24';
+              modeBadge.style.borderColor = 'rgba(245, 158, 11, 0.45)';
             }}
             
             const coords = currentNavRoute.coords;
@@ -2132,11 +2390,18 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                 clearInterval(navDriveTimer);
                 navDriveTimer = null;
                 isDriving = false;
-                btn.innerText = '🏁 Arrived';
-                btn.classList.remove('active');
+                if (btn) {{
+                  btn.innerText = '🏁 Arrived';
+                  btn.classList.remove('active');
+                }}
                 if (simTopBtn) {{
-                  simTopBtn.innerText = '🚀 Sim GPS';
+                  simTopBtn.innerText = '🎬 Sim Demo';
                   simTopBtn.classList.remove('active');
+                }}
+                if (modeBadge) {{
+                  modeBadge.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span> LIVE NAVIGATION';
+                  modeBadge.style.color = '#34d399';
+                  modeBadge.style.borderColor = 'rgba(16, 185, 129, 0.45)';
                 }}
                 document.getElementById('navInstruction').innerHTML = `🏁 Arrived at <b>${{currentNavRoute.destName}}</b>`;
                 document.getElementById('navManeuverIcon').innerText = '🏁';
@@ -2177,7 +2442,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             document.getElementById('navHud').style.display = 'none';
             document.getElementById('navStepsDrawer').style.display = 'none';
             const btn = document.getElementById('btnSim');
-            if (btn) {{ btn.innerText = '🚀 Sim GPS'; btn.classList.remove('active'); }}
+            if (btn) {{ btn.innerText = '🎬 Sim Demo'; btn.classList.remove('active'); }}
           }}
         }};
 
@@ -2241,17 +2506,98 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         renderZones('ALL');
         updateUserPosition({init_lat}, {init_lon}, 20);
         
-        if (navigator.geolocation) {{
-          navigator.geolocation.watchPosition(
+        let lastLiveGpsPos = {{ lat: {init_lat}, lon: {init_lon} }};
+        let isLiveGpsActive = false;
+        let liveGpsWatchId = null;
+
+        function startLiveGpsTracking() {{
+          if (!navigator.geolocation) return;
+          if (liveGpsWatchId !== null) navigator.geolocation.clearWatch(liveGpsWatchId);
+          
+          liveGpsWatchId = navigator.geolocation.watchPosition(
             pos => {{
-              updateUserPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+              isLiveGpsActive = true;
+              lastLiveGpsPos = {{ lat: pos.coords.latitude, lon: pos.coords.longitude }};
+              if (!isDriving) {{
+                updateUserPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+              }}
+              const btn = document.getElementById('btnLiveGps');
+              if (btn) {{
+                btn.innerHTML = '🟢 Live GPS';
+                btn.classList.add('active');
+              }}
             }},
             err => {{
-              console.warn('GPS error:', err.message);
+              console.warn('GPS watchPosition notice:', err.message);
+              const btn = document.getElementById('btnLiveGps');
+              if (btn && !isLiveGpsActive) {{
+                btn.innerHTML = '📡 Live GPS';
+                btn.classList.remove('active');
+              }}
             }},
             {{ enableHighAccuracy: true, timeout: 15000, maximumAge: 1000 }}
           );
         }}
+
+        window.activateLiveGpsTracking = function() {{
+          // Stop any simulation if active
+          if (isDriving || navDriveTimer) {{
+            clearInterval(navDriveTimer);
+            navDriveTimer = null;
+            isDriving = false;
+            const simTopBtn = document.getElementById('btnSim');
+            if (simTopBtn) {{
+              simTopBtn.innerText = '🎬 Sim Demo';
+              simTopBtn.classList.remove('active');
+            }}
+            const hudSimBtn = document.getElementById('navSimPlayBtn');
+            if (hudSimBtn) {{
+              hudSimBtn.innerText = '🎬 Sim';
+              hudSimBtn.classList.remove('active');
+            }}
+            const liveTrackBtn = document.getElementById('navLiveTrackBtn');
+            if (liveTrackBtn) liveTrackBtn.classList.add('active');
+            const modeBadge = document.getElementById('navModeBadge');
+            if (modeBadge) {{
+              modeBadge.innerHTML = '<span style="width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span> LIVE NAVIGATION';
+              modeBadge.style.color = '#34d399';
+              modeBadge.style.borderColor = 'rgba(16, 185, 129, 0.45)';
+            }}
+          }}
+          
+          if (navigator.geolocation) {{
+            navigator.geolocation.getCurrentPosition(
+              pos => {{
+                isLiveGpsActive = true;
+                lastLiveGpsPos = {{ lat: pos.coords.latitude, lon: pos.coords.longitude }};
+                updateUserPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, {{ duration: 1.2 }});
+                startLiveGpsTracking();
+                const btn = document.getElementById('btnLiveGps');
+                if (btn) {{
+                  btn.innerHTML = '🟢 Live GPS';
+                  btn.classList.add('active');
+                }}
+              }},
+              err => {{
+                console.warn('GPS request error:', err.message);
+                alert('📍 Live GPS: Browser location permission is required for live tracking. Please check your browser address bar and enable location permissions.');
+              }},
+              {{ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }}
+            );
+          }} else {{
+            alert('📍 Geolocation is not supported by your browser.');
+          }}
+        }};
+
+        window.activateLiveNavTracking = function() {{
+          if (isDriving || navDriveTimer) {{
+            toggleNavDriveSim(); // Reverts to live mode and restores real position
+          }}
+          activateLiveGpsTracking();
+        }};
+
+        startLiveGpsTracking();
         
         window.setLayerFilter = function(f) {{
           activeFilter = f;
@@ -2262,7 +2608,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         }};
         
         window.centerOnMe = function() {{
-          map.flyTo([currentUserPos.lat, currentUserPos.lon], 15, {{ duration: 1.2 }});
+          const targetPos = (!isDriving && lastLiveGpsPos) ? lastLiveGpsPos : currentUserPos;
+          map.flyTo([targetPos.lat, targetPos.lon], 16, {{ duration: 1.2 }});
         }};
         
         window.zoomInMap = function() {{
@@ -2313,20 +2660,17 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           const btn = document.getElementById('btnSim');
           if (isDriving || navDriveTimer) {{
             toggleNavDriveSim();
-            btn.innerText = '🚀 Sim GPS';
+            btn.innerText = '🎬 Sim Demo';
             btn.classList.remove('active');
             return;
           }}
-          
-          btn.innerText = '⏹️ Stop Sim';
-          btn.classList.add('active');
           
           if (currentNavRoute) {{
             toggleNavDriveSim();
             return;
           }}
           
-          // Auto-start real road navigation to Rajiv Chowk Metro Hotspot!
+          // Auto-start real road navigation demo to Rajiv Chowk Metro with simulation
           startNavigationTo(28.6328, 77.2197, "Rajiv Chowk Metro (Connaught Place)", true);
         }};
       </script>

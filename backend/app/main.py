@@ -21,7 +21,6 @@ if BASE_DIR not in sys.path:
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
-from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
 from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
@@ -902,12 +901,10 @@ with kpi5:
     st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
-tab1, tab_clean, tab_pred, tab2, tab4, tab5 = st.tabs([
+tab1, tab_clean, tab2, tab5 = st.tabs([
     "🗺️ Interactive Hotspot Map",
     "🧹 Data Cleaning & FIR Verification",
-    "🚔 Predictive Policing & Tactics",
     "⚡ Real-Time Premises Risk Scorer",
-    "📊 District & Temporal Analytics",
     "🔥 x402 Protocol & Algorand Agent"
 ])
 
@@ -1154,147 +1151,7 @@ with tab_clean:
         cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
         st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
 
-# --- TAB: PREDICTIVE POLICING & TACTICS ---
-with tab_pred:
-    st.subheader("🚔 Predictive Policing & Strategic Patrol Intelligence")
-    st.caption("Criminological patrol routing (Koper Curve), Knox near-repeat contagion, and emergency choke-point interception.")
 
-    pred_subtab1, pred_subtab2, pred_subtab3, pred_subtab4 = st.tabs([
-        "🚔 Patrol Beat Optimizer (Koper Curve)",
-        "🔁 Knox Near-Repeat Contagion",
-        "🛡️ Safest Corridor Navigator",
-        "🛑 Tactical Choke-Point Pickets"
-    ])
-
-    # 1. Patrol Beat Optimizer
-    with pred_subtab1:
-        st.markdown("### 🚔 Traveling Salesperson (TSP) Patrol Beat Optimizer")
-        st.caption("Computes multi-stop patrol loops for PCR vans and Cheetah motorcycle units with Koper Curve deterrence dwell times.")
-
-        p_col1, p_col2, p_col3 = st.columns(3)
-        with p_col1:
-            p_shift = st.selectbox("Patrol Shift", ["Night (22:00-06:00)", "Evening Rush (17:00-22:00)", "Day Patrol (08:00-17:00)"], index=0)
-        with p_col2:
-            p_units = st.slider("Active PCR Units", 1, 8, 4)
-        with p_col3:
-            p_start_dist = st.selectbox("Dispatch Base District", sorted(list(DISTRICTS.keys())), index=0)
-
-        # Generate sample itinerary from DBSCAN clusters
-        hotspots_sample = [
-            {"name": "Rajiv Chowk Metro Inner Circle", "district": "New Delhi", "lat": 28.6328, "lon": 77.2197, "riskScore": 0.84, "riskLevel": "HIGH"},
-            {"name": "Paharganj Railway Approach", "district": "Central", "lat": 28.6435, "lon": 77.2105, "riskScore": 0.76, "riskLevel": "HIGH"},
-            {"name": "Chandni Chowk Main Bazaar", "district": "Central", "lat": 28.6562, "lon": 77.2301, "riskScore": 0.79, "riskLevel": "HIGH"},
-            {"name": "Kashmere Gate Interstate Terminal", "district": "North", "lat": 28.6675, "lon": 77.2285, "riskScore": 0.88, "riskLevel": "HIGH"},
-        ]
-        start_c = DISTRICTS[p_start_dist]["center"]
-        optimizer = PatrolBeatOptimizer()
-        plan = optimizer.generate_patrol_itinerary(start_c[0], start_c[1], hotspots_sample, max_stops=4)
-
-        m_kpi1, m_kpi2, m_kpi3 = st.columns(3)
-        with m_kpi1:
-            st.metric("Total Patrol Circuit", f"{plan['total_distance_km']} km", "Optimal Loop")
-        with m_kpi2:
-            st.metric("Est. Total Time", f"{plan['total_duration_minutes']} mins", "Includes Dwell Times")
-        with m_kpi3:
-            st.metric("Coverage Efficiency", plan["coverage_efficiency_score"], "Top Corridors")
-
-        st.info(f"⚠️ **Shift-Handover Advisory:** {plan['shift_handover_advisory']}")
-
-        st.markdown("#### 📋 Recommended Step-by-Step Patrol Schedule")
-        itinerary_df = pd.DataFrame(plan["itinerary"])[[
-            "stop_order", "name", "risk_level", "travel_dist_km", "travel_time_min", "koper_dwell_min", "tactical_task"
-        ]].rename(columns={
-            "stop_order": "Stop #",
-            "name": "Target Hotspot",
-            "risk_level": "Risk Tier",
-            "travel_dist_km": "Leg Dist (km)",
-            "travel_time_min": "Transit Time (mins)",
-            "koper_dwell_min": "Koper Dwell Time (mins)",
-            "tactical_task": "Tactical Action"
-        })
-        st.dataframe(itinerary_df, use_container_width=True, hide_index=True)
-
-    # 2. Knox Near-Repeat
-    with pred_subtab2:
-        st.markdown("### 🔁 Knox Spatio-Temporal Contagion Forecaster")
-        st.caption("Criminological Near-Repeat test: when a crime occurs, adjacent premises within 400m face a temporary surge in vulnerability for 48–72 hours.")
-
-        knox_eng = KnoxNearRepeatEngine()
-        k_col1, k_col2 = st.columns(2)
-        with k_col1:
-            k_lat = st.number_input("Anchor Incident Latitude", value=28.6328, format="%.4f")
-            k_lon = st.number_input("Anchor Incident Longitude", value=77.2197, format="%.4f")
-        with k_col2:
-            k_hours = st.slider("Hours Elapsed Since Incident", 1, 72, 8)
-            k_crime = st.selectbox("Anchor Incident Type", ["Snatching (Chain/Phone)", "Street Robbery", "Motor Vehicle Theft", "Burglary"])
-
-        mock_crimes = pd.DataFrame([{"lat": k_lat, "lon": k_lon, "crime": k_crime, "hours_ago": k_hours}])
-        knox_result = knox_eng.calculate_near_repeat_risk(k_lat + 0.0015, k_lon + 0.0015, mock_crimes)
-
-        knox_c1, knox_c2 = st.columns(2)
-        with knox_c1:
-            st.metric("Contagion Status", knox_result["contagion_level"], f"{knox_result['max_risk_multiplier']}x Multiplier")
-        with knox_c2:
-            st.metric("Contagion Bandwidth", "450 Meters", "Knox Threshold")
-
-        st.success(f"🎯 **Tactical Directive:** {knox_result['tactical_guidance']}")
-
-    # 3. Safest Corridor Navigator
-    with pred_subtab3:
-        st.markdown("### 🛡️ Safest Corridor vs. Shortest Path Navigation")
-        st.caption("Contrasts raw shortest direct path against statistically protected corridors guarded by 24/7 pickets and full street lighting.")
-
-        router = SafeCorridorRouter()
-        c_col1, c_col2 = st.columns(2)
-        with c_col1:
-            route_origin = st.text_input("Origin Landmark", "Connaught Place Outer Circle")
-        with c_col2:
-            route_dest = st.text_input("Destination Landmark", "Civil Lines VIP Enclave")
-
-        comparison = router.compute_route_comparison(28.6328, 77.2197, 28.6820, 77.2180)
-
-        r_col1, r_col2 = st.columns(2)
-        with r_col1:
-            st.markdown("#### 🔴 Shortest Direct Route")
-            st.write(f"**Distance:** `{comparison['direct_route']['distance_km']} km`")
-            st.write(f"**Estimated Time:** `{comparison['direct_route']['estimated_time_min']} mins`")
-            st.error(f"**Threat Exposure:** {comparison['direct_route']['threat_exposure']}")
-            st.caption(comparison['direct_route']['hazard_summary'])
-
-        with r_col2:
-            st.markdown("#### 🟢 Recommended Safest Corridor")
-            st.write(f"**Distance:** `{comparison['safest_corridor']['distance_km']} km`")
-            st.write(f"**Estimated Time:** `{comparison['safest_corridor']['estimated_time_min']} mins`")
-            st.success(f"**Threat Exposure:** {comparison['safest_corridor']['threat_exposure']} ({comparison['safest_corridor']['protective_gain']})")
-            st.caption(f"Guarded Waypoint: {comparison['safest_corridor']['safe_waypoint']} ({comparison['safest_corridor']['security_features']})")
-
-    # 4. Tactical Choke Points
-    with pred_subtab4:
-        st.markdown("### 🛑 Tactical Emergency Choke-Point & Barricade Placer")
-        st.caption("Calculates fleeing offender escape radius and recommends static police barricades to seal highway exits.")
-
-        planner = TacticalInterceptionPlanner()
-        ch_col1, ch_col2 = st.columns(2)
-        with ch_col1:
-            ch_mins = st.slider("Minutes Elapsed Since 112 FIR", 2, 20, 6)
-        with ch_col2:
-            ch_mode = st.selectbox("Offender Transport Mode", ["Motorcycle (38 km/h)", "Car (30 km/h)", "On Foot (8 km/h)"])
-
-        interception = planner.plan_interception(28.6328, 77.2197, minutes_elapsed=ch_mins)
-
-        st.metric("Offender Escape Radius", f"{interception['escape_radius_km']} km", f"{interception['escape_radius_meters']}m Perimeter")
-        st.warning(f"📢 **Emergency 112 Net Broadcast:** {interception['tactical_broadcast']}")
-
-        st.markdown("#### 🎯 Priority Choke-Point Barricades")
-        cp_df = pd.DataFrame(interception["recommended_barricades"])[[
-            "name", "distance_km", "capacity", "intercept_feasibility"
-        ]].rename(columns={
-            "name": "Barricade Junction",
-            "distance_km": "Distance from Crime (km)",
-            "capacity": "Junction Role",
-            "intercept_feasibility": "Interception Feasibility"
-        })
-        st.dataframe(cp_df, use_container_width=True, hide_index=True)
 
 # --- TAB 2: REAL-TIME PREMISES RISK SCORER ---
 with tab2:
@@ -1447,39 +1304,6 @@ if False:
     *"When evaluating Delhi's crime geography, K-Means was unsuitable because urban offenses follow non-convex infrastructure corridors like metro lines and commercial markets. DBSCAN with a 600m Haversine radius not only adapts to arbitrary corridor geometries, but critically isolates 1-2% of noise incidents. In law enforcement resource allocation, false positive hotspots waste critical patrol units, making density-based clustering with noise rejection mathematically and operationally superior."*
     """)
 
-# --- TAB 4: DISTRICT & TEMPORAL ANALYTICS ---
-with tab4:
-    st.subheader("District & Temporal Pattern Analytics")
-    
-    col_g1, col_g2 = st.columns(2)
-    
-    with col_g1:
-        st.markdown("#### Crime Frequency by Hour of Day")
-        hourly_counts = filtered_df.groupby("hour")["record_id"].count().reset_index()
-        hourly_counts.columns = ["Hour (24h)", "Incident Count"]
-        st.bar_chart(hourly_counts.set_index("Hour (24h)"))
-        
-    with col_g2:
-        st.markdown("#### Vulnerability by Premises Category")
-        premises_counts = filtered_df["premises_type"].value_counts().reset_index()
-        premises_counts.columns = ["Premises Type", "Total Incidents"]
-        st.bar_chart(premises_counts.set_index("Premises Type"))
-        
-    st.markdown("---")
-    col_g3, col_g4 = st.columns(2)
-    
-    with col_g3:
-        st.markdown("#### Top Crime Categories Across Selected Filter")
-        crime_counts = filtered_df["crime_category"].value_counts().reset_index()
-        crime_counts.columns = ["Crime Category", "Count"]
-        st.dataframe(crime_counts, use_container_width=True, hide_index=True)
-        
-    with col_g4:
-        st.markdown("#### ML Feature Importance (XGBoost / Gradient Boosting)")
-        top_features = predictor.metrics.get("top_features", [])
-        if top_features:
-            feat_df = pd.DataFrame(top_features[:8])
-            st.bar_chart(feat_df.set_index("feature"))
 
 # --- TAB 5: x402 PROTOCOL & ALGORAND AGENT ---
 with tab5:
