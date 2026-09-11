@@ -13,3 +13,4 @@ altair>=5.0.0
 
 # HTTP & API Gateway Client
 requests>=2.31.0
+pyarrow>=14.0.0

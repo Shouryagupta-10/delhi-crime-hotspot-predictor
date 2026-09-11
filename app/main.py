@@ -24,6 +24,10 @@ from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
+try:
+    from app.search_component import render_predictive_search
+except ImportError:
+    from search_component import render_predictive_search
 
 # Comprehensive Delhi Police Station Geocoordinates Registry for Precision Proximity Calculation
 DELHI_POLICE_STATIONS = [
@@ -573,6 +577,24 @@ elif "user_lat" in st.query_params and "user_lon" in st.query_params:
         user_lat = None
         user_lon = None
 
+# Query parameters for Tab 2 location search
+if "tab2_loc" in st.query_params:
+    st.session_state["tab2_location_search"] = st.query_params["tab2_loc"]
+    if "tab2_lat" in st.query_params and "tab2_lon" in st.query_params:
+        try:
+            p_lat = float(st.query_params["tab2_lat"])
+            p_lon = float(st.query_params["tab2_lon"])
+            p_dist = st.query_params.get("tab2_dist", "New Delhi")
+            st.session_state["tab2_selected_location"] = {
+                "name": st.query_params["tab2_loc"],
+                "district": p_dist,
+                "lat": p_lat,
+                "lon": p_lon,
+                "premises": "Street & Public Roadways"
+            }
+        except (ValueError, TypeError):
+            pass
+
 # --- SIDEBAR GEOLOCATION SECTION ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Live Movement & Risk Radar")
@@ -1020,9 +1042,9 @@ with tab_clean:
             - **Rule**: Prune any record with missing lat/lon, crime type, premises, or timestamp.
             """)
         with st.expander("3. Delhi Territorial Geofencing (NCT Bounding Box)"):
-            st.markdown("""
+            st.markdown(r"""
             - **Problem**: Coordinate transpositions or faulty GPS units record incidents in neighboring states (UP, Haryana) or oceans.
-            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\\text{N} - 28.95^\circ\\text{N}$, Longitude $76.80^\circ\\text{E} - 77.50^\circ\\text{E}$.
+            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\text{N} - 28.95^\circ\text{N}$, Longitude $76.80^\circ\text{E} - 77.50^\circ\text{E}$.
             """)
         with st.expander("4. Duplicate Incident Deduplication"):
             st.markdown("""
@@ -1068,58 +1090,21 @@ with tab2:
         st.markdown("#### 🔍 Search Location & Temporal Parameters")
         st.caption("Type any Delhi locality, landmark, colony, market, or metro station.")
         
-        # Location Search Bar with Real-time Predictive Autocomplete
-        default_search = "Rajiv Chowk Metro (Connaught Place)"
-        if user_lat is not None:
-            default_search = "My Live GPS Location"
-            
-        location_query = st.text_input(
-            "Search Delhi Location / Landmark",
-            value=st.session_state.get("tab2_location_search", default_search),
-            placeholder="Type e.g. Hauz Khas, Dwarka Mor, Rohini, Saket, Karol Bagh...",
-            help="Type any Delhi colony, market, POI, or metro station to get instant predictive suggestions and risk analysis."
-        )
-        st.session_state["tab2_location_search"] = location_query
+        # Exact Floating Predictive Search Bar from Map View
+        initial_search_query = st.session_state.get("tab2_location_search", "Rajiv Chowk Metro Station")
+        if user_lat is not None and "tab2_selected_location" not in st.session_state:
+            initial_search_query = "Live GPS Location"
 
-        # Real-time Predictive Suggestions Dropdown / Quick Selector (Matching Maps Tab behavior)
-        query_clean = location_query.strip().lower()
-        if len(query_clean) >= 2 and query_clean not in ["my live gps location", "live gps"]:
-            predictive_matches = [
-                loc for loc in DELHI_SEARCH_INDEX 
-                if query_clean in loc["name"].lower() or query_clean in loc["district"].lower()
-            ][:5]
-            
-            if predictive_matches:
-                st.markdown("""
-                <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin: 4px 0 2px 2px; font-family: 'Geist Mono', monospace;">
-                    ⚡ Predictive Matches in Delhi NCT:
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Render interactive suggestion buttons
-                cols = st.columns(min(len(predictive_matches), 3))
-                for idx, match in enumerate(predictive_matches[:3]):
-                    with cols[idx]:
-                        short_title = match["name"].split(" (")[0]
-                        if st.button(f"📍 {short_title[:20]}", key=f"pred_loc_{idx}", use_container_width=True):
-                            st.session_state["tab2_location_search"] = match["name"]
-                            st.rerun()
-                            
-                # Also provide a quick selectbox if user wants to expand suggestions
-                match_names = [m["name"] for m in predictive_matches]
-                if location_query not in match_names:
-                    picked_suggestion = st.selectbox(
-                        "Or choose from matching locations:",
-                        ["(Select matching location...)"] + match_names,
-                        key="pred_select_box"
-                    )
-                    if picked_suggestion != "(Select matching location...)":
-                        st.session_state["tab2_location_search"] = picked_suggestion
-                        st.rerun()
-        
-        # Resolve location details
-        selected_location = None
-        if location_query.strip().lower() in ["my live gps location", "live gps", "current location"] and user_lat is not None:
+        search_result = render_predictive_search(default_query=initial_search_query, key="tab2_predictive_search_component")
+
+        # Resolve selected location
+        if search_result and isinstance(search_result, dict):
+            st.session_state["tab2_selected_location"] = search_result
+            st.session_state["tab2_location_search"] = search_result.get("name", "")
+            selected_location = search_result
+        elif "tab2_selected_location" in st.session_state:
+            selected_location = st.session_state["tab2_selected_location"]
+        elif user_lat is not None:
             closest_d, _, _ = find_nearest_delhi_jurisdiction(user_lat, user_lon)
             selected_location = {
                 "name": "Live GPS Position",
@@ -1129,32 +1114,32 @@ with tab2:
                 "lon": user_lon
             }
         else:
-            selected_location = resolve_delhi_search_location(location_query)
-            
-        # Fallback if unresolved
-        if not selected_location:
             selected_location = {
-                "name": location_query.strip() if location_query.strip() else "Connaught Place Central",
+                "name": "Rajiv Chowk Metro Station",
                 "district": "New Delhi",
                 "premises": "Transit & Metro Hub",
                 "lat": 28.6328,
-                "lon": 77.2195
+                "lon": 77.2197
             }
-            if location_query.strip():
-                st.info(f"📍 Matching **'{location_query.strip()}'** against Central Delhi network...")
 
         # Premises Category Selection
         premises_options = sorted(list(df["premises_type"].unique()))
         default_prem_idx = 0
-        if selected_location.get("premises") in premises_options:
-            default_prem_idx = premises_options.index(selected_location["premises"])
+        loc_prem = selected_location.get("premises", "")
+        if loc_prem in premises_options:
+            default_prem_idx = premises_options.index(loc_prem)
         pred_premises = st.selectbox("Premises Vulnerability Type", premises_options, index=default_prem_idx)
+        
+        # Derive precise jurisdiction from geographic coordinates
+        loc_lat = selected_location.get("lat", 28.6328)
+        loc_lon = selected_location.get("lon", 77.2197)
+        pred_district, _, _ = find_nearest_delhi_jurisdiction(loc_lat, loc_lon)
         
         # Auto-resolved Location Context Pill
         st.markdown(f"""
         <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; margin-top: 4px; margin-bottom: 12px; font-size: 11.5px; color: #cbd5e1; font-family: 'Geist Mono', monospace;">
-            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 2px;">🎯 Resolved Location: {selected_location['name']}</div>
-            <div>Jurisdiction: <b style="color: #f1f5f9;">{selected_location['district']} District</b></div>
+            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 2px;">🎯 Resolved Location: {selected_location.get('name', 'Delhi NCT')}</div>
+            <div>Jurisdiction: <b style="color: #f1f5f9;">{pred_district} District</b> | Coordinates: <code>{loc_lat:.4f}°N, {loc_lon:.4f}°E</code></div>
         </div>
         """, unsafe_allow_html=True)
             
@@ -1166,9 +1151,8 @@ with tab2:
     with col_result:
         st.markdown("#### AI Risk Assessment & Nearest Police Station")
         if predict_btn or True:  # Run by default for immediate responsiveness
-            pred_lat = selected_location["lat"]
-            pred_lon = selected_location["lon"]
-            pred_district = selected_location["district"]
+            pred_lat = loc_lat
+            pred_lon = loc_lon
             
             result = predictor.predict_risk(pred_district, pred_premises, pred_hour, pred_day, pred_lat, pred_lon)
             nearest_ps = get_detailed_nearest_police_station(pred_lat, pred_lon)
