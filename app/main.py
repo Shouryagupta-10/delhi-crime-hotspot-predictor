@@ -678,10 +678,43 @@ transition: border-color 0.2s ease, transform 0.2s ease;
 border-color: rgba(56, 189, 248, 0.4);
 transform: translateY(-1px);
 }
+.parallax-layer-backdrop {
+position: absolute;
+inset: -10px;
+background: url('https://cdn.21st.dev/assets/mirror/a4/a43f4eae3459c461345ee676f12d6e1ddca65e8a5279a5af00d475b17ff83aea.webp') center / cover no-repeat;
+opacity: 0.12;
+mix-blend-mode: screen;
+pointer-events: none;
+}
+.parallax-layer-city {
+position: absolute;
+bottom: -10px;
+left: 0;
+right: 0;
+height: 100%;
+background: url('https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1600&auto=format&fit=crop&q=80') center bottom / cover no-repeat;
+opacity: 0.16;
+mix-blend-mode: screen;
+filter: contrast(1.3) brightness(0.75);
+pointer-events: none;
+}
+.parallax-fade-bottom {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+height: 90px;
+background: linear-gradient(180deg, transparent 0%, #080c14 100%);
+pointer-events: none;
+z-index: 3;
+}
 </style>
 <div class="parallax-hero-wrapper">
 <div class="parallax-hero">
 <div class="parallax-bg-glow"></div>
+<div class="parallax-layer-backdrop"></div>
+<div class="parallax-layer-city"></div>
+<div class="parallax-fade-bottom"></div>
 <div class="parallax-overlay"></div>
 <div class="parallax-content">
 <div class="parallax-badge">
