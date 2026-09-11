@@ -545,187 +545,166 @@ st.markdown("""
         <span style="color: #94a3b8;">Asia/Kolkata (IST)</span>
     </div>
 </div>
-
-<!-- Multi-Layered Parallax Scrolling Hero Banner -->
-<div class="parallax-hero-wrapper">
-    <style>
-        .parallax-hero-wrapper {
-            position: relative;
-            width: 100%;
-            border-radius: 24px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            background: #080c14;
-        }
-        .parallax-hero {
-            position: relative;
-            min-height: 360px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 44px 34px 50px 34px;
-            overflow: hidden;
-        }
-        .parallax-layer-1 {
-            position: absolute;
-            inset: -25px;
-            background: radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.18) 0%, transparent 48%),
-                        radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.15) 0%, transparent 48%),
-                        #080c14;
-            background-image: 
-                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1.2px, transparent 0),
-                radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.18) 0%, transparent 48%),
-                radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.15) 0%, transparent 48%);
-            background-size: 28px 28px, auto, auto;
-            pointer-events: none;
-            will-change: transform;
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .parallax-layer-2 {
-            position: absolute;
-            bottom: -15px;
-            left: -25px;
-            right: -25px;
-            height: 100%;
-            background: url('https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1600&auto=format&fit=crop&q=80') center bottom / cover no-repeat;
-            opacity: 0.18;
-            mix-blend-mode: screen;
-            filter: contrast(1.4) brightness(0.7);
-            pointer-events: none;
-            will-change: transform;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .parallax-layer-3 {
-            position: relative;
-            z-index: 10;
-            max-width: 960px;
-            will-change: transform;
-            transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .parallax-layer-4 {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(8, 12, 20, 0.15) 0%, rgba(8, 12, 20, 0.82) 80%, #080c14 100%);
-            pointer-events: none;
-            z-index: 5;
-        }
-        .parallax-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 14px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(56, 189, 248, 0.35);
-            box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
-            font-size: 10.5px;
-            font-family: 'Geist Mono', monospace;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 12px;
-        }
-        .parallax-badge-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
-        }
-        .parallax-title {
-            font-size: clamp(2rem, 3.6vw, 2.9rem);
-            font-weight: 900;
-            letter-spacing: -0.035em;
-            color: #ffffff;
-            margin: 0 0 12px 0;
-            line-height: 1.18;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.85);
-            background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .parallax-desc {
-            font-size: 14px;
-            color: #94a3b8;
-            line-height: 1.65;
-            margin: 0 0 18px 0;
-            max-width: 880px;
-        }
-        .parallax-chips {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .parallax-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(14, 18, 26, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 9999px;
-            padding: 4px 12px;
-            font-size: 11px;
-            font-family: 'Geist Mono', monospace;
-            color: #e2e8f0;
-        }
-    </style>
-
-    <div class="parallax-hero" id="parallaxHero">
-        <div class="parallax-layer-1" id="pLayer1"></div>
-        <div class="parallax-layer-2" id="pLayer2"></div>
-        <div class="parallax-layer-4"></div>
-        <div class="parallax-layer-3" id="pLayer3">
-            <div class="parallax-badge">
-                <span class="parallax-badge-dot"></span>
-                PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
-            </div>
-            <h1 class="parallax-title">
-                Algorithmic Crime Forensics & Autonomous Agent Deterrence
-            </h1>
-            <p class="parallax-desc">
-                Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
-            </p>
-            <div class="parallax-chips">
-                <span class="parallax-chip"><b style="color: #38bdf8;">15</b> Police Districts</span>
-                <span class="parallax-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
-                <span class="parallax-chip"><b style="color: #f59e0b;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
-                <span class="parallax-chip"><b style="color: #a78bfa;">60fps</b> Interactive Movement Radar</span>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        (function() {
-            const hero = document.getElementById('parallaxHero');
-            const l1 = document.getElementById('pLayer1');
-            const l2 = document.getElementById('pLayer2');
-            const l3 = document.getElementById('pLayer3');
-            if (!hero || !l1 || !l2 || !l3) return;
-
-            hero.addEventListener('mousemove', function(e) {
-                const rect = hero.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width - 0.5;
-                const y = (e.clientY - rect.top) / rect.height - 0.5;
-
-                l1.style.transform = 'translate3d(' + (x * 12) + 'px, ' + (y * 12) + 'px, 0)';
-                l2.style.transform = 'translate3d(' + (x * -24) + 'px, ' + (y * -16) + 'px, 0) scale(1.03)';
-                l3.style.transform = 'translate3d(' + (x * 14) + 'px, ' + (y * 8) + 'px, 0)';
-            });
-
-            hero.addEventListener('mouseleave', function() {
-                l1.style.transform = 'translate3d(0, 0, 0)';
-                l2.style.transform = 'translate3d(0, 0, 0) scale(1)';
-                l3.style.transform = 'translate3d(0, 0, 0)';
-            });
-        })();
-    </script>
-</div>
 """, unsafe_allow_html=True)
+
+# Multi-Layered Parallax Hero Banner
+hero_banner_html = """
+<style>
+.parallax-hero-wrapper {
+position: relative;
+width: 100%;
+border-radius: 24px;
+overflow: hidden;
+margin-bottom: 24px;
+border: 1px solid rgba(255, 255, 255, 0.1);
+box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+background: #080c14;
+transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.parallax-hero-wrapper:hover {
+box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.parallax-hero {
+position: relative;
+min-height: 280px;
+width: 100%;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 38px 34px 40px 34px;
+overflow: hidden;
+}
+.parallax-bg-glow {
+position: absolute;
+inset: -30px;
+background: radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.22) 0%, transparent 50%),
+radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.18) 0%, transparent 50%),
+radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+#080c14;
+background-image: 
+radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0),
+radial-gradient(circle at 18% 28%, rgba(6, 182, 212, 0.22) 0%, transparent 50%),
+radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.18) 0%, transparent 50%);
+background-size: 28px 28px, auto, auto;
+pointer-events: none;
+animation: heroPulse 12s ease-in-out infinite alternate;
+}
+@keyframes heroPulse {
+0% { transform: scale(1) translate(0, 0); opacity: 0.9; }
+50% { transform: scale(1.02) translate(-6px, 4px); opacity: 1; }
+100% { transform: scale(1.04) translate(6px, -4px); opacity: 0.95; }
+}
+.parallax-overlay {
+position: absolute;
+inset: 0;
+background: linear-gradient(180deg, rgba(8, 12, 20, 0.2) 0%, rgba(8, 12, 20, 0.75) 75%, #080c14 100%);
+pointer-events: none;
+z-index: 2;
+}
+.parallax-content {
+position: relative;
+z-index: 5;
+max-width: 960px;
+}
+.parallax-badge {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+padding: 5px 14px;
+border-radius: 9999px;
+background: rgba(6, 182, 212, 0.08);
+border: 1px solid rgba(56, 189, 248, 0.4);
+box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+color: #38bdf8;
+font-size: 10.5px;
+font-family: 'Geist Mono', monospace;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.06em;
+margin-bottom: 12px;
+}
+.parallax-badge-dot {
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: #38bdf8;
+box-shadow: 0 0 8px #38bdf8;
+animation: blinkGlow 2s infinite ease-in-out;
+}
+@keyframes blinkGlow {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.4; transform: scale(0.85); }
+}
+.parallax-title {
+font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+font-weight: 900;
+letter-spacing: -0.035em;
+color: #ffffff;
+margin: 0 0 12px 0;
+line-height: 1.18;
+text-shadow: 0 10px 30px rgba(0,0,0,0.85);
+background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+.parallax-desc {
+font-size: 14px;
+color: #94a3b8;
+line-height: 1.65;
+margin: 0 0 18px 0;
+max-width: 880px;
+}
+.parallax-chips {
+display: flex;
+align-items: center;
+gap: 10px;
+flex-wrap: wrap;
+}
+.parallax-chip {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+background: rgba(14, 18, 26, 0.85);
+border: 1px solid rgba(255, 255, 255, 0.1);
+border-radius: 9999px;
+padding: 5px 14px;
+font-size: 11px;
+font-family: 'Geist Mono', monospace;
+color: #e2e8f0;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.parallax-chip:hover {
+border-color: rgba(56, 189, 248, 0.4);
+transform: translateY(-1px);
+}
+</style>
+<div class="parallax-hero-wrapper">
+<div class="parallax-hero">
+<div class="parallax-bg-glow"></div>
+<div class="parallax-overlay"></div>
+<div class="parallax-content">
+<div class="parallax-badge">
+<span class="parallax-badge-dot"></span>
+PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+</div>
+<h1 class="parallax-title">
+Algorithmic Crime Forensics & Autonomous Agent Deterrence
+</h1>
+<p class="parallax-desc">
+Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
+</p>
+<div class="parallax-chips">
+<span class="parallax-chip"><b style="color: #38bdf8;">15</b> Police Districts</span>
+<span class="parallax-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
+<span class="parallax-chip"><b style="color: #f59e0b;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
+<span class="parallax-chip"><b style="color: #a78bfa;">60fps</b> Interactive Movement Radar</span>
+</div>
+</div>
+</div>
+</div>
+"""
+st.markdown(hero_banner_html, unsafe_allow_html=True)
 
 # Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
