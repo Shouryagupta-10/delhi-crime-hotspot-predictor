@@ -827,6 +827,254 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           color: #ffffff;
           border: 2px solid #ffffff;
         }}
+        
+        /* Real-Time Street Navigation HUD */
+        .nav-hud {{
+          position: absolute;
+          top: 10px;
+          left: 12px;
+          right: 12px;
+          max-width: 660px;
+          margin: 0 auto;
+          z-index: 1100;
+          background: rgba(11, 15, 25, 0.94);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(56, 189, 248, 0.45);
+          border-radius: 14px;
+          box-shadow: 0 14px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.18);
+          overflow: hidden;
+          animation: navSlideDown 0.25s ease-out;
+        }}
+        @keyframes navSlideDown {{
+          from {{ transform: translateY(-20px); opacity: 0; }}
+          to {{ transform: translateY(0); opacity: 1; }}
+        }}
+        .nav-hud-main {{
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 9px 14px;
+        }}
+        .nav-maneuver-icon {{
+          width: 42px;
+          height: 42px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #0284c7, #2563eb);
+          border: 1.5px solid #38bdf8;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 900;
+          flex-shrink: 0;
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+        }}
+        .nav-hud-text {{
+          flex: 1;
+          min-width: 0;
+        }}
+        .nav-instruction {{
+          font-size: 13px;
+          font-weight: 800;
+          color: #f8fafc;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.2;
+        }}
+        .nav-next-street {{
+          font-size: 11px;
+          color: #94a3b8;
+          margin-top: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }}
+        .nav-hud-stats {{
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-left: 1px solid rgba(255, 255, 255, 0.1);
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 0 12px;
+          flex-shrink: 0;
+        }}
+        .nav-stat-block {{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }}
+        .nav-stat-val {{
+          font-family: monospace;
+          font-size: 13px;
+          font-weight: 800;
+        }}
+        .nav-stat-lbl {{
+          font-size: 8px;
+          font-weight: 800;
+          color: #64748b;
+          letter-spacing: 0.05em;
+        }}
+        .nav-hud-controls {{
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }}
+        .nav-action-btn {{
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #e2e8f0;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 6px 9px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }}
+        .nav-action-btn:hover {{
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+        }}
+        .nav-action-btn.btn-play {{
+          background: #0284c7;
+          border-color: #38bdf8;
+          color: #fff;
+        }}
+        .nav-action-btn.btn-play.active {{
+          background: #d97706;
+          border-color: #f59e0b;
+        }}
+        .nav-action-btn.btn-close {{
+          background: rgba(239, 68, 68, 0.15);
+          border-color: rgba(239, 68, 68, 0.4);
+          color: #ef4444;
+        }}
+        .nav-action-btn.btn-close:hover {{
+          background: #dc2626;
+          color: #fff;
+        }}
+        
+        /* Steps Drawer */
+        .nav-steps-drawer {{
+          max-height: 220px;
+          overflow-y: auto;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(8, 11, 19, 0.96);
+          padding: 8px 12px;
+        }}
+        .nav-steps-header {{
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 11px;
+          font-weight: 700;
+          color: #cbd5e1;
+          margin-bottom: 6px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }}
+        .nav-step-item {{
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 6px 8px;
+          border-radius: 6px;
+          font-size: 11.5px;
+          cursor: pointer;
+          transition: background 0.1s ease;
+        }}
+        .nav-step-item:hover {{
+          background: rgba(255, 255, 255, 0.06);
+        }}
+        .nav-step-item.active {{
+          background: rgba(2, 132, 199, 0.25);
+          border: 1px solid rgba(56, 189, 248, 0.35);
+        }}
+        .nav-step-icon {{
+          font-size: 14px;
+          width: 22px;
+          text-align: center;
+          flex-shrink: 0;
+        }}
+        .nav-step-desc {{
+          flex: 1;
+          color: #e2e8f0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }}
+        .nav-step-dist {{
+          font-family: monospace;
+          font-size: 11px;
+          color: #38bdf8;
+          flex-shrink: 0;
+        }}
+        
+        /* Quick Route Modal */
+        .quick-route-modal {{
+          position: absolute;
+          inset: 0;
+          z-index: 1200;
+          background: rgba(0, 0, 0, 0.75);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }}
+        .quick-route-card {{
+          background: #0f172a;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 16px;
+          padding: 18px;
+          max-width: 500px;
+          width: 100%;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+        }}
+        .quick-route-header {{
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }}
+        .modal-close-btn {{
+          background: none;
+          border: none;
+          color: #94a3b8;
+          font-size: 16px;
+          cursor: pointer;
+        }}
+        .modal-close-btn:hover {{ color: #fff; }}
+        .quick-route-grid {{
+          overflow-y: auto;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 6px;
+          margin-top: 8px;
+          padding-right: 4px;
+        }}
+        .quick-route-item {{
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9px;
+          padding: 9px 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }}
+        .quick-route-item:hover {{
+          background: rgba(2, 132, 199, 0.18);
+          border-color: #38bdf8;
+          transform: translateX(2px);
+        }}
       </style>
     </head>
     <body>
@@ -877,6 +1125,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           <!-- Action Controls -->
           <div class="nav-section">
+            <button id="btnQuickNav" class="action-btn" style="background: linear-gradient(135deg, #0284c7, #4f46e5); border-color: #38bdf8; font-weight: 700;" onclick="openQuickRouteModal()">🧭 Route / ETA</button>
             <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()">🚀 Sim GPS</button>
             <button class="action-btn" onclick="centerOnMe()">📍 Me</button>
           </div>
@@ -886,6 +1135,57 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         <!-- Clean Map Canvas Viewport -->
         <main class="map-viewport">
           <div id="map"></div>
+          
+          <!-- Real-Time Street Navigation HUD -->
+          <div id="navHud" class="nav-hud" style="display:none;">
+            <div class="nav-hud-main">
+              <div id="navManeuverIcon" class="nav-maneuver-icon">⬆</div>
+              <div class="nav-hud-text">
+                <div id="navInstruction" class="nav-instruction">Proceed along route</div>
+                <div id="navNextStreet" class="nav-next-street">Calculating street trajectory...</div>
+              </div>
+              <div class="nav-hud-stats">
+                <div class="nav-stat-block">
+                  <div id="navEtaText" class="nav-stat-val val-green">-- min</div>
+                  <div class="nav-stat-lbl">ETA (LIVE)</div>
+                </div>
+                <div class="nav-stat-block">
+                  <div id="navDistText" class="nav-stat-val val-cyan">-- km</div>
+                  <div class="nav-stat-lbl">DISTANCE</div>
+                </div>
+              </div>
+              <div class="nav-hud-controls">
+                <button id="navSimPlayBtn" class="nav-action-btn btn-play" onclick="toggleNavDriveSim()" title="Drive route at 60fps">🚀 Drive</button>
+                <button class="nav-action-btn" onclick="toggleNavStepsDrawer()" title="View Turn-by-Turn Steps">📋 Turns</button>
+                <button class="nav-action-btn btn-close" onclick="clearNavigationRoute(true)" title="Exit Navigation">✕</button>
+              </div>
+            </div>
+            
+            <!-- Turn-by-Turn Steps Drawer -->
+            <div id="navStepsDrawer" class="nav-steps-drawer" style="display:none;">
+              <div class="nav-steps-header">
+                <span>🛣️ Real-Time Street Directions (OpenStreetMap / OSRM)</span>
+                <span id="navDrawerSummary" class="val-cyan"></span>
+              </div>
+              <div id="navStepsList" class="nav-steps-list"></div>
+            </div>
+          </div>
+
+          <!-- Quick Route Destination Selector Modal -->
+          <div id="quickRouteModal" class="quick-route-modal" style="display:none;">
+            <div class="quick-route-card">
+              <div class="quick-route-header">
+                <span style="font-size: 13.5px; font-weight: 800; color: #fff; display:flex; align-items:center; gap:6px;">
+                  🧭 Choose Navigation Destination
+                </span>
+                <button class="modal-close-btn" onclick="closeQuickRouteModal()">✕</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin: 6px 0 10px 0;">
+                Calculates real-time street turn-by-turn directions, road-accurate distance, and live ETA from your GPS position.
+              </div>
+              <div class="quick-route-grid" id="quickRouteList"></div>
+            </div>
+          </div>
           
           <!-- Floating Status Capsule -->
           <div class="floating-status-pill">
@@ -1175,6 +1475,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                   <button onclick="map.flyTo([${{h.lat}}, ${{h.lon}}], 16, {{duration: 1}})" style="width: 100%; background: #0284c7; border: 1px solid #38bdf8; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
                     🔍 Zoom into Cluster Core
                   </button>
+                  <button onclick="startNavigationTo(${{h.lat}}, ${{h.lon}}, '${{h.name.replace(/'/g, \"\\\\'\")}}', false)" style="width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #0284c7, #4f46e5); border: 1px solid #38bdf8; color: #fff; border-radius: 6px; padding: 6px 8px; font-size: 11px; font-weight: 800; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);">
+                    🧭 Navigate Here (Live Street ETA & Turns)
+                  </button>
                   <a href="https://www.mapillary.com/app/?lat=${{h.lat}}&lng=${{h.lon}}&z=17" target="_blank" style="display: block; text-align: center; width: 100%; box-sizing: border-box; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 5px 8px; font-size: 10.5px; font-weight: 700; text-decoration: none; margin-top: 6px;">
                     📸 Free 360° Street View (Mapillary)
                   </a>
@@ -1226,6 +1529,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                     </div>
                     <button onclick="map.flyTo([${{s.lat}}, ${{s.lon}}], 16, {{duration: 1}})" style="width: 100%; background: #059669; border: 1px solid #10b981; color: #fff; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
                       🛡️ Center on Safe Haven
+                    </button>
+                    <button onclick="startNavigationTo(${{s.lat}}, ${{s.lon}}, '${{s.name.replace(/'/g, \"\\\\'\")}}', false)" style="width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #059669, #10b981); border: 1px solid #34d399; color: #fff; border-radius: 6px; padding: 6px 8px; font-size: 11px; font-weight: 800; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                      🛡️ Route Safe Corridor (Turn-by-Turn)
                     </button>
                   </div>
                 </div>
@@ -1454,6 +1760,9 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               <button onclick="updateUserPosition(${{lat}}, ${{lon}}, 15); map.flyTo([${{lat}}, ${{lon}}], 16);" style="width:100%; background:#0284c7; border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:5px 8px; font-size:11px; font-weight:700; cursor:pointer;">
                 🎯 Set as My Location
               </button>
+              <button onclick="startNavigationTo(${{lat}}, ${{lon}}, '${{title.replace(/'/g, \"\\\\'\")}}', false)" style="width:100%; box-sizing:border-box; background:linear-gradient(135deg, #0284c7, #4f46e5); border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:6px 8px; font-size:11px; font-weight:800; cursor:pointer; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:5px;">
+                🧭 Navigate Here (Turn-by-Turn)
+              </button>
             </div>
           `).openPopup();
           
@@ -1467,10 +1776,21 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           }}
         }});
         
-        function updateUserPosition(lat, lon, accuracy) {{
+        function updateUserPosition(lat, lon, accuracy, isNavigating) {{
+          const prevLat = currentUserPos.lat;
+          const prevLon = currentUserPos.lon;
           currentUserPos = {{ lat, lon }};
-          trailWaypoints.push([lat, lon]);
-          trailPolyline.setLatLngs(trailWaypoints);
+          
+          const distMoved = calcDistMeters(prevLat, prevLon, lat, lon);
+          if (isNavigating || (distMoved > 2 && distMoved < 500)) {{
+            trailWaypoints.push([lat, lon]);
+            if (trailWaypoints.length > 250) trailWaypoints.shift();
+            trailPolyline.setLatLngs(trailWaypoints);
+          }} else if (distMoved >= 500 && !isNavigating) {{
+            // Teleported or clicked distant pin: reset trail to avoid drawing straight lines across Delhi!
+            trailWaypoints = [[lat, lon]];
+            trailPolyline.setLatLngs(trailWaypoints);
+          }}
           
           document.getElementById('gpsCoordsText').innerText = `${{lat.toFixed(4)}}°N, ${{lon.toFixed(4)}}°E`;
           document.getElementById('gpsAccText').innerText = `&plusmn;${{Math.round(accuracy)}}m`;
@@ -1533,6 +1853,389 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           map.panTo([lat, lon], {{ animate: true, duration: 0.8 }});
         }}
+        
+        // ==========================================
+        // REAL-TIME STREET ROUTING & NAVIGATION (OSRM)
+        // ==========================================
+        let currentNavRoute = null;
+        let navRoutePolyline = null;
+        let navRouteCasing = null;
+        let navDestMarker = null;
+        let navDriveTimer = null;
+        let navDriveIdx = 0;
+        let isDriving = false;
+
+        function getManeuverIcon(maneuver) {{
+          if (!maneuver) return '⬆';
+          const type = maneuver.type || '';
+          const mod = (maneuver.modifier || '').toLowerCase();
+          
+          if (type === 'arrive') return '🏁';
+          if (type === 'depart') return '🚗';
+          if (type === 'rotary' || type === 'roundabout') return '🔄';
+          if (mod.includes('sharp left')) return '⮢';
+          if (mod.includes('slight left')) return '⮤';
+          if (mod.includes('left')) return '↰';
+          if (mod.includes('sharp right')) return '⮣';
+          if (mod.includes('slight right')) return '⮥';
+          if (mod.includes('right')) return '↱';
+          if (mod.includes('u-turn')) return '↶';
+          return '⬆';
+        }}
+
+        function formatManeuverText(step) {{
+          if (!step || !step.maneuver) return 'Proceed along corridor';
+          const type = step.maneuver.type || '';
+          const mod = step.maneuver.modifier || '';
+          const road = step.name ? `onto <b>${{step.name}}</b>` : 'along road';
+          
+          if (type === 'arrive') return `🏁 Arrive at destination (${{step.name || 'Target'}})`;
+          if (type === 'depart') return `Head ${{mod || 'straight'}} ${{road}}`;
+          if (type === 'roundabout' || type === 'rotary') return `Take roundabout ${{road}}`;
+          if (type === 'end of road') return `Turn ${{mod}} at end of road ${{road}}`;
+          if (type === 'fork') return `Keep ${{mod}} at fork ${{road}}`;
+          if (mod) return `Turn ${{mod}} ${{road}}`;
+          return `Continue ${{road}}`;
+        }}
+
+        function formatDist(meters) {{
+          if (meters < 1000) return `${{Math.round(meters)}} m`;
+          return `${{(meters / 1000).toFixed(1)}} km`;
+        }}
+
+        function formatDuration(seconds) {{
+          const mins = Math.ceil(seconds / 60);
+          if (mins < 60) return `${{mins}} min`;
+          const hrs = Math.floor(mins / 60);
+          const rem = mins % 60;
+          return `${{hrs}} hr ${{rem}} min`;
+        }}
+
+        function generateCorridorInterpolation(p1, p2) {{
+          const pts = [];
+          const numSteps = 45;
+          for (let i = 0; i <= numSteps; i++) {{
+            const t = i / numSteps;
+            const lat = p1[0] + (p2[0] - p1[0]) * t;
+            const lon = p1[1] + (p2[1] - p1[1]) * t;
+            const curve = Math.sin(t * Math.PI) * 0.003;
+            pts.push([lat + curve, lon + curve]);
+          }}
+          return pts;
+        }}
+
+        window.startNavigationTo = async function(destLat, destLon, destName, autoDrive) {{
+          const startLat = currentUserPos.lat;
+          const startLon = currentUserPos.lon;
+          
+          // Display HUD loading
+          const hud = document.getElementById('navHud');
+          hud.style.display = 'block';
+          document.getElementById('navManeuverIcon').innerText = '⌛';
+          document.getElementById('navInstruction').innerHTML = `Calculating street route to <b>${{destName}}</b>...`;
+          document.getElementById('navNextStreet').innerText = 'Querying OpenStreetMap Delhi Road Network (OSRM)...';
+          document.getElementById('navDistText').innerText = '--';
+          document.getElementById('navEtaText').innerText = '--';
+          
+          try {{
+            // Real-time Street Navigation API (100% Free OpenStreetMap / OSRM)
+            const url = `https://router.project-osrm.org/route/v1/driving/${{startLon}},${{startLat}};${{destLon}},${{destLat}}?overview=full&geometries=geojson&steps=true`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {{
+              const r = data.routes[0];
+              const coords = r.geometry.coordinates.map(c => [c[1], c[0]]); // [lon, lat] -> [lat, lon]
+              const steps = r.legs[0]?.steps || [];
+              displayStreetRoute(coords, steps, r.distance, r.duration, destName, [destLat, destLon], autoDrive);
+            }} else {{
+              throw new Error('OSRM routing response not ok');
+            }}
+          }} catch (err) {{
+            console.warn('OSRM query failed or offline, using fallback corridor:', err);
+            const fallbackPoints = generateCorridorInterpolation([startLat, startLon], [destLat, destLon]);
+            const estDist = calcDistMeters(startLat, startLon, destLat, destLon) * 1.28;
+            const estDuration = (estDist / 8.5); // ~30 km/h
+            const fallbackSteps = [
+              {{ maneuver: {{ type: 'depart', modifier: 'straight' }}, name: 'Current Corridor', distance: estDist * 0.35, duration: estDuration * 0.35 }},
+              {{ maneuver: {{ type: 'turn', modifier: 'slight right' }}, name: 'Delhi Ring Road Highway', distance: estDist * 0.45, duration: estDuration * 0.45 }},
+              {{ maneuver: {{ type: 'arrive', modifier: '' }}, name: destName, distance: estDist * 0.2, duration: estDuration * 0.2 }}
+            ];
+            displayStreetRoute(fallbackPoints, fallbackSteps, estDist, estDuration, destName, [destLat, destLon], autoDrive);
+          }}
+        }};
+
+        function displayStreetRoute(coords, steps, totalDistMeters, totalDurationSec, destName, destLatLng, autoDrive) {{
+          clearNavigationRoute(false);
+          
+          currentNavRoute = {{
+            coords: coords,
+            steps: steps,
+            totalDistMeters: totalDistMeters,
+            totalDurationSec: totalDurationSec,
+            destName: destName,
+            destLatLng: destLatLng
+          }};
+          navDriveIdx = 0;
+          
+          // Clear old straight trail
+          trailWaypoints = [coords[0]];
+          trailPolyline.setLatLngs(trailWaypoints);
+          
+          // Outer black casing line
+          navRouteCasing = L.polyline(coords, {{
+            color: '#030712',
+            weight: 8,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }}).addTo(map);
+          
+          // Inner glowing cyan street line snapped to roads
+          navRoutePolyline = L.polyline(coords, {{
+            color: '#00f0ff',
+            weight: 4.5,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }}).addTo(map);
+          
+          // Destination Flag
+          const flagHtml = `
+            <div style="display:flex; flex-direction:column; align-items:center;">
+              <div style="width:34px; height:34px; border-radius:50%; background:#ef4444; border:2px solid #fff; box-shadow:0 0 16px #ef4444; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                🏁
+              </div>
+              <div style="background:#0b0f19; color:#fff; border:1px solid #ef4444; border-radius:4px; font-size:10px; font-weight:800; padding:2px 6px; margin-top:2px; white-space:nowrap; box-shadow:0 4px 10px rgba(0,0,0,0.6);">
+                ${{destName.split(' ')[0]}}
+              </div>
+            </div>
+          `;
+          const flagIcon = L.divIcon({{ html: flagHtml, className: '', iconSize: [36, 46], iconAnchor: [18, 23] }});
+          navDestMarker = L.marker(destLatLng, {{ icon: flagIcon, zIndexOffset: 990 }}).addTo(map);
+          
+          // Zoom to show whole route
+          const bounds = L.latLngBounds(coords);
+          map.fitBounds(bounds, {{ padding: [70, 70], animate: true, duration: 1.0 }});
+          
+          // Populate HUD & Drawer
+          updateNavHUD(0);
+          populateNavStepsDrawer(steps);
+          document.getElementById('navHud').style.display = 'block';
+          
+          if (autoDrive) {{
+            setTimeout(() => toggleNavDriveSim(), 600);
+          }}
+        }}
+
+        function updateNavHUD(stepIdx) {{
+          if (!currentNavRoute || !currentNavRoute.steps || currentNavRoute.steps.length === 0) return;
+          const steps = currentNavRoute.steps;
+          const cur = steps[stepIdx] || steps[0];
+          const nxt = steps[stepIdx + 1];
+          
+          const icon = getManeuverIcon(cur.maneuver);
+          const mainText = formatManeuverText(cur);
+          const subText = nxt ? `In ${{formatDist(cur.distance)}}, ${{formatManeuverText(nxt).replace(/<[^>]*>/g, '')}}` : `Approaching ${{currentNavRoute.destName}}`;
+          
+          document.getElementById('navManeuverIcon').innerText = icon;
+          document.getElementById('navInstruction').innerHTML = mainText;
+          document.getElementById('navNextStreet').innerText = subText;
+          
+          const mins = Math.ceil(currentNavRoute.totalDurationSec / 60);
+          const arrival = new Date(Date.now() + currentNavRoute.totalDurationSec * 1000).toLocaleTimeString([], {{ hour: '2-digit', minute: '2-digit' }});
+          document.getElementById('navEtaText').innerText = `${{mins}} min (${{arrival}})`;
+          document.getElementById('navDistText').innerText = formatDist(currentNavRoute.totalDistMeters);
+        }}
+
+        function findAndDisplayCurrentManeuver(lat, lon) {{
+          if (!currentNavRoute || !currentNavRoute.steps) return;
+          const steps = currentNavRoute.steps;
+          let closestIdx = 0;
+          let minDist = Infinity;
+          for (let i = 0; i < steps.length; i++) {{
+            const loc = steps[i].maneuver?.location;
+            if (loc) {{
+              const d = calcDistMeters(lat, lon, loc[1], loc[0]);
+              if (d < minDist) {{
+                minDist = d;
+                closestIdx = i;
+              }}
+            }}
+          }}
+          updateNavHUD(closestIdx);
+          
+          const items = document.querySelectorAll('.nav-step-item');
+          items.forEach((el, idx) => el.classList.toggle('active', idx === closestIdx));
+        }}
+
+        function populateNavStepsDrawer(steps) {{
+          const list = document.getElementById('navStepsList');
+          if (!list) return;
+          list.innerHTML = '';
+          
+          document.getElementById('navDrawerSummary').innerText = `${{formatDist(currentNavRoute.totalDistMeters)}} • ${{formatDuration(currentNavRoute.totalDurationSec)}}`;
+          
+          steps.forEach((s, idx) => {{
+            const icon = getManeuverIcon(s.maneuver);
+            const text = formatManeuverText(s);
+            const dist = formatDist(s.distance);
+            
+            const row = document.createElement('div');
+            row.className = `nav-step-item ${{idx === 0 ? 'active' : ''}}`;
+            row.innerHTML = `
+              <span class="nav-step-icon">${{icon}}</span>
+              <span class="nav-step-desc"><b>${{idx + 1}}.</b> ${{text}}</span>
+              <span class="nav-step-dist">${{dist}}</span>
+            `;
+            row.onclick = () => {{
+              if (s.maneuver?.location) {{
+                map.flyTo([s.maneuver.location[1], s.maneuver.location[0]], 17, {{ duration: 1.0 }});
+              }}
+            }};
+            list.appendChild(row);
+          }});
+        }}
+
+        window.toggleNavStepsDrawer = function() {{
+          const drawer = document.getElementById('navStepsDrawer');
+          drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+        }};
+
+        window.toggleNavDriveSim = function() {{
+          if (!currentNavRoute) return;
+          const btn = document.getElementById('navSimPlayBtn');
+          const simTopBtn = document.getElementById('btnSim');
+          
+          if (isDriving) {{
+            clearInterval(navDriveTimer);
+            navDriveTimer = null;
+            isDriving = false;
+            btn.innerText = '▶ Drive';
+            btn.classList.remove('active');
+            if (simTopBtn) {{
+              simTopBtn.innerText = '🚀 Sim GPS';
+              simTopBtn.classList.remove('active');
+            }}
+          }} else {{
+            isDriving = true;
+            btn.innerText = '⏸ Pause';
+            btn.classList.add('active');
+            if (simTopBtn) {{
+              simTopBtn.innerText = '⏹️ Stop Sim';
+              simTopBtn.classList.add('active');
+            }}
+            
+            const coords = currentNavRoute.coords;
+            navDriveTimer = setInterval(() => {{
+              if (navDriveIdx >= coords.length - 1) {{
+                clearInterval(navDriveTimer);
+                navDriveTimer = null;
+                isDriving = false;
+                btn.innerText = '🏁 Arrived';
+                btn.classList.remove('active');
+                if (simTopBtn) {{
+                  simTopBtn.innerText = '🚀 Sim GPS';
+                  simTopBtn.classList.remove('active');
+                }}
+                document.getElementById('navInstruction').innerHTML = `🏁 Arrived at <b>${{currentNavRoute.destName}}</b>`;
+                document.getElementById('navManeuverIcon').innerText = '🏁';
+                document.getElementById('navNextStreet').innerText = 'Destination reached via Delhi street network';
+                document.getElementById('navDistText').innerText = '0 m';
+                document.getElementById('navEtaText').innerText = '0 min';
+                return;
+              }}
+              
+              navDriveIdx += 1;
+              const p = coords[navDriveIdx];
+              updateUserPosition(p[0], p[1], 10, true);
+              
+              const ratio = navDriveIdx / coords.length;
+              const remDist = Math.max(0, currentNavRoute.totalDistMeters * (1 - ratio));
+              const remSec = Math.max(0, currentNavRoute.totalDurationSec * (1 - ratio));
+              document.getElementById('navDistText').innerText = formatDist(remDist);
+              document.getElementById('navEtaText').innerText = `${{Math.ceil(remSec / 60)}} min`;
+              
+              findAndDisplayCurrentManeuver(p[0], p[1]);
+            }}, 120);
+          }}
+        }};
+
+        window.clearNavigationRoute = function(clearUI) {{
+          if (navDriveTimer) {{
+            clearInterval(navDriveTimer);
+            navDriveTimer = null;
+          }}
+          isDriving = false;
+          navDriveIdx = 0;
+          if (navRoutePolyline) {{ map.removeLayer(navRoutePolyline); navRoutePolyline = null; }}
+          if (navRouteCasing) {{ map.removeLayer(navRouteCasing); navRouteCasing = null; }}
+          if (navDestMarker) {{ map.removeLayer(navDestMarker); navDestMarker = null; }}
+          currentNavRoute = null;
+          
+          if (clearUI) {{
+            document.getElementById('navHud').style.display = 'none';
+            document.getElementById('navStepsDrawer').style.display = 'none';
+            const btn = document.getElementById('btnSim');
+            if (btn) {{ btn.innerText = '🚀 Sim GPS'; btn.classList.remove('active'); }}
+          }}
+        }};
+
+        window.openQuickRouteModal = function() {{
+          populateQuickRouteModal();
+          document.getElementById('quickRouteModal').style.display = 'flex';
+        }};
+        
+        window.closeQuickRouteModal = function() {{
+          document.getElementById('quickRouteModal').style.display = 'none';
+        }};
+        
+        function populateQuickRouteModal() {{
+          const container = document.getElementById('quickRouteList');
+          if (!container) return;
+          container.innerHTML = '';
+          
+          const targets = [
+            {{ name: "Rajiv Chowk Metro (Connaught Place)", lat: 28.6328, lon: 77.2197, type: "🚨 Hotspot Centroid", badgeClass: "color:#ef4444;" }},
+            {{ name: "Kashmere Gate ISBT & Terminal", lat: 28.6675, lon: 77.2285, type: "🚨 Critical Hotspot", badgeClass: "color:#ef4444;" }},
+            {{ name: "Chanakyapuri Diplomatic Enclave", lat: 28.5983, lon: 77.1912, type: "🛡️ Safe Haven", badgeClass: "color:#10b981;" }},
+            {{ name: "India Gate & Kartavya Path", lat: 28.6129, lon: 77.2295, type: "🛡️ Safe Corridor", badgeClass: "color:#10b981;" }},
+            {{ name: "Hauz Khas Village & Lake", lat: 28.5535, lon: 77.1945, type: "🏙️ Lifestyle & Market", badgeClass: "color:#38bdf8;" }},
+            {{ name: "Seelampur Market Corridor", lat: 28.6644, lon: 77.2711, type: "🚨 Critical Corridor", badgeClass: "color:#ef4444;" }},
+            {{ name: "Civil Lines VIP & Raj Niwas", lat: 28.6820, lon: 77.2180, type: "🛡️ Secure Enclave", badgeClass: "color:#10b981;" }},
+            {{ name: "Anand Vihar Terminal", lat: 28.6469, lon: 77.3160, type: "🚨 East Hotspot", badgeClass: "color:#ef4444;" }},
+            {{ name: "Saket Select Citywalk", lat: 28.5284, lon: 77.2185, type: "🛍️ Commercial Corridor", badgeClass: "color:#38bdf8;" }}
+          ];
+          
+          targets.forEach(t => {{
+            const distM = calcDistMeters(currentUserPos.lat, currentUserPos.lon, t.lat, t.lon);
+            const distStr = formatDist(distM);
+            const estMin = Math.ceil((distM * 1.25) / 500);
+            
+            const div = document.createElement('div');
+            div.className = 'quick-route-item';
+            div.innerHTML = `
+              <div>
+                <div style="font-size:12.5px; font-weight:800; color:#fff;">${{t.name}}</div>
+                <div style="font-size:10.5px; ${{t.badgeClass}} font-weight:700;">${{t.type}}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:12px; font-family:monospace; color:#38bdf8; font-weight:800;">${{distStr}}</div>
+                <div style="font-size:10px; color:#94a3b8;">~${{estMin}} mins</div>
+              </div>
+            `;
+            div.onclick = () => {{
+              closeQuickRouteModal();
+              startNavigationTo(t.lat, t.lon, t.name, false);
+            }};
+            container.appendChild(div);
+          }});
+        }}
+
+        // Right-click map to route anywhere
+        map.on('contextmenu', (e) => {{
+          startNavigationTo(e.latlng.lat, e.latlng.lng, `Location (${{e.latlng.lat.toFixed(3)}}, ${{e.latlng.lng.toFixed(3)}})`, false);
+        }});
         
         // Initial setup
         renderZones('ALL');
@@ -1606,13 +2309,10 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           else if (e.key.toLowerCase() === 'f') fitAllHotspots();
         }});
         
-        let simTimer = null;
-        let simIdx = 0;
         window.toggleSimulation = function() {{
           const btn = document.getElementById('btnSim');
-          if (simTimer) {{
-            clearInterval(simTimer);
-            simTimer = null;
+          if (isDriving || navDriveTimer) {{
+            toggleNavDriveSim();
             btn.innerText = '🚀 Sim GPS';
             btn.classList.remove('active');
             return;
@@ -1620,15 +2320,14 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           
           btn.innerText = '⏹️ Stop Sim';
           btn.classList.add('active');
-          simIdx = 0;
-          const p0 = SIMULATION_ROUTE[0];
-          updateUserPosition(p0.lat, p0.lon, 15);
           
-          simTimer = setInterval(() => {{
-            simIdx = (simIdx + 1) % SIMULATION_ROUTE.length;
-            const p = SIMULATION_ROUTE[simIdx];
-            updateUserPosition(p.lat, p.lon, 15);
-          }}, 2800);
+          if (currentNavRoute) {{
+            toggleNavDriveSim();
+            return;
+          }}
+          
+          // Auto-start real road navigation to Rajiv Chowk Metro Hotspot!
+          startNavigationTo(28.6328, 77.2197, "Rajiv Chowk Metro (Connaught Place)", true);
         }};
       </script>
     </body>

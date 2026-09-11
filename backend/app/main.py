@@ -513,6 +513,10 @@ show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
 show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
 show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔮 Predictive Policing")
+show_future_heatmap = st.sidebar.checkbox("Generate Future Crime Heatmap (Next 24H)", value=False)
+
 map_zoom_sidebar = st.sidebar.slider(
     "Map Zoom Scale",
     min_value=10,
@@ -1021,6 +1025,8 @@ with tab1:
                 show_hotspots=show_spots,
                 show_pins=show_incidents,
                 user_location=(user_lat, user_lon) if user_lat else None,
+                show_future_heatmap=show_future_heatmap,
+                predictor=predictor,
                 zoom_level=current_zoom
             )
             st_folium(crime_map, width=None, height=580, returned_objects=[])
