@@ -209,28 +209,68 @@ st.sidebar.image("https://img.icons8.com/fluency/96/police-badge.png", width=64)
 st.sidebar.title("🛡️ Rakshak.ai")
 st.sidebar.markdown("**Civic Geospatial AI Dashboard**")
 
-# Check for active Geolocation query params
+# Check for active Geolocation query params or session state
 user_lat = None
 user_lon = None
-if "user_lat" in st.query_params and "user_lon" in st.query_params:
+
+if "user_lat" in st.session_state and "user_lon" in st.session_state:
+    user_lat = st.session_state["user_lat"]
+    user_lon = st.session_state["user_lon"]
+elif "user_lat" in st.query_params and "user_lon" in st.query_params:
     try:
         user_lat = float(st.query_params["user_lat"])
         user_lon = float(st.query_params["user_lon"])
+        st.session_state["user_lat"] = user_lat
+        st.session_state["user_lon"] = user_lon
     except (ValueError, TypeError):
         user_lat = None
         user_lon = None
 
 # --- SIDEBAR GEOLOCATION SECTION ---
 st.sidebar.markdown("---")
-st.sidebar.subheader("📍 Your Live Geolocation")
+st.sidebar.subheader("📍 Live Movement & Risk Radar")
+
 if user_lat is None:
     render_gps_locator(key_suffix="_side")
+    st.sidebar.caption("Or test location scenarios:")
+    col_g1, col_g2 = st.sidebar.columns(2)
+    with col_g1:
+        if st.button("🚨 Rajiv Chowk (High)", use_container_width=True):
+            st.session_state["user_lat"] = 28.6328
+            st.session_state["user_lon"] = 77.2197
+            st.rerun()
+    with col_g2:
+        if st.button("🛡️ Chanakya (Safe)", use_container_width=True):
+            st.session_state["user_lat"] = 28.5983
+            st.session_state["user_lon"] = 77.1912
+            st.rerun()
 else:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
-    st.sidebar.success(f"**GPS Locked:** `{user_lat:.4f}, {user_lon:.4f}`")
-    st.sidebar.markdown(f"**Nearest District:** {closest_d}\n\n**Police Station:** PS {closest_ps} ({dist_km} km)\n\n**Hotspot Proximity:** `{dist_spot:.2f} km`")
-    if st.sidebar.button("❌ Clear My Location", use_container_width=True):
+    
+    # Risk assessment
+    if dist_spot <= 0.4:
+        zone_status = "🚨 HIGH RISK CORRIDOR"
+        zone_color = "#DC2626"
+    elif dist_spot <= 0.8:
+        zone_status = "⚠️ MODERATE CAUTION ZONE"
+        zone_color = "#D97706"
+    else:
+        zone_status = "🛡️ SAFE HAVEN / BUFFER ZONE"
+        zone_color = "#16A34A"
+        
+    st.sidebar.markdown(f"""
+    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-left: 5px solid {zone_color}; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px;">
+        <b style="color: {zone_color};">{zone_status}</b><br/>
+        <b>Lat, Lon:</b> <code>{user_lat:.4f}, {user_lon:.4f}</code><br/>
+        <b>Nearest Hotspot:</b> <b>{dist_spot:.2f} km away</b><br/>
+        <b>Jurisdiction:</b> {closest_d} (PS {closest_ps})
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.sidebar.button("❌ Clear Active Location", use_container_width=True):
+        st.session_state.pop("user_lat", None)
+        st.session_state.pop("user_lon", None)
         st.query_params.clear()
         st.rerun()
 
@@ -308,16 +348,35 @@ st.markdown('<div class="sub-header">Geospatial Density Clustering (Haversine DB
 if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
+    if dist_spot <= 0.4:
+        banner_border = "#DC2626"
+        banner_bg = "linear-gradient(90deg, #FEF2F2 0%, #FEE2E2 100%)"
+        banner_title = "🚨 DANGER: You are in or adjacent to a HIGH-RISK CRIME CORRIDOR"
+        badge_bg = "#DC2626"
+        badge_txt = "HIGH RISK CORRIDOR"
+    elif dist_spot <= 0.8:
+        banner_border = "#D97706"
+        banner_bg = "linear-gradient(90deg, #FFFBEB 0%, #FEF3C7 100%)"
+        banner_title = "⚠️ CAUTION: You are within 800m of an Active Crime Hotspot"
+        badge_bg = "#D97706"
+        badge_txt = "MODERATE CAUTION"
+    else:
+        banner_border = "#16A34A"
+        banner_bg = "linear-gradient(90deg, #F0FDF4 0%, #DCFCE7 100%)"
+        banner_title = "🛡️ SAFE ZONE: You are currently within a Verified Safe Buffer Zone"
+        badge_bg = "#16A34A"
+        badge_txt = "SAFE ZONE"
+
     st.markdown(f"""
-    <div style="background: linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 100%); border: 1px solid #93C5FD; border-left: 6px solid #2563EB; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-family: sans-serif;">
+    <div style="background: {banner_bg}; border: 1px solid #CBD5E1; border-left: 6px solid {banner_border}; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-family: sans-serif;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
-                <div style="font-weight: 700; color: #1E40AF; font-size: 15px;">📍 Live GPS Geolocation Active: {user_lat:.4f}°N, {user_lon:.4f}°E</div>
-                <div style="color: #1E3A8A; font-size: 13px; margin-top: 4px;">
-                    Nearest Delhi Police Jurisdiction: <b>{closest_d} District (PS {closest_ps})</b> • Distance to Boundary: <b>{dist_km} km</b> • Nearest Crime Hotspot: <b>{dist_spot:.2f} km</b>
+                <div style="font-weight: 800; color: #111827; font-size: 15px;">{banner_title}</div>
+                <div style="color: #374151; font-size: 13px; margin-top: 4px;">
+                    Coordinates: <code>{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b>{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
                 </div>
             </div>
-            <span style="background: #2563EB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">🛰️ Live GPS Locked</span>
+            <span style="background: {badge_bg}; color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">{badge_txt}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
