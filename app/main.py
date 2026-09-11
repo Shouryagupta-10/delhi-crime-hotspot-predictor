@@ -44,30 +44,34 @@ def find_nearest_delhi_jurisdiction(lat, lon):
     return closest_dist, closest_ps, round(min_dist, 2)
 
 def render_gps_locator(key_suffix=""):
-    """Renders an interactive HTML5 Geolocation button that requests browser GPS permissions."""
+    """Renders an interactive Once UI glassmorphic HTML5 Geolocation radar button."""
     btn_id = f"gps-btn{key_suffix}"
     status_id = f"gps-status{key_suffix}"
     geo_html = f"""
-    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: sans-serif;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-weight: 700; color: #166534; font-size: 13px;">📍 Live GPS Geolocation</span>
-            <span style="font-size: 10px; background: #DCFCE7; color: #15803D; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HTML5 GPS</span>
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); font-family: 'Geist', -apple-system, sans-serif;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">📍</span>
+                <span style="font-weight: 800; color: #ffffff; font-size: 12px; letter-spacing: -0.01em;">Live GPS Geolocation Radar</span>
+            </div>
+            <span style="font-size: 10px; font-family: 'Geist Mono', monospace; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">HTML5 GPS</span>
         </div>
         <button id="{btn_id}" onclick="requestGPS_{key_suffix}()" style="
             width: 100%;
-            background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%);
             color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 9px 12px;
-            font-weight: 600;
-            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 9999px;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 12.5px;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
+            transition: all 0.2s ease;
         ">
             🛰️ Access My Current Location
         </button>
-        <div id="{status_id}" style="font-size: 11px; color: #4B5563; margin-top: 6px; text-align: center;">
+        <div id="{status_id}" style="font-size: 10.5px; color: #94a3b8; margin-top: 8px; text-align: center; font-family: 'Geist Mono', monospace;">
             Click to detect your current latitude & longitude
         </div>
     </div>
@@ -76,19 +80,19 @@ def render_gps_locator(key_suffix=""):
         const btn = document.getElementById("{btn_id}");
         const status = document.getElementById("{status_id}");
         if (!navigator.geolocation) {{
-            status.innerHTML = "<span style='color: #DC2626;'>❌ Geolocation not supported by browser.</span>";
+            status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported by browser.</span>";
             return;
         }}
         btn.disabled = true;
         btn.innerText = "⏳ Acquiring GPS Fix...";
-        status.innerHTML = "<span style='color: #2563EB;'>Requesting browser permission...</span>";
+        status.innerHTML = "<span style='color: #38bdf8;'>Requesting browser permission...</span>";
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {{
                 const lat = pos.coords.latitude.toFixed(5);
                 const lon = pos.coords.longitude.toFixed(5);
                 const acc = Math.round(pos.coords.accuracy);
-                status.innerHTML = "<span style='color: #16A34A; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
+                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
                 
                 try {{
                     const target = window.top || window.parent;
@@ -107,10 +111,10 @@ def render_gps_locator(key_suffix=""):
                 btn.disabled = false;
                 btn.innerText = "🛰️ Access My Current Location";
                 let msg = err.message;
-                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser address bar.";
+                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser.";
                 else if (err.code === 2) msg = "GPS position unavailable.";
                 else if (err.code === 3) msg = "GPS request timed out.";
-                status.innerHTML = "<span style='color: #DC2626;'>⚠️ " + msg + "</span>";
+                status.innerHTML = "<span style='color: #f87171;'>⚠️ " + msg + "</span>";
             }},
             {{ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }}
         );
@@ -121,57 +125,187 @@ def render_gps_locator(key_suffix=""):
 
 # Page Configuration
 st.set_page_config(
-    page_title="Rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor",
+    page_title="Rakshak.ai | Civic Safety Intelligence & Predictive Policing",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS styling
+# Custom Once UI & Magic Portfolio CSS styling
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.1rem;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 0.2rem;
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    /* Global Dark Canvas with Once UI Dot Grid */
+    html, body, [data-testid="stAppViewContainer"], .main {
+        font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+        background-color: #090b10 !important;
+        color: #f1f5f9 !important;
     }
-    .sub-header {
-        font-size: 1.05rem;
-        color: #64748B;
-        margin-bottom: 1.5rem;
+
+    [data-testid="stAppViewContainer"] {
+        background-color: #090b10 !important;
+        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0) !important;
+        background-size: 24px 24px !important;
     }
-    .metric-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+    /* Top padding fix */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1400px !important;
     }
+
+    /* Sidebar Once UI Styling */
+    [data-testid="stSidebar"] {
+        background-color: rgba(11, 15, 23, 0.95) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+    }
+
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Streamlit Metric Cards -> Once UI Pop Cards */
+    [data-testid="stMetric"] {
+        background: rgba(14, 18, 26, 0.75) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        padding: 16px 20px !important;
+        box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    [data-testid="stMetric"]:hover {
+        border-color: rgba(6, 182, 212, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        color: #94a3b8 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 30px !important;
+        font-weight: 900 !important;
+        color: #ffffff !important;
+        letter-spacing: -0.03em !important;
+    }
+
+    [data-testid="stMetricDelta"] {
+        font-family: 'Geist Mono', monospace !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+    }
+
+    /* Streamlit Tabs -> Once UI Floating Capsule Nav */
+    div[data-baseweb="tab-list"] {
+        background: rgba(14, 18, 26, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 9999px !important;
+        padding: 6px !important;
+        gap: 6px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(16px) !important;
+        margin-bottom: 24px !important;
+    }
+
+    div[data-baseweb="tab"] {
+        border-radius: 9999px !important;
+        color: #94a3b8 !important;
+        font-size: 12.5px !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        border: 1px solid transparent !important;
+        transition: all 0.2s ease !important;
+        background: transparent !important;
+    }
+
+    div[data-baseweb="tab"]:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    div[data-baseweb="tab"][aria-selected="true"] {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    div[data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* Buttons -> Once UI Pill Buttons */
+    .stButton > button {
+        border-radius: 9999px !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease !important;
+        padding: 8px 18px !important;
+    }
+
+    .stButton > button:hover {
+        background: rgba(255, 255, 255, 0.14) !important;
+        border-color: rgba(6, 182, 212, 0.5) !important;
+        color: #22d3ee !important;
+    }
+
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%) !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
+    }
+
+    /* Selectboxes and Inputs */
+    div[data-baseweb="select"] > div {
+        background: rgba(14, 18, 26, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 14px !important;
+        color: #f1f5f9 !important;
+    }
+
+    /* Badges */
     .badge-high {
-        background-color: #FEE2E2;
-        color: #991B1B;
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
     .badge-med {
-        background-color: #FEF3C7;
-        color: #92400E;
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
     .badge-low {
-        background-color: #D1FAE5;
-        color: #065F46;
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -264,11 +398,13 @@ else:
         zone_color = "#16A34A"
         
     st.sidebar.markdown(f"""
-    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-left: 5px solid {zone_color}; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px;">
-        <b style="color: {zone_color};">{zone_status}</b><br/>
-        <b>Lat, Lon:</b> <code>{user_lat:.4f}, {user_lon:.4f}</code><br/>
-        <b>Nearest Hotspot:</b> <b>{dist_spot:.2f} km away</b><br/>
-        <b>Jurisdiction:</b> {closest_d} (PS {closest_ps})
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {zone_color}; padding: 14px; border-radius: 16px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+        <b style="color: {zone_color}; font-size: 12.5px;">{zone_status}</b><br/>
+        <div style="color: #94a3b8; font-family: 'Geist Mono', monospace; font-size: 11px; margin-top: 6px; line-height: 1.5;">
+            <b>Coordinates:</b> <span style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</span><br/>
+            <b>Nearest Hotspot:</b> <b style="color: {zone_color};">{dist_spot:.2f} km</b><br/>
+            <b>Jurisdiction:</b> {closest_d} (PS {closest_ps})
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -285,17 +421,17 @@ missing_drop = cleaning_audit.get("missing_coords_dropped", 0) + cleaning_audit.
 out_bounds_drop = cleaning_audit.get("out_of_bounds_coords_dropped", 0)
 
 st.sidebar.markdown(f"""
-<div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px; font-size: 12px; margin-bottom: 8px;">
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-        <b style="color: #166534;">✅ Clean Data Pipeline: ACTIVE</b>
-        <span style="background: #DCFCE7; color: #15803D; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 10px;">100% Complete</span>
+<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 14px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: #34d399; font-weight: 700;">✅ Clean Data Pipeline</span>
+        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-family: 'Geist Mono', monospace;">100% Complete</span>
     </div>
-    <div style="color: #374151; font-size: 11px; margin-top: 4px; line-height: 1.4;">
-        • <b>{len(df):,}</b> verified reports retained<br/>
-        • <b>{unconfirmed_drop:,}</b> unconfirmed/pending dropped<br/>
-        • <b>{missing_drop:,}</b> missing data records dropped<br/>
-        • <b>{out_bounds_drop:,}</b> out-of-bounds coords dropped<br/>
-        • Missing Values in Map: <b>0 (Zero)</b>
+    <div style="color: #94a3b8; font-size: 11px; line-height: 1.6; font-family: 'Geist Mono', monospace;">
+        • <b style="color: #f1f5f9;">{len(df):,}</b> verified reports retained<br/>
+        • <span style="color: #f87171;">{unconfirmed_drop:,}</span> unconfirmed dropped<br/>
+        • <span style="color: #fbbf24;">{missing_drop:,}</span> missing fields dropped<br/>
+        • <span style="color: #f87171;">{out_bounds_drop:,}</span> out-of-bounds dropped<br/>
+        • Missing Values: <b style="color: #34d399;">0 (Zero)</b>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -385,43 +521,79 @@ elif time_preset == "Evening Rush (17:00-21:00)":
 elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
-# Header Section
-st.markdown('<div class="main-header">🛡️ Rakshak.ai <span style="font-size: 1.05rem; font-weight: 600; color: #166534; background: #DCFCE7; padding: 3px 10px; border-radius: 6px; margin-left: 8px; vertical-align: middle;">Delhi Police & Citizen Safety Intelligence</span></div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Geospatial Density Clustering (Haversine DBSCAN) & Supervised Premises Risk Forecasting across 15 Delhi Police Districts</div>', unsafe_allow_html=True)
+# Top Floating Capsule Header (Once UI Style)
+st.markdown("""
+<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 9999px; padding: 10px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #10b981); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 16px rgba(6,182,212,0.35);">
+            🛡️
+        </div>
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
+                <span style="font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Delhi Police & Civic AI</span>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8;">Predictive Policing, Spatial Hotspots & Autonomous Agent Gateway</div>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; font-family: 'Geist Mono', monospace;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+            <span>All ML Models Live</span>
+        </div>
+        <span style="color: #475569;">•</span>
+        <span style="color: #94a3b8;">Asia/Kolkata (IST)</span>
+    </div>
+</div>
 
-# Live GPS Banner if location is active
+<!-- Once UI Hero Banner Card -->
+<div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px 28px; margin-bottom: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);">
+    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #22d3ee; font-size: 10.5px; font-family: 'Geist Mono', monospace; font-weight: 700; text-transform: uppercase; margin-bottom: 10px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22d3ee;"></span>
+        PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+    </div>
+    <h1 style="font-size: 2.1rem; font-weight: 900; color: #ffffff; letter-spacing: -0.03em; margin: 0 0 8px 0; line-height: 1.2;">
+        Algorithmic Crime Forensics & Autonomous Agent Deterrence
+    </h1>
+    <p style="font-size: 13.5px; color: #94a3b8; max-width: 900px; margin: 0; line-height: 1.6;">
+        Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
     if dist_spot <= 0.4:
-        banner_border = "#DC2626"
-        banner_bg = "linear-gradient(90deg, #FEF2F2 0%, #FEE2E2 100%)"
+        banner_border = "#f87171"
+        banner_bg = "rgba(239, 68, 68, 0.12)"
         banner_title = "🚨 DANGER: You are in or adjacent to a HIGH-RISK CRIME CORRIDOR"
-        badge_bg = "#DC2626"
+        badge_bg = "#dc2626"
         badge_txt = "HIGH RISK CORRIDOR"
     elif dist_spot <= 0.8:
-        banner_border = "#D97706"
-        banner_bg = "linear-gradient(90deg, #FFFBEB 0%, #FEF3C7 100%)"
+        banner_border = "#fbbf24"
+        banner_bg = "rgba(245, 158, 11, 0.12)"
         banner_title = "⚠️ CAUTION: You are within 800m of an Active Crime Hotspot"
-        badge_bg = "#D97706"
+        badge_bg = "#d97706"
         badge_txt = "MODERATE CAUTION"
     else:
-        banner_border = "#16A34A"
-        banner_bg = "linear-gradient(90deg, #F0FDF4 0%, #DCFCE7 100%)"
+        banner_border = "#34d399"
+        banner_bg = "rgba(16, 185, 129, 0.12)"
         banner_title = "🛡️ SAFE ZONE: You are currently within a Verified Safe Buffer Zone"
-        badge_bg = "#16A34A"
+        badge_bg = "#059669"
         badge_txt = "SAFE ZONE"
 
     st.markdown(f"""
-    <div style="background: {banner_bg}; border: 1px solid #CBD5E1; border-left: 6px solid {banner_border}; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-family: sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="background: {banner_bg}; backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {banner_border}; border-radius: 18px; padding: 16px 22px; margin-bottom: 22px; font-family: 'Geist', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-                <div style="font-weight: 800; color: #111827; font-size: 15px;">{banner_title}</div>
-                <div style="color: #374151; font-size: 13px; margin-top: 4px;">
-                    Coordinates: <code>{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b>{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
+                <div style="font-weight: 800; color: #ffffff; font-size: 14.5px;">{banner_title}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px; font-family: 'Geist Mono', monospace;">
+                    Coordinates: <code style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b style="color: #f1f5f9;">{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
                 </div>
             </div>
-            <span style="background: {badge_bg}; color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">{badge_txt}</span>
+            <span style="background: {badge_bg}; color: white; padding: 6px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; font-family: 'Geist Mono', monospace;">{badge_txt}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)

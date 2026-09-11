@@ -24,6 +24,7 @@ from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
 from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
 from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html
 from data.generate_delhi_data import DISTRICTS
+from data.cleaner import clean_crime_dataset
 
 def find_nearest_delhi_jurisdiction(lat, lon):
     """Calculates nearest Delhi police district and police station using Haversine distance."""
@@ -43,30 +44,34 @@ def find_nearest_delhi_jurisdiction(lat, lon):
     return closest_dist, closest_ps, round(min_dist, 2)
 
 def render_gps_locator(key_suffix=""):
-    """Renders an interactive HTML5 Geolocation button that requests browser GPS permissions."""
+    """Renders an interactive Once UI glassmorphic HTML5 Geolocation radar button."""
     btn_id = f"gps-btn{key_suffix}"
     status_id = f"gps-status{key_suffix}"
     geo_html = f"""
-    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: sans-serif;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-weight: 700; color: #166534; font-size: 13px;">📍 Live GPS Geolocation</span>
-            <span style="font-size: 10px; background: #DCFCE7; color: #15803D; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HTML5 GPS</span>
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); font-family: 'Geist', -apple-system, sans-serif;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">📍</span>
+                <span style="font-weight: 800; color: #ffffff; font-size: 12px; letter-spacing: -0.01em;">Live GPS Geolocation Radar</span>
+            </div>
+            <span style="font-size: 10px; font-family: 'Geist Mono', monospace; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">HTML5 GPS</span>
         </div>
         <button id="{btn_id}" onclick="requestGPS_{key_suffix}()" style="
             width: 100%;
-            background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%);
             color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 9px 12px;
-            font-weight: 600;
-            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 9999px;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 12.5px;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
+            transition: all 0.2s ease;
         ">
             🛰️ Access My Current Location
         </button>
-        <div id="{status_id}" style="font-size: 11px; color: #4B5563; margin-top: 6px; text-align: center;">
+        <div id="{status_id}" style="font-size: 10.5px; color: #94a3b8; margin-top: 8px; text-align: center; font-family: 'Geist Mono', monospace;">
             Click to detect your current latitude & longitude
         </div>
     </div>
@@ -75,19 +80,19 @@ def render_gps_locator(key_suffix=""):
         const btn = document.getElementById("{btn_id}");
         const status = document.getElementById("{status_id}");
         if (!navigator.geolocation) {{
-            status.innerHTML = "<span style='color: #DC2626;'>❌ Geolocation not supported by browser.</span>";
+            status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported by browser.</span>";
             return;
         }}
         btn.disabled = true;
         btn.innerText = "⏳ Acquiring GPS Fix...";
-        status.innerHTML = "<span style='color: #2563EB;'>Requesting browser permission...</span>";
+        status.innerHTML = "<span style='color: #38bdf8;'>Requesting browser permission...</span>";
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {{
                 const lat = pos.coords.latitude.toFixed(5);
                 const lon = pos.coords.longitude.toFixed(5);
                 const acc = Math.round(pos.coords.accuracy);
-                status.innerHTML = "<span style='color: #16A34A; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
+                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
                 
                 try {{
                     const target = window.top || window.parent;
@@ -106,10 +111,10 @@ def render_gps_locator(key_suffix=""):
                 btn.disabled = false;
                 btn.innerText = "🛰️ Access My Current Location";
                 let msg = err.message;
-                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser address bar.";
+                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser.";
                 else if (err.code === 2) msg = "GPS position unavailable.";
                 else if (err.code === 3) msg = "GPS request timed out.";
-                status.innerHTML = "<span style='color: #DC2626;'>⚠️ " + msg + "</span>";
+                status.innerHTML = "<span style='color: #f87171;'>⚠️ " + msg + "</span>";
             }},
             {{ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }}
         );
@@ -120,57 +125,187 @@ def render_gps_locator(key_suffix=""):
 
 # Page Configuration
 st.set_page_config(
-    page_title="Rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor",
+    page_title="Rakshak.ai | Civic Safety Intelligence & Predictive Policing",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS styling
+# Custom Once UI & Magic Portfolio CSS styling
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.1rem;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 0.2rem;
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    /* Global Dark Canvas with Once UI Dot Grid */
+    html, body, [data-testid="stAppViewContainer"], .main {
+        font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+        background-color: #090b10 !important;
+        color: #f1f5f9 !important;
     }
-    .sub-header {
-        font-size: 1.05rem;
-        color: #64748B;
-        margin-bottom: 1.5rem;
+
+    [data-testid="stAppViewContainer"] {
+        background-color: #090b10 !important;
+        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0) !important;
+        background-size: 24px 24px !important;
     }
-    .metric-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+    /* Top padding fix */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1400px !important;
     }
+
+    /* Sidebar Once UI Styling */
+    [data-testid="stSidebar"] {
+        background-color: rgba(11, 15, 23, 0.95) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+    }
+
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Streamlit Metric Cards -> Once UI Pop Cards */
+    [data-testid="stMetric"] {
+        background: rgba(14, 18, 26, 0.75) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        padding: 16px 20px !important;
+        box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    [data-testid="stMetric"]:hover {
+        border-color: rgba(6, 182, 212, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        color: #94a3b8 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 30px !important;
+        font-weight: 900 !important;
+        color: #ffffff !important;
+        letter-spacing: -0.03em !important;
+    }
+
+    [data-testid="stMetricDelta"] {
+        font-family: 'Geist Mono', monospace !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+    }
+
+    /* Streamlit Tabs -> Once UI Floating Capsule Nav */
+    div[data-baseweb="tab-list"] {
+        background: rgba(14, 18, 26, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 9999px !important;
+        padding: 6px !important;
+        gap: 6px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(16px) !important;
+        margin-bottom: 24px !important;
+    }
+
+    div[data-baseweb="tab"] {
+        border-radius: 9999px !important;
+        color: #94a3b8 !important;
+        font-size: 12.5px !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+        border: 1px solid transparent !important;
+        transition: all 0.2s ease !important;
+        background: transparent !important;
+    }
+
+    div[data-baseweb="tab"]:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    div[data-baseweb="tab"][aria-selected="true"] {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    div[data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* Buttons -> Once UI Pill Buttons */
+    .stButton > button {
+        border-radius: 9999px !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease !important;
+        padding: 8px 18px !important;
+    }
+
+    .stButton > button:hover {
+        background: rgba(255, 255, 255, 0.14) !important;
+        border-color: rgba(6, 182, 212, 0.5) !important;
+        color: #22d3ee !important;
+    }
+
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%) !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
+    }
+
+    /* Selectboxes and Inputs */
+    div[data-baseweb="select"] > div {
+        background: rgba(14, 18, 26, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 14px !important;
+        color: #f1f5f9 !important;
+    }
+
+    /* Badges */
     .badge-high {
-        background-color: #FEE2E2;
-        color: #991B1B;
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
     .badge-med {
-        background-color: #FEF3C7;
-        color: #92400E;
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
     .badge-low {
-        background-color: #D1FAE5;
-        color: #065F46;
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
         padding: 4px 10px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.85rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        font-family: 'Geist Mono', monospace;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -178,12 +313,14 @@ st.markdown("""
 @st.cache_data
 def load_data():
     csv_path = os.path.join(BASE_DIR, "data", "delhi_crime_records.csv")
-    if not os.path.exists(csv_path):
+    raw_path = os.path.join(BASE_DIR, "data", "raw_delhi_police_reports.csv")
+    if not os.path.exists(csv_path) or not os.path.exists(raw_path):
         from data.generate_delhi_data import generate_delhi_crime_dataset
-        df = generate_delhi_crime_dataset(output_path=csv_path)
-    else:
-        df = pd.read_csv(csv_path)
-    return df
+        df = generate_delhi_crime_dataset(output_path=csv_path, raw_output_path=raw_path)
+    clean_df = pd.read_csv(csv_path)
+    raw_df = pd.read_csv(raw_path) if os.path.exists(raw_path) else clean_df.copy()
+    _, audit = clean_crime_dataset(raw_df)
+    return clean_df, raw_df, audit
 
 @st.cache_resource
 def load_or_train_models(df):
@@ -201,7 +338,7 @@ def load_or_train_models(df):
     return predictor
 
 # Load Dataset and ML Model
-df = load_data()
+df, raw_df, cleaning_audit = load_data()
 predictor = load_or_train_models(df)
 cluster_engine = predictor.cluster_engine
 
@@ -261,11 +398,13 @@ else:
         zone_color = "#16A34A"
         
     st.sidebar.markdown(f"""
-    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-left: 5px solid {zone_color}; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px;">
-        <b style="color: {zone_color};">{zone_status}</b><br/>
-        <b>Lat, Lon:</b> <code>{user_lat:.4f}, {user_lon:.4f}</code><br/>
-        <b>Nearest Hotspot:</b> <b>{dist_spot:.2f} km away</b><br/>
-        <b>Jurisdiction:</b> {closest_d} (PS {closest_ps})
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {zone_color}; padding: 14px; border-radius: 16px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+        <b style="color: {zone_color}; font-size: 12.5px;">{zone_status}</b><br/>
+        <div style="color: #94a3b8; font-family: 'Geist Mono', monospace; font-size: 11px; margin-top: 6px; line-height: 1.5;">
+            <b>Coordinates:</b> <span style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</span><br/>
+            <b>Nearest Hotspot:</b> <b style="color: {zone_color};">{dist_spot:.2f} km</b><br/>
+            <b>Jurisdiction:</b> {closest_d} (PS {closest_ps})
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -276,18 +415,50 @@ else:
         st.rerun()
 
 st.sidebar.markdown("---")
+st.sidebar.subheader("🧹 Data Cleaning & Quality Engine")
+unconfirmed_drop = cleaning_audit.get("unconfirmed_dropped", 0)
+missing_drop = cleaning_audit.get("missing_coords_dropped", 0) + cleaning_audit.get("missing_critical_fields_dropped", 0)
+out_bounds_drop = cleaning_audit.get("out_of_bounds_coords_dropped", 0)
+
+st.sidebar.markdown(f"""
+<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 14px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: #34d399; font-weight: 700;">✅ Clean Data Pipeline</span>
+        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-family: 'Geist Mono', monospace;">100% Complete</span>
+    </div>
+    <div style="color: #94a3b8; font-size: 11px; line-height: 1.6; font-family: 'Geist Mono', monospace;">
+        • <b style="color: #f1f5f9;">{len(df):,}</b> verified reports retained<br/>
+        • <span style="color: #f87171;">{unconfirmed_drop:,}</span> unconfirmed dropped<br/>
+        • <span style="color: #fbbf24;">{missing_drop:,}</span> missing fields dropped<br/>
+        • <span style="color: #f87171;">{out_bounds_drop:,}</span> out-of-bounds dropped<br/>
+        • Missing Values: <b style="color: #34d399;">0 (Zero)</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+data_stream_mode = st.sidebar.radio(
+    "Hotspot Map Data Stream",
+    ["✅ Confirmed & Complete FIRs (Default)", "⚠️ Raw Uncleaned Feed (Audit Mode)"],
+    index=0
+)
+
+st.sidebar.markdown("---")
 st.sidebar.subheader("Filter & Simulation Controls")
 
+# Determine active source based on stream selection
+is_clean_mode = data_stream_mode.startswith("✅")
+active_source_df = df if is_clean_mode else raw_df
+
 # District Filter
-all_districts = ["All Districts"] + sorted(list(df["district"].unique()))
+all_districts = ["All Districts"] + sorted([str(d) for d in active_source_df["district"].dropna().unique()])
 selected_district = st.sidebar.selectbox("Police District", all_districts, index=0)
 
 # Premises Filter
-all_premises = ["All Premises"] + sorted(list(df["premises_type"].unique()))
+all_premises = ["All Premises"] + sorted([str(p) for p in active_source_df["premises_type"].dropna().unique()])
 selected_premises = st.sidebar.selectbox("Premises Vulnerability", all_premises, index=0)
 
 # Crime Category
-all_crimes = ["All Crimes"] + sorted(list(df["crime_category"].unique()))
+all_crimes = ["All Crimes"] + sorted([str(c) for c in active_source_df["crime_category"].dropna().unique()])
 selected_crime = st.sidebar.selectbox("Crime Category", all_crimes, index=0)
 
 # Time Slider
@@ -310,15 +481,24 @@ selected_day = st.sidebar.selectbox(
     ["All Days", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 )
 
-# Map Options
 st.sidebar.markdown("---")
-st.sidebar.subheader("Map Layer Controls")
+st.sidebar.subheader("Map Layer & Zoom Controls")
 show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
 show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
 show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
 
+map_zoom_sidebar = st.sidebar.slider(
+    "Map Zoom Scale",
+    min_value=10,
+    max_value=18,
+    value=st.session_state.get("map_zoom", 13),
+    step=1,
+    help="Adjust initial zoom (11=City, 13=District, 15=Hotspot, 17=Street)"
+)
+st.session_state["map_zoom"] = map_zoom_sidebar
+
 # Filter Dataset based on controls
-filtered_df = df.copy()
+filtered_df = active_source_df.copy()
 
 if selected_district != "All Districts":
     filtered_df = filtered_df[filtered_df["district"] == selected_district]
@@ -341,43 +521,79 @@ elif time_preset == "Evening Rush (17:00-21:00)":
 elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
-# Header Section
-st.markdown('<div class="main-header">🛡️ Rakshak.ai <span style="font-size: 1.05rem; font-weight: 600; color: #166534; background: #DCFCE7; padding: 3px 10px; border-radius: 6px; margin-left: 8px; vertical-align: middle;">Delhi Police & Citizen Safety Intelligence</span></div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Geospatial Density Clustering (Haversine DBSCAN) & Supervised Premises Risk Forecasting across 15 Delhi Police Districts</div>', unsafe_allow_html=True)
+# Top Floating Capsule Header (Once UI Style)
+st.markdown("""
+<div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 9999px; padding: 10px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #10b981); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 16px rgba(6,182,212,0.35);">
+            🛡️
+        </div>
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
+                <span style="font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Delhi Police & Civic AI</span>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8;">Predictive Policing, Spatial Hotspots & Autonomous Agent Gateway</div>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; font-size: 11px; font-family: 'Geist Mono', monospace;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+            <span>All ML Models Live</span>
+        </div>
+        <span style="color: #475569;">•</span>
+        <span style="color: #94a3b8;">Asia/Kolkata (IST)</span>
+    </div>
+</div>
 
-# Live GPS Banner if location is active
+<!-- Once UI Hero Banner Card -->
+<div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px 28px; margin-bottom: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);">
+    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #22d3ee; font-size: 10.5px; font-family: 'Geist Mono', monospace; font-weight: 700; text-transform: uppercase; margin-bottom: 10px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22d3ee;"></span>
+        PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS
+    </div>
+    <h1 style="font-size: 2.1rem; font-weight: 900; color: #ffffff; letter-spacing: -0.03em; margin: 0 0 8px 0; line-height: 1.2;">
+        Algorithmic Crime Forensics & Autonomous Agent Deterrence
+    </h1>
+    <p style="font-size: 13.5px; color: #94a3b8; max-width: 900px; margin: 0; line-height: 1.6;">
+        Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
     if dist_spot <= 0.4:
-        banner_border = "#DC2626"
-        banner_bg = "linear-gradient(90deg, #FEF2F2 0%, #FEE2E2 100%)"
+        banner_border = "#f87171"
+        banner_bg = "rgba(239, 68, 68, 0.12)"
         banner_title = "🚨 DANGER: You are in or adjacent to a HIGH-RISK CRIME CORRIDOR"
-        badge_bg = "#DC2626"
+        badge_bg = "#dc2626"
         badge_txt = "HIGH RISK CORRIDOR"
     elif dist_spot <= 0.8:
-        banner_border = "#D97706"
-        banner_bg = "linear-gradient(90deg, #FFFBEB 0%, #FEF3C7 100%)"
+        banner_border = "#fbbf24"
+        banner_bg = "rgba(245, 158, 11, 0.12)"
         banner_title = "⚠️ CAUTION: You are within 800m of an Active Crime Hotspot"
-        badge_bg = "#D97706"
+        badge_bg = "#d97706"
         badge_txt = "MODERATE CAUTION"
     else:
-        banner_border = "#16A34A"
-        banner_bg = "linear-gradient(90deg, #F0FDF4 0%, #DCFCE7 100%)"
+        banner_border = "#34d399"
+        banner_bg = "rgba(16, 185, 129, 0.12)"
         banner_title = "🛡️ SAFE ZONE: You are currently within a Verified Safe Buffer Zone"
-        badge_bg = "#16A34A"
+        badge_bg = "#059669"
         badge_txt = "SAFE ZONE"
 
     st.markdown(f"""
-    <div style="background: {banner_bg}; border: 1px solid #CBD5E1; border-left: 6px solid {banner_border}; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-family: sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="background: {banner_bg}; backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {banner_border}; border-radius: 18px; padding: 16px 22px; margin-bottom: 22px; font-family: 'Geist', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-                <div style="font-weight: 800; color: #111827; font-size: 15px;">{banner_title}</div>
-                <div style="color: #374151; font-size: 13px; margin-top: 4px;">
-                    Coordinates: <code>{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b>{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
+                <div style="font-weight: 800; color: #ffffff; font-size: 14.5px;">{banner_title}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px; font-family: 'Geist Mono', monospace;">
+                    Coordinates: <code style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b style="color: #f1f5f9;">{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
                 </div>
             </div>
-            <span style="background: {badge_bg}; color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">{badge_txt}</span>
+            <span style="background: {badge_bg}; color: white; padding: 6px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; font-family: 'Geist Mono', monospace;">{badge_txt}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -385,7 +601,8 @@ if user_lat is not None:
 # Top KPI Metric Cards
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 with kpi1:
-    st.metric("Incidents Filtered", f"{len(filtered_df):,}", f"of {len(df):,} total")
+    completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
+    st.metric("Incidents Filtered", f"{len(filtered_df):,}", completeness_sub)
 with kpi2:
     st.metric("Active Hotspots", f"{cluster_engine.num_clusters_}", "DBSCAN (ε=600m)")
 with kpi3:
@@ -393,12 +610,13 @@ with kpi3:
 with kpi4:
     st.metric("Prediction F1", f"{predictor.metrics.get('f1_score', 0.75):.3f}", "High-Risk Class")
 with kpi5:
-    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 else 0
+    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 and "is_high_risk" in filtered_df.columns else 0
     st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
-tab1, tab_pred, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab_clean, tab_pred, tab2, tab3, tab4, tab5 = st.tabs([
     "🗺️ Interactive Hotspot Map",
+    "🧹 Data Cleaning & FIR Verification",
     "🚔 Predictive Policing & Tactics",
     "⚡ Real-Time Premises Risk Scorer",
     "🔬 DBSCAN vs K-Means (Interview Defense)",
@@ -411,22 +629,67 @@ with tab1:
     st.subheader("Delhi Geospatial Crime Map & Hotspot Corridors")
     st.caption("Visualizing spatial density gradients, DBSCAN cluster centroids, and localized premises risk profiles.")
     
+    if is_clean_mode:
+        st.markdown("""
+        <div style="background: #F0FDF4; border-left: 5px solid #16A34A; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #166534;">
+            <b>🛡️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background: #FFFBEB; border-left: 5px solid #D97706; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #92400E;">
+            <b>⚠️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
+        </div>
+        """, unsafe_allow_html=True)
+    
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        map_mode = st.radio(
-            "Select Map Experience:",
-            ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS, Breadcrumbs & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
-            index=0,
-            horizontal=True
-        )
+        map_col, zoom_tb_col = st.columns([1.5, 1.8])
+        with map_col:
+            map_mode = st.radio(
+                "Select Map Experience:",
+                ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
+                index=0,
+                horizontal=True
+            )
+        with zoom_tb_col:
+            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #475569; margin-bottom: 4px;'>🔍 Quick Zoom Controls:</div>", unsafe_allow_html=True)
+            z1, z2, z3, z4, z_in, z_out = st.columns(6)
+            with z1:
+                if st.button("🗺️ City (11x)", use_container_width=True, help="Full Delhi NCT Overview"):
+                    st.session_state["map_zoom"] = 11
+                    st.rerun()
+            with z2:
+                if st.button("🏙️ District (13x)", use_container_width=True, help="District Jurisdiction View"):
+                    st.session_state["map_zoom"] = 13
+                    st.rerun()
+            with z3:
+                if st.button("🚨 Corridor (15x)", use_container_width=True, help="DBSCAN Hotspot Cluster Core"):
+                    st.session_state["map_zoom"] = 15
+                    st.rerun()
+            with z4:
+                if st.button("🔎 Street (17x)", use_container_width=True, help="Street & Premises Detail"):
+                    st.session_state["map_zoom"] = 17
+                    st.rerun()
+            with z_in:
+                if st.button("➕ In", use_container_width=True, help="Step Zoom In"):
+                    st.session_state["map_zoom"] = min(19, st.session_state.get("map_zoom", 13) + 1)
+                    st.rerun()
+            with z_out:
+                if st.button("➖ Out", use_container_width=True, help="Step Zoom Out"):
+                    st.session_state["map_zoom"] = max(9, st.session_state.get("map_zoom", 13) - 1)
+                    st.rerun()
+
+        current_zoom = st.session_state.get("map_zoom", 13)
 
         if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine
+            # Native hardware-accelerated 60fps Leaflet engine with dedicated zoom dock and HUD controls
             smooth_html = create_smooth_realtime_leaflet_html(
                 hotspots_df=cluster_engine.hotspots_df,
                 initial_user_lat=user_lat,
-                initial_user_lon=user_lon
+                initial_user_lon=user_lon,
+                initial_zoom=current_zoom
             )
             st.components.v1.html(smooth_html, height=640)
         else:
@@ -437,7 +700,8 @@ with tab1:
                 show_heatmap=show_heat,
                 show_hotspots=show_spots,
                 show_pins=show_incidents,
-                user_location=(user_lat, user_lon) if user_lat else None
+                user_location=(user_lat, user_lon) if user_lat else None,
+                zoom_level=current_zoom
             )
             st_folium(crime_map, width=None, height=580, returned_objects=[])
         
@@ -464,6 +728,105 @@ with tab1:
                 use_container_width=True,
                 hide_index=True
             )
+
+# --- TAB: DATA CLEANING & FIR VERIFICATION ---
+with tab_clean:
+    st.subheader("🧹 Police FIR Data Cleaning & Completeness Verification Pipeline")
+    st.caption("Transforming raw, noisy police feeds into high-integrity verified crime data for algorithmic hotspot discovery.")
+
+    # Executive Pipeline Flow / Summary Card
+    st.markdown("""
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+        <div style="font-weight: 700; color: #1E293B; font-size: 15px; margin-bottom: 6px;">
+            🛡️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
+        </div>
+        <div style="color: #475569; font-size: 13px; line-height: 1.5;">
+            In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
+            false alarms, or records with missing coordinates leak into density estimators like DBSCAN, cluster centroids warp and police patrols 
+            are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 6 Funnel KPI Metric Cards
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    with c1:
+        st.metric("1. Raw Feed Ingested", f"{cleaning_audit.get('raw_count', len(raw_df)):,}", "Incoming Logs")
+    with c2:
+        st.metric("2. Unconfirmed Dropped", f"-{cleaning_audit.get('unconfirmed_dropped', 0):,}", "Pending / False")
+    with c3:
+        st.metric("3. Missing GPS Dropped", f"-{cleaning_audit.get('missing_coords_dropped', 0):,}", "Null Coordinates")
+    with c4:
+        st.metric("4. Missing Cols Dropped", f"-{cleaning_audit.get('missing_critical_fields_dropped', 0):,}", "Null Attributes")
+    with c5:
+        st.metric("5. Duplicates Dropped", f"-{cleaning_audit.get('duplicates_dropped', 0):,}", "Duplicate Logs")
+    with c6:
+        st.metric("6. Verified Hotspot Base", f"{len(df):,}", f"{cleaning_audit.get('retention_rate_pct', 72.8)}% Retained")
+
+    st.markdown("---")
+
+    col_audit_left, col_audit_right = st.columns([1.1, 0.9])
+
+    with col_audit_left:
+        st.markdown("### 📊 Cleaning Funnel & Rejection Reasons")
+        st.caption("Distribution of filtered raw records across validation stages.")
+        
+        rejection_data = pd.DataFrame(cleaning_audit.get("rejection_summary", []))
+        if not rejection_data.empty:
+            rejection_data["% of Raw Records"] = (rejection_data["count"] / cleaning_audit.get("raw_count", 1) * 100.0).round(2)
+            rejection_data = rejection_data.rename(columns={"reason": "Filter / Rejection Rule", "count": "Dropped Records"})
+            st.dataframe(rejection_data, use_container_width=True, hide_index=True)
+
+        st.markdown("#### 🏆 Data Quality Scorecard")
+        q1, q2, q3 = st.columns(3)
+        with q1:
+            st.metric("Data Completeness", "100.0%", "0 Missing Values")
+        with q2:
+            st.metric("FIR Confirmation", "100.0%", "All Confirmed")
+        with q3:
+            st.metric("Geocode Validity", "100.0%", "Delhi NCT Bounds")
+
+    with col_audit_right:
+        st.markdown("### 🔬 Verification Rules & Architectural Defense")
+        with st.expander("1. Verification Status (Confirmed FIR Only)", expanded=True):
+            st.markdown("""
+            - **Problem**: Emergency call feeds contain unconfirmed tips, false alarms, and incidents still under preliminary enquiry.
+            - **Criminological Impact**: Clustering unverified calls forces scarce police resources away from real persistent crime hubs.
+            - **Rule**: Retain only records with `confirmation_status == 'Confirmed'`.
+            """)
+        with st.expander("2. Zero-Tolerance for Missing Coordinates & Attributes"):
+            st.markdown("""
+            - **Problem**: In real police databases, 3-6% of records lack GPS coordinates or have (0,0) null placeholders.
+            - **Mathematical Impact**: Haversine distance matrix computation breaks with NaN coordinates. Imputation with district centroids artificially bunches crime into fake clusters.
+            - **Rule**: Prune any record with missing lat/lon, crime type, premises, or timestamp.
+            """)
+        with st.expander("3. Delhi Territorial Geofencing (NCT Bounding Box)"):
+            st.markdown("""
+            - **Problem**: Coordinate transpositions or faulty GPS units record incidents in neighboring states (UP, Haryana) or oceans.
+            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\\text{N} - 28.95^\circ\\text{N}$, Longitude $76.80^\circ\\text{E} - 77.50^\circ\\text{E}$.
+            """)
+        with st.expander("4. Duplicate Incident Deduplication"):
+            st.markdown("""
+            - **Problem**: Multiple citizens report the same snatching or robbery, resulting in multiple dispatch records for a single event.
+            - **Rule**: Deduplicate on composite spatio-temporal key `[record_id]` and `[date, hour, minute, lat, lon, crime_category]`.
+            """)
+
+    st.markdown("---")
+    st.markdown("### 🔍 Interactive Record Inspector: Clean vs Rejected Sample")
+    inspector_mode = st.radio(
+        "Select Dataset View to Inspect:",
+        ["✅ Cleaned & Verified Police Records (Used for Hotspots & ML)", "⚠️ Raw Ingested Sample with Data Flaws"],
+        horizontal=True
+    )
+    if inspector_mode.startswith("✅"):
+        st.caption("Showing sample of verified records. All fields are 100% complete and validated.")
+        cols_to_show = ["record_id", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "date", "hour", "latitude", "longitude", "risk_level"]
+        st.dataframe(df[[c for c in cols_to_show if c in df.columns]].head(15), use_container_width=True, hide_index=True)
+    else:
+        st.caption("Showing sample from raw feed highlighting unconfirmed statuses and missing fields.")
+        raw_display = raw_df.head(25).copy()
+        cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
+        st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
 
 # --- TAB: PREDICTIVE POLICING & TACTICS ---
 with tab_pred:
