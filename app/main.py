@@ -21,7 +21,7 @@ if BASE_DIR not in sys.path:
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
-from app.map_renderer import create_delhi_crime_map
+from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html
 from data.generate_delhi_data import DISTRICTS
 
 def find_nearest_delhi_jurisdiction(lat, lon):
@@ -412,16 +412,32 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        # Render Folium Map with optional user GPS location
-        crime_map = create_delhi_crime_map(
-            filtered_df,
-            hotspots_df=cluster_engine.hotspots_df,
-            show_heatmap=show_heat,
-            show_hotspots=show_spots,
-            show_pins=show_incidents,
-            user_location=(user_lat, user_lon) if user_lat else None
+        map_mode = st.radio(
+            "Select Map Experience:",
+            ["⚡ Ultra-Smooth 60fps Movement Radar (Continuous GPS, Breadcrumbs & Simulation)", "🗺️ Static Density Heatmap (Folium)"],
+            index=0,
+            horizontal=True
         )
-        st_folium(crime_map, width=None, height=520)
+
+        if map_mode.startswith("⚡"):
+            # Native hardware-accelerated 60fps Leaflet engine
+            smooth_html = create_smooth_realtime_leaflet_html(
+                hotspots_df=cluster_engine.hotspots_df,
+                initial_user_lat=user_lat,
+                initial_user_lon=user_lon
+            )
+            st.components.v1.html(smooth_html, height=640)
+        else:
+            # Folium Map with returned_objects=[] to eliminate re-run lag
+            crime_map = create_delhi_crime_map(
+                filtered_df,
+                hotspots_df=cluster_engine.hotspots_df,
+                show_heatmap=show_heat,
+                show_hotspots=show_spots,
+                show_pins=show_incidents,
+                user_location=(user_lat, user_lon) if user_lat else None
+            )
+            st_folium(crime_map, width=None, height=580, returned_objects=[])
         
         # Hotspots Table
         st.markdown("### Top Identified DBSCAN Crime Hotspots")

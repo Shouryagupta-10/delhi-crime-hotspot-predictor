@@ -1,16 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { 
-  Navigation, 
-  ShieldAlert, 
   ShieldCheck, 
-  AlertTriangle, 
   LocateFixed, 
   Play, 
   Square, 
   Radio, 
   PhoneCall,
-  Flame
+  Flame,
+  Zap,
+  Crosshair
 } from 'lucide-react';
 
 export interface HotspotPoint {
@@ -129,6 +128,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; accuracy: number; speed: number | null } | null>(null);
   const [trailHistory, setTrailHistory] = useState<[number, number][]>([]);
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [isGpsActive, setIsGpsActive] = useState<boolean>(false);
   const [gpsError, setGpsError] = useState<string>('');
 
   // Simulation State
@@ -137,13 +137,12 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
 
   // Active Map Filter
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'SAFE'>('ALL');
-  const [followUser] = useState<boolean>(true);
 
-  // Computed Proximity Radar
+  // Computed Proximity Radar & Threat Index
   const [nearestHotspot, setNearestHotspot] = useState<{ hotspot: HotspotPoint; distanceMeters: number } | null>(null);
   const [currentThreatLevel, setCurrentThreatLevel] = useState<'CRITICAL_RISK' | 'MODERATE_CAUTION' | 'SAFE_ZONE'>('SAFE_ZONE');
+  const [threatPercentage, setThreatPercentage] = useState<number>(20);
 
-  // Markers group
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
 
   // 1. Initialize Smooth Leaflet Map
@@ -168,11 +167,19 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
+    // Invalidate size to guarantee no grey tiles
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener('resize', handleResize);
+
     // Breadcrumbs Trail Polyline
     const trail = L.polyline([], {
       color: '#06B6D4',
       weight: 4,
-      opacity: 0.85,
+      opacity: 0.9,
       dashArray: '4, 8',
       lineCap: 'round'
     }).addTo(map);
@@ -181,9 +188,12 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
     mapInstanceRef.current = map;
 
     renderLayers(map, 'ALL');
-    startContinuousTracking();
+
+    // Start with default position
+    updateUserPosition(28.6328, 77.2197, 20, 0);
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       map.remove();
@@ -200,7 +210,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
 
     const group = markersGroupRef.current;
 
-    // Render Hotspots
+    // Render Hotspots with visible danger zones
     DELHI_HOTSPOTS.forEach((h) => {
       if (filter === 'SAFE') return;
       if (filter === 'HIGH' && h.riskLevel !== 'HIGH') return;
@@ -208,34 +218,35 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
 
       const isHigh = h.riskLevel === 'HIGH';
       const color = isHigh ? '#EF4444' : '#F59E0B';
-      const fillColor = isHigh ? '#F87171' : '#FBBF24';
-      const radius = isHigh ? 380 : 250;
+      const fillColor = isHigh ? '#DC2626' : '#D97706';
+      const radius = isHigh ? 420 : 280;
 
+      // Visible Danger Zone Perimeter
       const dangerZone = L.circle([h.lat, h.lon], {
         radius,
         color,
-        weight: 1.5,
+        weight: 2,
         fillColor,
-        fillOpacity: isHigh ? 0.22 : 0.14,
+        fillOpacity: isHigh ? 0.28 : 0.16,
         dashArray: isHigh ? undefined : '5, 5'
       });
 
       const iconHtml = `
-        <div class="relative flex items-center justify-center cursor-pointer">
-          <div class="w-8 h-8 rounded-full ${isHigh ? 'bg-rose-600 ring-4 ring-rose-500/30' : 'bg-amber-500 ring-4 ring-amber-400/30'} flex items-center justify-center text-white shadow-xl">
+        <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
+          <div style="width:30px; height:30px; border-radius:50%; background:${isHigh ? '#DC2626' : '#D97706'}; box-shadow:0 0 12px ${color}; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; border:2px solid #fff;">
             ${isHigh ? '🚨' : '⚠️'}
           </div>
-          <span class="absolute -bottom-5 whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-bold ${isHigh ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-amber-950 text-amber-300 border border-amber-800'} shadow-md">
+          <div style="font-size:10px; font-weight:800; background:#0F172A; color:${color}; border:1px solid ${color}; padding:2px 6px; border-radius:4px; margin-top:2px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
             ${h.name.split(' ')[0]} (${Math.round(h.riskScore * 100)}%)
-          </span>
+          </div>
         </div>
       `;
 
       const customIcon = L.divIcon({
         className: 'custom-hotspot-pin',
         html: iconHtml,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
       });
 
       const centroidMarker = L.marker([h.lat, h.lon], { icon: customIcon });
@@ -259,7 +270,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
             <div><b>Premises:</b> ${h.premises}</div>
             <div><b>Statute:</b> <code>${h.ipc}</code></div>
             <div><b>Peak Time:</b> ${h.peakHours}</div>
-            <div><b>Historical Incidents:</b> ${h.incidents} cases</div>
+            <div><b>Historical Cases:</b> ${h.incidents}</div>
           </div>
           <button id="btn-assess-${h.id}" style="
             width: 100%;
@@ -273,7 +284,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
             cursor: pointer;
             margin-top: 4px;
           ">
-            ⚡ Run Protected x402 Assessment
+            ⚡ Select & Test x402 Micropayment
           </button>
         </div>
       `;
@@ -298,29 +309,29 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
     if (filter === 'ALL' || filter === 'SAFE') {
       DELHI_SAFE_ZONES.forEach((s) => {
         const safeZone = L.circle([s.lat, s.lon], {
-          radius: 400,
+          radius: 460,
           color: '#10B981',
-          weight: 1.5,
+          weight: 2,
           fillColor: '#34D399',
-          fillOpacity: 0.16
+          fillOpacity: 0.22
         });
 
         const iconHtml = `
-          <div class="relative flex items-center justify-center cursor-pointer">
-            <div class="w-8 h-8 rounded-full bg-emerald-600 ring-4 ring-emerald-500/30 flex items-center justify-center text-white shadow-xl">
+          <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
+            <div style="width:28px; height:28px; border-radius:50%; background:#059669; box-shadow:0 0 10px #10B981; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; border:2px solid #fff;">
               🛡️
             </div>
-            <span class="absolute -bottom-5 whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 shadow-md">
-              Safe Zone
-            </span>
+            <div style="font-size:10px; font-weight:800; background:#064E3B; color:#6EE7B7; border:1px solid #10B981; padding:2px 6px; border-radius:4px; margin-top:2px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+              Safe Haven (${Math.round(s.riskScore * 100)}%)
+            </div>
           </div>
         `;
 
         const customIcon = L.divIcon({
           className: 'custom-safe-pin',
           html: iconHtml,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
+          iconSize: [44, 44],
+          iconAnchor: [22, 22]
         });
 
         const safeMarker = L.marker([s.lat, s.lon], { icon: customIcon });
@@ -376,7 +387,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
     }
   }, [activeFilter]);
 
-  // 3. Update User Location Marker & Proximity Engine
+  // 3. Update User Location Marker & Continuous Proximity Engine
   const updateUserPosition = (lat: number, lon: number, accuracy: number, speed: number | null) => {
     setUserLocation({ lat, lon, accuracy, speed });
 
@@ -403,13 +414,22 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
       setNearestHotspot({ hotspot: closestHotspot, distanceMeters: minHotspotDist });
     }
 
-    if (minHotspotDist <= 400 && closestHotspot && (closestHotspot as HotspotPoint).riskLevel === 'HIGH') {
+    // Quantitative Threat Index:
+    // If distance < 350m: Threat is 80-95%
+    // If distance 350-800m: Threat is 50-75%
+    // If distance > 800m: Threat is 10-35%
+    let calcThreat = 20;
+    if (minHotspotDist <= 350 && closestHotspot) {
       setCurrentThreatLevel('CRITICAL_RISK');
-    } else if (minHotspotDist <= 650) {
+      calcThreat = Math.round(closestHotspot.riskScore * 100);
+    } else if (minHotspotDist <= 800) {
       setCurrentThreatLevel('MODERATE_CAUTION');
+      calcThreat = Math.round(55 + (800 - minHotspotDist) / 450 * 20);
     } else {
       setCurrentThreatLevel('SAFE_ZONE');
+      calcThreat = Math.max(12, Math.round(35 - (minHotspotDist - 800) / 2000 * 20));
     }
+    setThreatPercentage(calcThreat);
 
     if (mapInstanceRef.current) {
       const map = mapInstanceRef.current;
@@ -418,14 +438,14 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
         className: 'user-radar-beacon',
         html: `
           <div class="relative flex items-center justify-center">
-            <div class="w-7 h-7 rounded-full bg-cyan-500 border-2 border-white shadow-2xl flex items-center justify-center text-slate-950 font-black text-xs z-10 radar-pulse-marker">
+            <div class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white shadow-2xl flex items-center justify-center text-slate-950 font-black text-xs z-10 radar-pulse-marker">
               📍
             </div>
-            <div class="absolute w-12 h-12 bg-cyan-400/30 rounded-full animate-ping pointer-events-none"></div>
+            <div class="absolute w-14 h-14 bg-cyan-400/40 rounded-full animate-ping pointer-events-none"></div>
           </div>
         `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
 
       if (!userMarkerRef.current) {
@@ -439,18 +459,16 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
         userAccuracyCircleRef.current = L.circle([lat, lon], {
           radius: Math.max(accuracy, 60),
           color: '#06B6D4',
-          weight: 1,
+          weight: 1.5,
           fillColor: '#22D3EE',
-          fillOpacity: 0.12
+          fillOpacity: 0.14
         }).addTo(map);
       } else {
         userAccuracyCircleRef.current.setLatLng([lat, lon]);
         userAccuracyCircleRef.current.setRadius(Math.max(accuracy, 60));
       }
 
-      if (followUser) {
-        map.panTo([lat, lon], { animate: true, duration: 0.8 });
-      }
+      map.panTo([lat, lon], { animate: true, duration: 0.8 });
     }
   };
 
@@ -461,6 +479,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
     }
 
     setGpsError('');
+    setIsGpsActive(true);
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
@@ -469,13 +488,11 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
       },
       (err) => {
         let msg = err.message;
-        if (err.code === 1) msg = 'Location permission denied. Please allow GPS access in browser.';
-        else if (err.code === 2) msg = 'GPS signal unavailable. Defaulting to Delhi central.';
-        else if (err.code === 3) msg = 'GPS location timed out.';
+        if (err.code === 1) msg = 'Location permission denied. Please click "Allow" in browser address bar.';
+        else if (err.code === 2) msg = 'GPS signal unavailable. Defaulting to Central Delhi.';
+        else if (err.code === 3) msg = 'GPS request timed out.';
         setGpsError(msg);
-
-        // Fallback default position (Rajiv Chowk)
-        updateUserPosition(28.6328, 77.2197, 100, 0);
+        setIsGpsActive(false);
       },
       {
         enableHighAccuracy: true,
@@ -487,13 +504,6 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
     setWatchId(id);
   };
 
-  const stopTracking = () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-    }
-  };
-
   const toggleSimulation = () => {
     if (isSimulating) {
       if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
@@ -501,19 +511,24 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
       return;
     }
 
-    stopTracking();
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+      setIsGpsActive(false);
+    }
+
     setIsSimulating(true);
     setSimulationIndex(0);
 
     let idx = 0;
     const firstPoint = SIMULATION_ROUTE[0];
-    updateUserPosition(firstPoint.lat, firstPoint.lon, 25, 4.2);
+    updateUserPosition(firstPoint.lat, firstPoint.lon, 20, 4.5);
 
     simulationTimerRef.current = setInterval(() => {
       idx = (idx + 1) % SIMULATION_ROUTE.length;
       setSimulationIndex(idx);
       const pt = SIMULATION_ROUTE[idx];
-      updateUserPosition(pt.lat, pt.lon, 20 + Math.random() * 15, 3.5 + Math.random() * 2);
+      updateUserPosition(pt.lat, pt.lon, 18 + Math.random() * 12, 3.8 + Math.random() * 2);
     }, 2800);
   };
 
@@ -524,14 +539,14 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[620px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl flex flex-col">
+    <div className="relative w-full h-[640px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl flex flex-col">
       
       {/* Top Floating Glassmorphic HUD Bar */}
       <div className="absolute top-4 left-4 right-4 z-[500] flex flex-wrap items-center justify-between gap-3 pointer-events-none">
         
         {/* Real-time Threat Badge & Hotspot Proximity */}
-        <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/70 rounded-xl p-3 shadow-xl flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl p-3 shadow-xl flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className={`w-3.5 h-3.5 rounded-full ${
               currentThreatLevel === 'CRITICAL_RISK' ? 'bg-rose-500 animate-ping' :
               currentThreatLevel === 'MODERATE_CAUTION' ? 'bg-amber-400 animate-pulse' :
@@ -539,16 +554,16 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
             }`}></div>
             <div>
               <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">
-                Live Zone Threat
+                Live Movement Radar
               </div>
-              <div className={`text-xs font-bold ${
+              <div className={`text-xs font-black ${
                 currentThreatLevel === 'CRITICAL_RISK' ? 'text-rose-400' :
                 currentThreatLevel === 'MODERATE_CAUTION' ? 'text-amber-400' :
                 'text-emerald-400'
               }`}>
                 {currentThreatLevel === 'CRITICAL_RISK' ? '🚨 HIGH RISK CORRIDOR' :
                  currentThreatLevel === 'MODERATE_CAUTION' ? '⚠️ MODERATE CAUTION' :
-                 '🛡️ SAFE HAVEN CORRIDOR'}
+                 '🛡️ SAFE HAVEN CORRIDOR'} ({threatPercentage}%)
               </div>
             </div>
           </div>
@@ -556,7 +571,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
           {nearestHotspot && (
             <div className="border-l border-slate-700/80 pl-3 hidden sm:block">
               <div className="text-[10px] text-slate-400 uppercase font-bold">Closest Crime Centroid</div>
-              <div className="text-xs font-semibold text-slate-200 truncate max-w-[200px]">
+              <div className="text-xs font-semibold text-slate-200 truncate max-w-[210px]">
                 {nearestHotspot.hotspot.name} <span className="text-rose-400 font-mono">({nearestHotspot.distanceMeters}m)</span>
               </div>
             </div>
@@ -564,7 +579,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
         </div>
 
         {/* Filter Pill Tabs */}
-        <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/70 rounded-xl p-1 shadow-xl flex items-center gap-1">
+        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl p-1 shadow-xl flex items-center gap-1">
           <button
             onClick={() => setActiveFilter('ALL')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -582,14 +597,6 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
             <Flame className="w-3.5 h-3.5" /> High Risk
           </button>
           <button
-            onClick={() => setActiveFilter('MEDIUM')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeFilter === 'MEDIUM' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Caution
-          </button>
-          <button
             onClick={() => setActiveFilter('SAFE')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
               activeFilter === 'SAFE' ? 'bg-emerald-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'
@@ -599,9 +606,23 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
           </button>
         </div>
 
-        {/* Action Controls: Live GPS, Center, Simulation */}
+        {/* Action Controls: Live GPS, Simulation, Center */}
         <div className="pointer-events-auto flex items-center gap-2">
           
+          {/* GPS Tracking Trigger Button */}
+          <button
+            onClick={startContinuousTracking}
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg transition-all ${
+              isGpsActive
+                ? 'bg-emerald-600 text-white border border-emerald-400 shadow-emerald-500/30'
+                : 'bg-slate-800/90 hover:bg-slate-700 text-cyan-300 border border-slate-700 backdrop-blur'
+            }`}
+            title="Start continuous GPS live tracking of your movement"
+          >
+            <Crosshair className={`w-3.5 h-3.5 ${isGpsActive ? 'animate-spin' : ''}`} />
+            <span>{isGpsActive ? '🛰️ Tracking GPS Movement' : '🛰️ Track My Movement'}</span>
+          </button>
+
           {/* Movement Simulation Button */}
           <button
             onClick={toggleSimulation}
@@ -619,7 +640,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
               </>
             ) : (
               <>
-                <Play className="w-3.5 h-3.5 text-cyan-400" />
+                <Play className="w-3.5 h-3.5 text-amber-400" />
                 <span>Simulate Movement</span>
               </>
             )}
@@ -637,10 +658,13 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
 
       </div>
 
-      {/* Main Leaflet Map Viewport */}
-      <div ref={mapContainerRef} className="w-full h-full z-10" />
+      {/* Main Leaflet Map Viewport - Guaranteed 100% height */}
+      <div 
+        ref={mapContainerRef} 
+        className="w-full flex-1 min-h-[500px] z-10" 
+      />
 
-      {/* Bottom Floating Movement Status Ribbon */}
+      {/* Bottom Floating Movement Status Ribbon with Dynamic Danger Meter */}
       <div className="absolute bottom-4 left-4 right-4 z-[500] pointer-events-none flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         
         {/* Coordinates and Speed HUD */}
@@ -648,7 +672,7 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
             <div>
-              <span className="text-slate-400 text-[10px] block">GPS COORDINATES</span>
+              <span className="text-slate-400 text-[10px] block">LIVE GPS POSITION</span>
               <span className="font-mono font-bold text-white">
                 {userLocation ? `${userLocation.lat.toFixed(4)}°N, ${userLocation.lon.toFixed(4)}°E` : '28.6328°N, 77.2197°E'}
               </span>
@@ -665,38 +689,44 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
           <div className="border-l border-slate-800 pl-4 hidden md:block">
             <span className="text-slate-400 text-[10px] block">TRAIL BREADCRUMBS</span>
             <span className="font-mono text-cyan-300 font-semibold">
-              {trailHistory.length} Waypoints Logged
+              {trailHistory.length} Waypoints
             </span>
           </div>
 
           <div className="border-l border-slate-800 pl-4 hidden lg:block">
-            <span className="text-slate-400 text-[10px] block">POLICE HELPLINE</span>
+            <span className="text-slate-400 text-[10px] block">POLICE EMERGENCY</span>
             <span className="text-slate-200 font-semibold flex items-center gap-1">
               <PhoneCall className="w-3 h-3 text-rose-400" /> Dial 112 / 1090
             </span>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl px-3 py-2 shadow-2xl flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-300">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
-            <span>High Risk (&ge;60%)</span>
+        {/* Dynamic Threat Meter Bar */}
+        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl px-4 py-2.5 shadow-2xl flex items-center gap-3 text-xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Live Threat Level:</span>
+          <div className="w-28 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+            <div 
+              className={`h-full transition-all duration-500 ${
+                threatPercentage >= 60 ? 'bg-rose-500' :
+                threatPercentage >= 45 ? 'bg-amber-400' :
+                'bg-emerald-400'
+              }`}
+              style={{ width: `${threatPercentage}%` }}
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></span>
-            <span>Caution (45-60%)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
-            <span>Safe Haven (&lt;45%)</span>
-          </div>
+          <span className={`font-mono font-black text-xs ${
+            threatPercentage >= 60 ? 'text-rose-400' :
+            threatPercentage >= 45 ? 'text-amber-400' :
+            'text-emerald-400'
+          }`}>
+            {threatPercentage}%
+          </span>
         </div>
 
       </div>
 
       {gpsError && (
-        <div className="absolute top-20 left-4 z-[500] bg-rose-950/90 border border-rose-600 text-rose-200 text-xs px-3 py-2 rounded-lg backdrop-blur">
+        <div className="absolute top-20 left-4 z-[500] bg-rose-950/90 border border-rose-600 text-rose-200 text-xs px-3 py-2 rounded-lg backdrop-blur shadow-lg">
           ⚠️ {gpsError}
         </div>
       )}
