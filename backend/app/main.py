@@ -1058,7 +1058,7 @@ with tab2:
             st.markdown("- **IPC 392 / 394 (BNS 309)**: Robbery / Extortion along unlit transit corridors")
 
 # --- TAB 3: DBSCAN VS K-MEANS INTERVIEW DEFENSE ---
-with tab3:
+if False:
     st.subheader("Algorithmic Defense: Why DBSCAN Over K-Means for Crime Hotspots?")
     st.markdown("""
     > **Core Interview Talking Point from Curriculum:**
