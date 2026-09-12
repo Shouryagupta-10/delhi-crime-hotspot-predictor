@@ -14,10 +14,13 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
-# Add parent directory to sys.path
+# Add parent and project root directories to sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(BASE_DIR) if os.path.basename(BASE_DIR) == "backend" else BASE_DIR
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
@@ -530,8 +533,11 @@ font-family: 'Geist Mono', monospace;
 
 @st.cache_data
 def load_data():
-    csv_path = os.path.join(BASE_DIR, "data", "delhi_crime_records.csv")
-    raw_path = os.path.join(BASE_DIR, "data", "raw_delhi_police_reports.csv")
+    data_dir = os.path.join(BASE_DIR, "data")
+    if not os.path.exists(data_dir):
+        data_dir = os.path.join(PROJECT_ROOT, "data")
+    csv_path = os.path.join(data_dir, "delhi_crime_records.csv")
+    raw_path = os.path.join(data_dir, "raw_delhi_police_reports.csv")
     if not os.path.exists(csv_path) or not os.path.exists(raw_path):
         from data.generate_delhi_data import generate_delhi_crime_dataset
         df = generate_delhi_crime_dataset(output_path=csv_path, raw_output_path=raw_path)
@@ -543,6 +549,10 @@ def load_data():
 @st.cache_resource
 def load_or_train_models(df):
     model_path = os.path.join(BASE_DIR, "models", "saved_models.pkl")
+    if not os.path.exists(model_path):
+        alt_model_path = os.path.join(PROJECT_ROOT, "models", "saved_models.pkl")
+        if os.path.exists(alt_model_path):
+            model_path = alt_model_path
     if os.path.exists(model_path):
         try:
             predictor = DelhiCrimeRiskPredictor.load(model_path)
@@ -550,7 +560,10 @@ def load_or_train_models(df):
         except Exception:
             pass
     predictor = DelhiCrimeRiskPredictor(use_xgboost=True)
-    csv_path = os.path.join(BASE_DIR, "data", "delhi_crime_records.csv")
+    data_dir = os.path.join(BASE_DIR, "data")
+    if not os.path.exists(data_dir):
+        data_dir = os.path.join(PROJECT_ROOT, "data")
+    csv_path = os.path.join(data_dir, "delhi_crime_records.csv")
     predictor.train_and_evaluate(csv_path)
     predictor.save(model_path)
     return predictor
@@ -685,6 +698,15 @@ st.sidebar.subheader("Filter & Simulation Controls")
 is_clean_mode = data_stream_mode.startswith("✅")
 active_source_df = df if is_clean_mode else raw_df
 
+# 10-Year Historical Timeline Filter
+if "year" in active_source_df.columns:
+    available_years = sorted([int(y) for y in active_source_df["year"].dropna().unique()])
+else:
+    available_years = sorted(list(range(2015, 2027)))
+
+year_options = ["All 10 Years (2015–2026)", "Recent 3 Years (2024–2026)", "Past 5 Years (2022–2026)"] + [str(y) for y in reversed(available_years)]
+selected_timeline = st.sidebar.selectbox("📅 10-Year Crime Timeline", year_options, index=0)
+
 # District Filter
 all_districts = ["All Districts"] + sorted([str(d) for d in active_source_df["district"].dropna().unique()])
 selected_district = st.sidebar.selectbox("Police District", all_districts, index=0)
@@ -731,6 +753,27 @@ st.session_state["map_zoom"] = map_zoom_sidebar
 
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
+
+# Timeline filtering
+if selected_timeline == "Recent 3 Years (2024–2026)":
+    if "year" in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df["year"] >= 2024]
+    else:
+        filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year >= 2024]
+elif selected_timeline == "Past 5 Years (2022–2026)":
+    if "year" in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df["year"] >= 2022]
+    else:
+        filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year >= 2022]
+elif selected_timeline != "All 10 Years (2015–2026)":
+    try:
+        chosen_year = int(selected_timeline)
+        if "year" in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df["year"] == chosen_year]
+        else:
+            filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year == chosen_year]
+    except Exception:
+        pass
 
 if selected_district != "All Districts":
     filtered_df = filtered_df[filtered_df["district"] == selected_district]
@@ -794,88 +837,6 @@ st.markdown(header_html, unsafe_allow_html=True)
 if user_lat is None:
     render_gps_locator(key_suffix="_main_top")
 
-# --- 3. CITIZEN FEATURES / INFO BOXES (Simplified language) ---
-bento_html = """
-<div class="cruip-bento-grid">
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">📍</div>
-            <span class="cruip-card-tag">AI MAPPING</span>
-        </div>
-        <div class="cruip-card-title">Identify Danger Zones</div>
-        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">🚓</div>
-            <span class="cruip-card-tag">POLICE SUPPORT</span>
-        </div>
-        <div class="cruip-card-title">Smart Patrol Routing</div>
-        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">⚡</div>
-            <span class="cruip-card-tag">PREDICTIVE TECH</span>
-        </div>
-        <div class="cruip-card-title">Predict Future Threats</div>
-        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
-    </div>
-</div>
-"""
-st.markdown(bento_html, unsafe_allow_html=True) 
-
-# Live GPS Banner if location is active (Once UI Glassmorphic)
-if user_lat is not None:
-    closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
-    dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
-    if dist_spot <= 0.4:
-        banner_border = "#f87171"
-        banner_bg = "rgba(239, 68, 68, 0.12)"
-        banner_title = "🚨 DANGER: You are in or adjacent to a HIGH-RISK CRIME CORRIDOR"
-        badge_bg = "#dc2626"
-        badge_txt = "HIGH RISK CORRIDOR"
-    elif dist_spot <= 0.8:
-        banner_border = "#fbbf24"
-        banner_bg = "rgba(245, 158, 11, 0.12)"
-        banner_title = "⚠️ CAUTION: You are within 800m of an Active Crime Hotspot"
-        badge_bg = "#d97706"
-        badge_txt = "MODERATE CAUTION"
-    else:
-        banner_border = "#34d399"
-        banner_bg = "rgba(16, 185, 129, 0.12)"
-        banner_title = "🛡️ SAFE ZONE: You are currently within a Verified Safe Buffer Zone"
-        badge_bg = "#059669"
-        badge_txt = "SAFE ZONE"
-
-    st.markdown(f"""
-    <div style="background: {banner_bg}; backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {banner_border}; border-radius: 18px; padding: 16px 22px; margin-bottom: 22px; font-family: 'Geist', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div>
-                <div style="font-weight: 800; color: #ffffff; font-size: 14.5px;">{banner_title}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px; font-family: 'Geist Mono', monospace;">
-                    Coordinates: <code style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b style="color: #f1f5f9;">{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
-                </div>
-            </div>
-            <span style="background: {badge_bg}; color: white; padding: 6px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; font-family: 'Geist Mono', monospace;">{badge_txt}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# Top KPI Metric Cards
-kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-with kpi1:
-    completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
-    st.metric("Incidents Filtered", f"{len(filtered_df):,}", completeness_sub)
-with kpi2:
-    st.metric("Active Hotspots", f"{cluster_engine.num_clusters_}", "DBSCAN (ε=600m)")
-with kpi3:
-    st.metric("Model ROC-AUC", f"{predictor.metrics.get('roc_auc', 0.90):.3f}", "Test Split")
-with kpi4:
-    st.metric("Prediction F1", f"{predictor.metrics.get('f1_score', 0.75):.3f}", "High-Risk Class")
-with kpi5:
-    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 and "is_high_risk" in filtered_df.columns else 0
-    st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
 tab1, tab_clean, tab2, tab5 = st.tabs([
@@ -906,6 +867,19 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
+        st.markdown(f"""
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 10px; border-radius: 6px;">
+                📅 Timeline: <b>{selected_timeline}</b>
+            </span>
+            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 10px; border-radius: 6px;">
+                🚨 Incidents In View: <b>{len(filtered_df):,}</b>
+            </span>
+            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px;">
+                📍 Active DBSCAN Hotspots: <b>{len(cluster_engine.hotspots_df) if cluster_engine.hotspots_df is not None else 0}</b>
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 6px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
         z1, z2, z3, z4, z_space = st.columns([1, 1, 1, 1, 2])
         with z1:
@@ -1066,13 +1040,25 @@ with tab_clean:
     )
     if inspector_mode.startswith("✅"):
         st.caption("Showing sample of verified records. All fields are 100% complete and validated.")
-        cols_to_show = ["record_id", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "date", "hour", "latitude", "longitude", "risk_level"]
+        cols_to_show = ["record_id", "year", "date", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "hour", "latitude", "longitude", "risk_level"]
         st.dataframe(df[[c for c in cols_to_show if c in df.columns]].head(15), use_container_width=True, hide_index=True)
     else:
         st.caption("Showing sample from raw feed highlighting unconfirmed statuses and missing fields.")
         raw_display = raw_df.head(25).copy()
-        cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
+        cols_to_show = ["record_id", "year", "date", "confirmation_status", "district", "crime_category", "latitude", "longitude", "hour", "risk_level"]
         st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.markdown("### 📈 10-Year Historical Incident Distribution (2015 – 2026)")
+    st.caption("Verified police incident report volume across all 15 Delhi Police Districts over the past decade.")
+    if "year" in df.columns:
+        yearly_counts = df["year"].value_counts().sort_index()
+        year_dist_df = pd.DataFrame({"Year": yearly_counts.index.astype(str), "Verified FIRs": yearly_counts.values})
+        y_col1, y_col2 = st.columns([1.3, 0.7])
+        with y_col1:
+            st.bar_chart(year_dist_df.set_index("Year"), color="#3b82f6")
+        with y_col2:
+            st.dataframe(year_dist_df, use_container_width=True, hide_index=True)
 
 
 
@@ -1437,6 +1423,81 @@ with tab5:
         - [x] **Genuine Code Integration**: High-security geospatial crime prediction endpoints pay-walled via x402 (`/api/v1/risk-assessment`, `/api/v1/patrol-route-optimizer`, `/api/v1/dbscan-hotspots`).
         """)
 
-# Footer
+
+# CITIZEN FEATURES & METRICS (Moved to Bottom)
+# ==========================================
+
+# Phone-Friendly Features / Info Boxes
+bento_html_bottom = """
+<style>
+/* 📱 NEW: Mobile Responsive Layout Fixes */
+@media (max-width: 768px) {
+    .cruip-header-nav {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 14px !important;
+    }
+    .cruip-bento-grid { 
+        grid-template-columns: 1fr !important; 
+        gap: 12px !important;
+    }
+    .cruip-card {
+        padding: 16px !important;
+    }
+}
+</style>
+
+<div class="cruip-bento-grid">
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">📍</div>
+            <span class="cruip-card-tag">AI MAPPING</span>
+        </div>
+        <div class="cruip-card-title">Identify Danger Zones</div>
+        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">🚓</div>
+            <span class="cruip-card-tag">POLICE SUPPORT</span>
+        </div>
+        <div class="cruip-card-title">Smart Patrol Routing</div>
+        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">⚡</div>
+            <span class="cruip-card-tag">PREDICTIVE TECH</span>
+        </div>
+        <div class="cruip-card-title">Predict Future Threats</div>
+        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
+    </div>
+</div>
+"""
+st.markdown(bento_html_bottom, unsafe_allow_html=True) 
+
+# Top KPI Metric Cards (Moved to bottom)
+st.markdown("### 📊 System Analytics & Risk Metrics")
+kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+with kpi1:
+    completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
+    st.metric("Incidents Filtered", f"{len(filtered_df):,}", completeness_sub)
+with kpi2:
+    st.metric("Active Hotspots", f"{cluster_engine.num_clusters_}", "DBSCAN (ε=600m)")
+with kpi3:
+    st.metric("Model ROC-AUC", f"{predictor.metrics.get('roc_auc', 0.90):.3f}", "Test Split")
+with kpi4:
+    st.metric("Prediction F1", f"{predictor.metrics.get('f1_score', 0.75):.3f}", "High-Risk Class")
+with kpi5:
+    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 and "is_high_risk" in filtered_df.columns else 0
+    st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
+    # Footer
 st.markdown("---")
-st.caption("Rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor | Built with Python, Scikit-learn, XGBoost, Folium, and Streamlit.")
+
+# Hackathon & AI Disclaimer
+st.warning("""
+**Note:** This application is a prototype built for a hackathon. The crime predictions and hotspot areas are generated by Artificial Intelligence (AI) models based on historical datasets. These predictions are probabilistic and may not be 100% accurate or reflect real-time events. This tool is for demonstration purposes only and should not be relied upon for critical safety or law enforcement decisions.
+""")
+
+st.caption("Rakshak.ai | Safety Portal for Citizens | Built with Python, Scikit-learn, XGBoost, and Streamlit.")

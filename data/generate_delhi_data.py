@@ -234,12 +234,12 @@ try:
 except (ImportError, ValueError):
     from cleaner import clean_crime_dataset
 
-def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_path=None, inject_noise=True):
+def generate_delhi_crime_dataset(num_records=25000, output_path=None, raw_output_path=None, inject_noise=True, start_year=2015):
     """
-    Generates realistic raw Delhi police incident reports with confirmation statuses,
-    temporal dynamics, and geocodes. Applies rigorous data cleaning to ensure that
-    downstream hotspot maps and predictive models run exclusively on confirmed,
-    fully populated (no missing data) records.
+    Generates realistic raw Delhi police incident reports spanning past 10 years (from 2015
+    to recent date) with confirmation statuses, temporal dynamics, and geocodes. Applies
+    rigorous data cleaning to ensure that downstream hotspot maps and predictive models run
+    exclusively on confirmed, fully populated (no missing data) records.
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
     if output_path is None:
@@ -248,7 +248,9 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
         raw_output_path = os.path.join(base_dir, "raw_delhi_police_reports.csv")
 
     records = []
-    start_date = datetime(2025, 1, 1)
+    start_date = datetime(start_year, 1, 1)
+    end_date = datetime.now()
+    total_days = max(1, (end_date - start_date).days)
     
     crime_names = list(CRIME_TYPES.keys())
     crime_weights = [CRIME_TYPES[c]["weight"] for c in crime_names]
@@ -274,8 +276,9 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
             hour = random.randint(0, 23)
             
         minute = random.randint(0, 59)
-        day_offset = random.randint(0, 365)
+        day_offset = random.randint(0, total_days)
         dt = start_date + timedelta(days=day_offset, hours=hour, minutes=minute)
+        incident_year = dt.year
         day_name = dt.strftime("%A")
         is_weekend = 1 if day_name in ["Saturday", "Sunday"] else 0
         
@@ -311,7 +314,8 @@ def generate_delhi_crime_dataset(num_records=9000, output_path=None, raw_output_
         status = random.choices(status_choices, weights=status_weights, k=1)[0]
         
         rec = {
-            "record_id": f"DEL-FIR-{2025}-{100000 + i}",
+            "record_id": f"DEL-FIR-{incident_year}-{100000 + i}",
+            "year": incident_year,
             "district": dist_name,
             "police_station": ps_name,
             "landmark_premise": landmark_name,
