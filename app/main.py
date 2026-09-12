@@ -596,88 +596,6 @@ st.markdown(header_html, unsafe_allow_html=True)
 if user_lat is None:
     render_gps_locator(key_suffix="_main_top")
 
-# --- 3. CITIZEN FEATURES / INFO BOXES (Simplified language) ---
-bento_html = """
-<div class="cruip-bento-grid">
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">📍</div>
-            <span class="cruip-card-tag">AI MAPPING</span>
-        </div>
-        <div class="cruip-card-title">Identify Danger Zones</div>
-        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">🚓</div>
-            <span class="cruip-card-tag">POLICE SUPPORT</span>
-        </div>
-        <div class="cruip-card-title">Smart Patrol Routing</div>
-        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon">⚡</div>
-            <span class="cruip-card-tag">PREDICTIVE TECH</span>
-        </div>
-        <div class="cruip-card-title">Predict Future Threats</div>
-        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
-    </div>
-</div>
-"""
-st.markdown(bento_html, unsafe_allow_html=True) 
-
-# Live GPS Banner if location is active (Once UI Glassmorphic)
-if user_lat is not None:
-    closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
-    dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
-    if dist_spot <= 0.4:
-        banner_border = "#f87171"
-        banner_bg = "rgba(239, 68, 68, 0.12)"
-        banner_title = "🚨 DANGER: You are in or adjacent to a HIGH-RISK CRIME CORRIDOR"
-        badge_bg = "#dc2626"
-        badge_txt = "HIGH RISK CORRIDOR"
-    elif dist_spot <= 0.8:
-        banner_border = "#fbbf24"
-        banner_bg = "rgba(245, 158, 11, 0.12)"
-        banner_title = "⚠️ CAUTION: You are within 800m of an Active Crime Hotspot"
-        badge_bg = "#d97706"
-        badge_txt = "MODERATE CAUTION"
-    else:
-        banner_border = "#34d399"
-        banner_bg = "rgba(16, 185, 129, 0.12)"
-        banner_title = "🛡️ SAFE ZONE: You are currently within a Verified Safe Buffer Zone"
-        badge_bg = "#059669"
-        badge_txt = "SAFE ZONE"
-
-    st.markdown(f"""
-    <div style="background: {banner_bg}; backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-left: 5px solid {banner_border}; border-radius: 18px; padding: 16px 22px; margin-bottom: 22px; font-family: 'Geist', sans-serif; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div>
-                <div style="font-weight: 800; color: #ffffff; font-size: 14.5px;">{banner_title}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px; font-family: 'Geist Mono', monospace;">
-                    Coordinates: <code style="color: #38bdf8;">{user_lat:.4f}°N, {user_lon:.4f}°E</code> • Distance to Nearest Hotspot: <b style="color: {banner_border};">{dist_spot:.2f} km</b> • Police Jurisdiction: <b style="color: #f1f5f9;">{closest_d} District (PS {closest_ps}, {dist_km} km)</b>
-                </div>
-            </div>
-            <span style="background: {badge_bg}; color: white; padding: 6px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; font-family: 'Geist Mono', monospace;">{badge_txt}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# Top KPI Metric Cards
-kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-with kpi1:
-    completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
-    st.metric("Incidents Filtered", f"{len(filtered_df):,}", completeness_sub)
-with kpi2:
-    st.metric("Active Hotspots", f"{cluster_engine.num_clusters_}", "DBSCAN (ε=600m)")
-with kpi3:
-    st.metric("Model ROC-AUC", f"{predictor.metrics.get('roc_auc', 0.90):.3f}", "Test Split")
-with kpi4:
-    st.metric("Prediction F1", f"{predictor.metrics.get('f1_score', 0.75):.3f}", "High-Risk Class")
-with kpi5:
-    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 and "is_high_risk" in filtered_df.columns else 0
-    st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
 tab1, tab_clean, tab_pred, tab2, tab4, tab5 = st.tabs([
@@ -1424,4 +1342,78 @@ with tab5:
 
 # Footer
 st.markdown("---")
-st.caption("Rakshak.ai | Delhi Crime Hotspot & Premises Risk Predictor | Built with Python, Scikit-learn, XGBoost, Folium, and Streamlit.")
+
+# Hackathon & AI Disclaimer
+st.warning("""
+**⚠️ Disclaimer:** This application is a prototype built for a hackathon. The crime predictions and hotspot areas are generated by Artificial Intelligence (AI) models based on historical datasets. These predictions are probabilistic and may not be 100% accurate or reflect real-time events. This tool is for demonstration purposes only and should not be relied upon for critical safety or law enforcement decisions.
+""")
+
+st.caption("Rakshak.ai | Safety Portal for Citizens | Built with Python, Scikit-learn, XGBoost, and Streamlit.")
+# CITIZEN FEATURES & METRICS (Moved to Bottom)
+# ==========================================
+
+# Phone-Friendly Features / Info Boxes
+bento_html_bottom = """
+<style>
+/* 📱 NEW: Mobile Responsive Layout Fixes */
+@media (max-width: 768px) {
+    .cruip-header-nav {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 14px !important;
+    }
+    .cruip-bento-grid { 
+        grid-template-columns: 1fr !important; 
+        gap: 12px !important;
+    }
+    .cruip-card {
+        padding: 16px !important;
+    }
+}
+</style>
+
+<div class="cruip-bento-grid">
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">📍</div>
+            <span class="cruip-card-tag">AI MAPPING</span>
+        </div>
+        <div class="cruip-card-title">Identify Danger Zones</div>
+        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">🚓</div>
+            <span class="cruip-card-tag">POLICE SUPPORT</span>
+        </div>
+        <div class="cruip-card-title">Smart Patrol Routing</div>
+        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">⚡</div>
+            <span class="cruip-card-tag">PREDICTIVE TECH</span>
+        </div>
+        <div class="cruip-card-title">Predict Future Threats</div>
+        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
+    </div>
+</div>
+"""
+st.markdown(bento_html_bottom, unsafe_allow_html=True) 
+
+# Top KPI Metric Cards (Moved to bottom)
+st.markdown("### 📊 System Analytics & Risk Metrics")
+kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+with kpi1:
+    completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
+    st.metric("Incidents Filtered", f"{len(filtered_df):,}", completeness_sub)
+with kpi2:
+    st.metric("Active Hotspots", f"{cluster_engine.num_clusters_}", "DBSCAN (ε=600m)")
+with kpi3:
+    st.metric("Model ROC-AUC", f"{predictor.metrics.get('roc_auc', 0.90):.3f}", "Test Split")
+with kpi4:
+    st.metric("Prediction F1", f"{predictor.metrics.get('f1_score', 0.75):.3f}", "High-Risk Class")
+with kpi5:
+    high_risk_pct = (filtered_df["is_high_risk"].mean() * 100) if len(filtered_df) > 0 and "is_high_risk" in filtered_df.columns else 0
+    st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
