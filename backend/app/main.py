@@ -21,107 +21,297 @@ if BASE_DIR not in sys.path:
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
-from models.predictive_policing import KnoxNearRepeatEngine, PatrolBeatOptimizer, SafeCorridorRouter, TacticalInterceptionPlanner
-from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+try:
+    from map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+except ImportError:
+    from app.map_renderer import create_delhi_crime_map, create_smooth_realtime_leaflet_html, create_google_maps_sentinel_html
+
 from data.generate_delhi_data import DISTRICTS
 from data.cleaner import clean_crime_dataset
 
+try:
+    from search_component import render_predictive_search
+except ImportError:
+    from app.search_component import render_predictive_search
+
+# Comprehensive Delhi Police Station Geocoordinates Registry for Precision Proximity Calculation
+DELHI_POLICE_STATIONS = [
+    # New Delhi
+    {"name": "Connaught Place Police Station", "district": "New Delhi", "lat": 28.6315, "lon": 77.2167, "address": "B-Block, Connaught Place, New Delhi", "phone": "011-23747100"},
+    {"name": "Parliament Street Police Station", "district": "New Delhi", "lat": 28.6238, "lon": 77.2142, "address": "Parliament Street, New Delhi", "phone": "011-23361100"},
+    {"name": "Chanakyapuri Police Station", "district": "New Delhi", "lat": 28.5983, "lon": 77.1912, "address": "Simon Bolivar Marg, Chanakyapuri", "phone": "011-24101100"},
+    {"name": "Mandir Marg Police Station", "district": "New Delhi", "lat": 28.6295, "lon": 77.2010, "address": "Mandir Marg, Gole Market", "phone": "011-23362100"},
+    {"name": "Tilak Marg Police Station", "district": "New Delhi", "lat": 28.6190, "lon": 77.2380, "address": "Tilak Marg, India Gate Environs", "phone": "011-23381100"},
+    # Central Delhi
+    {"name": "Karol Bagh Police Station", "district": "Central", "lat": 28.6517, "lon": 77.1906, "address": "Gurudwara Road, Karol Bagh", "phone": "011-25721100"},
+    {"name": "Paharganj Police Station", "district": "Central", "lat": 28.6432, "lon": 77.2140, "address": "Main Bazar, Paharganj", "phone": "011-23581100"},
+    {"name": "Daryaganj Police Station", "district": "Central", "lat": 28.6480, "lon": 77.2410, "address": "Ansari Road, Daryaganj", "phone": "011-23271100"},
+    {"name": "Chandni Chowk Police Station", "district": "Central", "lat": 28.6562, "lon": 77.2300, "address": "Town Hall, Chandni Chowk", "phone": "011-23261100"},
+    {"name": "Rajinder Nagar Police Station", "district": "Central", "lat": 28.6390, "lon": 77.1790, "address": "Old Rajinder Nagar", "phone": "011-25741100"},
+    # North Delhi
+    {"name": "Kashmere Gate Police Station", "district": "North", "lat": 28.6675, "lon": 77.2285, "address": "Lothian Road, Kashmere Gate", "phone": "011-23861100"},
+    {"name": "Civil Lines Police Station", "district": "North", "lat": 28.6750, "lon": 77.2230, "address": "Rajpur Road, Civil Lines", "phone": "011-23811100"},
+    {"name": "Timarpur Police Station", "district": "North", "lat": 28.7010, "lon": 77.2190, "address": "Timarpur, North Delhi", "phone": "011-23812100"},
+    {"name": "Maurice Nagar Police Station", "district": "North", "lat": 28.6890, "lon": 77.2080, "address": "Delhi University North Campus", "phone": "011-27661100"},
+    # South Delhi
+    {"name": "Hauz Khas Police Station", "district": "South", "lat": 28.5430, "lon": 77.2060, "address": "Aurobindo Marg, Hauz Khas", "phone": "011-26861100"},
+    {"name": "Saket Police Station", "district": "South", "lat": 28.5240, "lon": 77.2120, "address": "Press Enclave Marg, Saket", "phone": "011-26511100"},
+    {"name": "Malviya Nagar Police Station", "district": "South", "lat": 28.5360, "lon": 77.2090, "address": "Corner Market, Malviya Nagar", "phone": "011-26681100"},
+    {"name": "Mehrauli Police Station", "district": "South", "lat": 28.5200, "lon": 77.1820, "address": "Near Qutub Minar, Mehrauli", "phone": "011-26641100"},
+    {"name": "Greater Kailash Police Station", "district": "South", "lat": 28.5400, "lon": 77.2380, "address": "GK 1 Near M-Block Market", "phone": "011-29231100"},
+    # South-East Delhi
+    {"name": "Lajpat Nagar Police Station", "district": "South-East", "lat": 28.5677, "lon": 77.2433, "address": "Feroze Gandhi Road, Lajpat Nagar III", "phone": "011-29831100"},
+    {"name": "Nehru Place / Kalkaji Police Station", "district": "South-East", "lat": 28.5492, "lon": 77.2527, "address": "Kalkaji Environs, Nehru Place", "phone": "011-26431100"},
+    {"name": "Sarita Vihar Police Station", "district": "South-East", "lat": 28.5300, "lon": 77.2910, "address": "Mathura Road, Sarita Vihar", "phone": "011-26941100"},
+    {"name": "Okhla Industrial Area Police Station", "district": "South-East", "lat": 28.5350, "lon": 77.2720, "address": "Okhla Phase 3", "phone": "011-26841100"},
+    # South-West Delhi
+    {"name": "Vasant Kunj (North) Police Station", "district": "South-West", "lat": 28.5420, "lon": 77.1560, "address": "Sector D, Pocket 2, Vasant Kunj", "phone": "011-26891100"},
+    {"name": "Vasant Vihar Police Station", "district": "South-West", "lat": 28.5580, "lon": 77.1620, "address": "Basant Lok, Vasant Vihar", "phone": "011-26141100"},
+    {"name": "Delhi Cantt Police Station", "district": "South-West", "lat": 28.5898, "lon": 77.1325, "address": "Sadar Bazar, Delhi Cantt", "phone": "011-25691100"},
+    # West Delhi
+    {"name": "Rajouri Garden Police Station", "district": "West", "lat": 28.6490, "lon": 77.1230, "address": "Main Ring Road, Rajouri Garden", "phone": "011-25441100"},
+    {"name": "Punjabi Bagh Police Station", "district": "West", "lat": 28.6680, "lon": 77.1270, "address": "Rohtak Road, Punjabi Bagh", "phone": "011-25221100"},
+    {"name": "Janakpuri Police Station", "district": "West", "lat": 28.6290, "lon": 77.0810, "address": "District Centre Environs, Janakpuri", "phone": "011-25551100"},
+    {"name": "Tilak Nagar Police Station", "district": "West", "lat": 28.6365, "lon": 77.0965, "address": "Near Tilak Nagar Metro Station", "phone": "011-25981100"},
+    {"name": "Patel Nagar Police Station", "district": "West", "lat": 28.6508, "lon": 77.1654, "address": "Main Patel Road, West Patel Nagar", "phone": "011-25881100"},
+    # North-West Delhi
+    {"name": "Netaji Subhash Place Police Station", "district": "North-West", "lat": 28.6925, "lon": 77.1520, "address": "Pitampura TV Tower Environs, NSP", "phone": "011-27151100"},
+    {"name": "Model Town Police Station", "district": "North-West", "lat": 28.7050, "lon": 77.1920, "address": "Model Town II, Ring Road", "phone": "011-27451100"},
+    {"name": "Shalimar Bagh Police Station", "district": "North-West", "lat": 28.7150, "lon": 77.1600, "address": "Club Road, Shalimar Bagh", "phone": "011-27481100"},
+    # Rohini
+    {"name": "Rohini Sector 18 Police Station", "district": "Rohini", "lat": 28.7410, "lon": 77.1320, "address": "Sector 18, Rohini", "phone": "011-27891100"},
+    {"name": "Prashant Vihar Police Station", "district": "Rohini", "lat": 28.7110, "lon": 77.1350, "address": "Prashant Vihar, Outer Ring Road", "phone": "011-27561100"},
+    # Dwarka
+    {"name": "Dwarka Sector 10 Police Station", "district": "Dwarka", "lat": 28.5810, "lon": 77.0580, "address": "Sector 10 District Court Complex, Dwarka", "phone": "011-28081100"},
+    {"name": "Dwarka Sector 23 Police Station", "district": "Dwarka", "lat": 28.5520, "lon": 77.0580, "address": "Sector 23, Dwarka", "phone": "011-28051100"},
+    {"name": "Uttam Nagar Police Station", "district": "Dwarka", "lat": 28.6210, "lon": 77.0650, "address": "Najafgarh Road, Uttam Nagar", "phone": "011-25611100"},
+    # East Delhi & Shahdara
+    {"name": "Laxmi Nagar Police Station", "district": "East", "lat": 28.6310, "lon": 77.2780, "address": "Vikas Marg, Laxmi Nagar", "phone": "011-22441100"},
+    {"name": "Preet Vihar Police Station", "district": "East", "lat": 28.6410, "lon": 77.2950, "address": "Vikas Marg Ext, Preet Vihar", "phone": "011-22521100"},
+    {"name": "Mayur Vihar Police Station", "district": "East", "lat": 28.6080, "lon": 77.2950, "address": "Pocket 1, Mayur Vihar Phase 1", "phone": "011-22751100"},
+    {"name": "Anand Vihar Police Station", "district": "Shahdara", "lat": 28.6480, "lon": 77.3160, "address": "ISBT Terminal Environs, Anand Vihar", "phone": "011-22161100"},
+    {"name": "Gandhi Nagar Police Station", "district": "Shahdara", "lat": 28.6610, "lon": 77.2680, "address": "Main Road, Gandhi Nagar", "phone": "011-22081100"},
+    # North-East & Outer
+    {"name": "Seelampur Police Station", "district": "North-East", "lat": 28.6690, "lon": 77.2670, "address": "GT Road, Seelampur Chowk", "phone": "011-22811100"},
+    {"name": "Paschim Vihar Police Station", "district": "Outer", "lat": 28.6730, "lon": 77.1080, "address": "Jwala Heri Market Road, Paschim Vihar", "phone": "011-25261100"},
+    {"name": "Narela Police Station", "district": "Outer-North", "lat": 28.8450, "lon": 77.0920, "address": "Bawana Road, Narela", "phone": "011-27281100"}
+]
+
 def find_nearest_delhi_jurisdiction(lat, lon):
-    """Calculates nearest Delhi police district and police station using Haversine distance."""
+    """Calculates nearest Delhi police district and police station with exact Haversine distance."""
     min_dist = float("inf")
-    closest_dist = "New Delhi"
-    closest_ps = "Connaught Place"
-    for d_name, d_info in DISTRICTS.items():
-        c_lat, c_lon = d_info["center"]
+    closest_station = DELHI_POLICE_STATIONS[0]
+    for ps in DELHI_POLICE_STATIONS:
+        c_lat, c_lon = ps["lat"], ps["lon"]
         dlat = np.radians(lat - c_lat)
         dlon = np.radians(lon - c_lon)
         a = np.sin(dlat / 2.0)**2 + np.cos(np.radians(c_lat)) * np.cos(np.radians(lat)) * np.sin(dlon / 2.0)**2
         d_km = 2.0 * 6371.0 * np.arcsin(np.sqrt(a))
         if d_km < min_dist:
             min_dist = d_km
-            closest_dist = d_name
-            closest_ps = d_info["police_stations"][0]
-    return closest_dist, closest_ps, round(min_dist, 2)
+            closest_station = ps
+    return closest_station["district"], closest_station["name"], round(min_dist, 2)
+
+def get_detailed_nearest_police_station(lat, lon):
+    """Returns the complete object for the nearest police station."""
+    min_dist = float("inf")
+    closest_ps = DELHI_POLICE_STATIONS[0]
+    for ps in DELHI_POLICE_STATIONS:
+        c_lat, c_lon = ps["lat"], ps["lon"]
+        dlat = np.radians(lat - c_lat)
+        dlon = np.radians(lon - c_lon)
+        a = np.sin(dlat / 2.0)**2 + np.cos(np.radians(c_lat)) * np.cos(np.radians(lat)) * np.sin(dlon / 2.0)**2
+        d_km = 2.0 * 6371.0 * np.arcsin(np.sqrt(a))
+        if d_km < min_dist:
+            min_dist = d_km
+            closest_ps = {**ps, "distance_km": round(d_km, 2)}
+    return closest_ps
+
+# Searchable Delhi Location Registry for Text Search
+DELHI_SEARCH_INDEX = [
+    {"name": "Rajiv Chowk Metro (Connaught Place)", "district": "New Delhi", "premises": "Transit & Metro Hub", "lat": 28.6328, "lon": 77.2195},
+    {"name": "Connaught Place Inner & Outer Circle", "district": "New Delhi", "premises": "Commercial & Retail Market", "lat": 28.6315, "lon": 77.2167},
+    {"name": "India Gate & Kartavya Path", "district": "New Delhi", "premises": "Parks & Isolated Environs", "lat": 28.6129, "lon": 77.2295},
+    {"name": "Chanakyapuri Diplomatic Enclave", "district": "New Delhi", "premises": "Residential Gated Colony", "lat": 28.5983, "lon": 77.1912},
+    {"name": "Khan Market", "district": "New Delhi", "premises": "Commercial & Retail Market", "lat": 28.6003, "lon": 77.2270},
+    {"name": "Karol Bagh Gaffar Market", "district": "Central", "premises": "Commercial & Retail Market", "lat": 28.6517, "lon": 77.1906},
+    {"name": "Paharganj Hotel & Station Corridor", "district": "Central", "premises": "Transit & Metro Hub", "lat": 28.6432, "lon": 77.2140},
+    {"name": "Chandni Chowk Main Bazaar", "district": "Central", "premises": "Commercial & Retail Market", "lat": 28.6562, "lon": 77.2300},
+    {"name": "New Delhi Railway Station (NDLS)", "district": "Central", "premises": "Transit & Metro Hub", "lat": 28.6420, "lon": 77.2210},
+    {"name": "Daryaganj Heritage Market", "district": "Central", "premises": "Street & Public Roadways", "lat": 28.6480, "lon": 77.2410},
+    {"name": "Kashmere Gate ISBT & Terminal", "district": "North", "premises": "Transit & Metro Hub", "lat": 28.6675, "lon": 77.2285},
+    {"name": "Delhi University North Campus", "district": "North", "premises": "Educational & Campus Environs", "lat": 28.6890, "lon": 77.2080},
+    {"name": "Civil Lines Rajpur Road", "district": "North", "premises": "Residential Gated Colony", "lat": 28.6750, "lon": 77.2230},
+    {"name": "Kamla Nagar Market", "district": "North", "premises": "Commercial & Retail Market", "lat": 28.6815, "lon": 77.2025},
+    {"name": "Hauz Khas Village Social Hub", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5535, "lon": 77.1945},
+    {"name": "Saket Select Citywalk Mall", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5285, "lon": 77.2185},
+    {"name": "Malviya Nagar Shivalik Enclave", "district": "South", "premises": "Residential Gated Colony", "lat": 28.5360, "lon": 77.2090},
+    {"name": "Greater Kailash 1 (GK 1 M Block)", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5540, "lon": 77.2340},
+    {"name": "Greater Kailash 2 (GK 2 M Block)", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5350, "lon": 77.2430},
+    {"name": "Green Park Market", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5589, "lon": 77.2064},
+    {"name": "Defence Colony Market", "district": "South", "premises": "Commercial & Retail Market", "lat": 28.5728, "lon": 77.2325},
+    {"name": "Mehrauli Archaeological Park", "district": "South", "premises": "Parks & Isolated Environs", "lat": 28.5240, "lon": 77.1850},
+    {"name": "Chattarpur Enclave & Mandir", "district": "South", "premises": "Street & Public Roadways", "lat": 28.5020, "lon": 77.1780},
+    {"name": "Nehru Place IT & Electronics Complex", "district": "South-East", "premises": "Commercial & Retail Market", "lat": 28.5494, "lon": 77.2528},
+    {"name": "Lajpat Nagar Central Market", "district": "South-East", "premises": "Commercial & Retail Market", "lat": 28.5677, "lon": 77.2433},
+    {"name": "Kalkaji Mandir Environs", "district": "South-East", "premises": "Transit & Metro Hub", "lat": 28.5490, "lon": 77.2580},
+    {"name": "CR Park (Chittaranjan Park)", "district": "South-East", "premises": "Residential Gated Colony", "lat": 28.5385, "lon": 77.2470},
+    {"name": "Okhla Phase 3 Industrial Estate", "district": "South-East", "premises": "Industrial & Warehouse Estates", "lat": 28.5350, "lon": 77.2720},
+    {"name": "Jasola Vihar & Apollo Hospital", "district": "South-East", "premises": "Street & Public Roadways", "lat": 28.5410, "lon": 77.2910},
+    {"name": "Delhi Cantt Defense Corridor", "district": "South-West", "premises": "Residential Gated Colony", "lat": 28.5898, "lon": 77.1325},
+    {"name": "Vasant Kunj Promenade & Ambience Mall", "district": "South-West", "premises": "Commercial & Retail Market", "lat": 28.5420, "lon": 77.1560},
+    {"name": "Vasant Vihar Basant Lok", "district": "South-West", "premises": "Commercial & Retail Market", "lat": 28.5580, "lon": 77.1620},
+    {"name": "Aerocity Hospitality & Transit District", "district": "South-West", "premises": "Transit & Metro Hub", "lat": 28.5562, "lon": 77.1210},
+    {"name": "IGI Airport Terminal 1 & 3", "district": "South-West", "premises": "Transit & Metro Hub", "lat": 28.5560, "lon": 77.0900},
+    {"name": "Rajouri Garden Main Market & Club Road", "district": "West", "premises": "Commercial & Retail Market", "lat": 28.6490, "lon": 77.1230},
+    {"name": "Janakpuri District Centre", "district": "West", "premises": "Commercial & Retail Market", "lat": 28.6290, "lon": 77.0810},
+    {"name": "Punjabi Bagh Club Road", "district": "West", "premises": "Street & Public Roadways", "lat": 28.6680, "lon": 77.1270},
+    {"name": "Tilak Nagar Central Market", "district": "West", "premises": "Commercial & Retail Market", "lat": 28.6365, "lon": 77.0965},
+    {"name": "Kirti Nagar Commercial & Furniture Market", "district": "West", "premises": "Commercial & Retail Market", "lat": 28.6547, "lon": 77.1432},
+    {"name": "Patel Nagar Main Road", "district": "West", "premises": "Residential Gated Colony", "lat": 28.6508, "lon": 77.1654},
+    {"name": "Netaji Subhash Place (NSP) Commercial Complex", "district": "North-West", "premises": "Commercial & Retail Market", "lat": 28.6925, "lon": 77.1520},
+    {"name": "Pitampura TV Tower Environs", "district": "North-West", "premises": "Residential Gated Colony", "lat": 28.6989, "lon": 77.1407},
+    {"name": "Model Town 2 & Gujranwala Town", "district": "North-West", "premises": "Residential Gated Colony", "lat": 28.7050, "lon": 77.1920},
+    {"name": "Shalimar Bagh Club Road", "district": "North-West", "premises": "Street & Public Roadways", "lat": 28.7150, "lon": 77.1600},
+    {"name": "Ashok Vihar Deep Market", "district": "North-West", "premises": "Commercial & Retail Market", "lat": 28.6880, "lon": 77.1750},
+    {"name": "Rohini Sector 18 DDA Market", "district": "Rohini", "premises": "Commercial & Retail Market", "lat": 28.7410, "lon": 77.1320},
+    {"name": "Rohini Sector 13, 14 & DC Office", "district": "Rohini", "premises": "Residential Gated Colony", "lat": 28.7160, "lon": 77.1147},
+    {"name": "Prashant Vihar Environs", "district": "Rohini", "premises": "Bank & ATM Premises", "lat": 28.7110, "lon": 77.1350},
+    {"name": "Rithala Metro Terminal", "district": "Rohini", "premises": "Transit & Metro Hub", "lat": 28.7205, "lon": 77.1070},
+    {"name": "Dwarka Sector 21 Metro Terminal", "district": "Dwarka", "premises": "Transit & Metro Hub", "lat": 28.5520, "lon": 77.0580},
+    {"name": "Dwarka Sector 10 District Court & Market", "district": "Dwarka", "premises": "Commercial & Retail Market", "lat": 28.5810, "lon": 77.0580},
+    {"name": "Dwarka Mor Metro Interchange", "district": "Dwarka", "premises": "Transit & Metro Hub", "lat": 28.6190, "lon": 77.0330},
+    {"name": "Uttam Nagar East Metro Chowk", "district": "Dwarka", "premises": "Transit & Metro Hub", "lat": 28.6210, "lon": 77.0650},
+    {"name": "Najafgarh Main Chowk", "district": "Dwarka", "premises": "Street & Public Roadways", "lat": 28.6130, "lon": 76.9850},
+    {"name": "Laxmi Nagar Vikas Marg", "district": "East", "premises": "Commercial & Retail Market", "lat": 28.6310, "lon": 77.2780},
+    {"name": "Preet Vihar Commercial Complex", "district": "East", "premises": "Commercial & Retail Market", "lat": 28.6410, "lon": 77.2950},
+    {"name": "Mayur Vihar Phase 1 Pocket 1", "district": "East", "premises": "Residential Gated Colony", "lat": 28.6080, "lon": 77.2950},
+    {"name": "Mayur Vihar Phase 2 & 3", "district": "East", "premises": "Residential Gated Colony", "lat": 28.6100, "lon": 77.3200},
+    {"name": "Akshardham Corridor", "district": "East", "premises": "Transit & Metro Hub", "lat": 28.6180, "lon": 77.2790},
+    {"name": "Anand Vihar ISBT & Terminal", "district": "Shahdara", "premises": "Transit & Metro Hub", "lat": 28.6480, "lon": 77.3160},
+    {"name": "Gandhi Nagar Textile Wholesale Market", "district": "Shahdara", "premises": "Commercial & Retail Market", "lat": 28.6610, "lon": 77.2680},
+    {"name": "Krishna Nagar Lal Quarter Market", "district": "Shahdara", "premises": "Commercial & Retail Market", "lat": 28.6590, "lon": 77.2840},
+    {"name": "Vivek Vihar Block B", "district": "Shahdara", "premises": "Residential Gated Colony", "lat": 28.6710, "lon": 77.3120},
+    {"name": "Shahdara Railway Station Chauraha", "district": "Shahdara", "premises": "Transit & Metro Hub", "lat": 28.6740, "lon": 77.2900},
+    {"name": "Seelampur Metro & Market Chowk", "district": "North-East", "premises": "Transit & Metro Hub", "lat": 28.6690, "lon": 77.2670},
+    {"name": "Bhajanpura Wazirabad Road Intersection", "district": "North-East", "premises": "Street & Public Roadways", "lat": 28.7010, "lon": 77.2630},
+    {"name": "Gokulpuri Market", "district": "North-East", "premises": "Commercial & Retail Market", "lat": 28.7030, "lon": 77.2810},
+    {"name": "Paschim Vihar Jwala Heri Market", "district": "Outer", "premises": "Commercial & Retail Market", "lat": 28.6730, "lon": 77.1080},
+    {"name": "Mangolpuri Industrial Area Phase 1", "district": "Outer", "premises": "Industrial & Warehouse Estates", "lat": 28.6910, "lon": 77.0860},
+    {"name": "Nangloi Metro Rohtak Road", "district": "Outer", "premises": "Transit & Metro Hub", "lat": 28.6830, "lon": 77.0650},
+    {"name": "Bawana Industrial Estate Sector 3", "district": "Outer-North", "premises": "Industrial & Warehouse Estates", "lat": 28.7980, "lon": 77.0420},
+    {"name": "Narela Food Park & Mandi", "district": "Outer-North", "premises": "Commercial & Retail Market", "lat": 28.8450, "lon": 77.0920},
+    {"name": "Samaypur Badli Metro & Railway Hub", "district": "Outer-North", "premises": "Transit & Metro Hub", "lat": 28.7460, "lon": 77.1420}
+]
+
+def resolve_delhi_search_location(search_query: str):
+    """Searches Delhi locations index or falls back to Komoot Photon geocoder."""
+    q = (search_query or "").strip().lower()
+    if not q:
+        return None
+    
+    # 1. Exact or substring match from local index
+    for item in DELHI_SEARCH_INDEX:
+        if q in item["name"].lower():
+            return item
+            
+    # 2. Match words
+    words = [w for w in q.split() if len(w) > 2]
+    if words:
+        for item in DELHI_SEARCH_INDEX:
+            name_lower = item["name"].lower()
+            if any(w in name_lower for w in words):
+                return item
+                
+    # 3. Remote Photon Geocoder
+    try:
+        import urllib.request
+        import json
+        clean_q = search_query.replace(",", " ").strip()
+        url = f"https://photon.komoot.io/api/?q={urllib.parse.quote(clean_q)}&lat=28.6139&lon=77.2090&limit=5"
+        req = urllib.request.Request(url, headers={"User-Agent": "RakshakAI-DelhiPoliceSafety/1.0"})
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode())
+            for feat in data.get("features", []):
+                coords = feat.get("geometry", {}).get("coordinates", [])
+                if len(coords) >= 2:
+                    lon_val, lat_val = float(coords[0]), float(coords[1])
+                    if 28.15 <= lat_val <= 29.15 and 76.60 <= lon_val <= 77.70:
+                        props = feat.get("properties", {})
+                        p_name = props.get("name") or props.get("street") or search_query
+                        # Auto-derive district
+                        derived_dist, _, _ = find_nearest_delhi_jurisdiction(lat_val, lon_val)
+                        return {
+                            "name": p_name,
+                            "district": derived_dist,
+                            "premises": "Street & Public Roadways",
+                            "lat": lat_val,
+                            "lon": lon_val
+                        }
+    except Exception:
+        pass
+        
+    return None
 
 def render_gps_locator(key_suffix=""):
-    """Renders an interactive Once UI glassmorphic HTML5 Geolocation radar button."""
+    """Renders an interactive Geolocation button with clear user feedback."""
     btn_id = f"gps-btn{key_suffix}"
     status_id = f"gps-status{key_suffix}"
     geo_html = f"""
-    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); font-family: 'Geist', -apple-system, sans-serif;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px;">📍</span>
-                <span style="font-weight: 800; color: #ffffff; font-size: 12px; letter-spacing: -0.01em;">Live GPS Geolocation Radar</span>
-            </div>
-            <span style="font-size: 10px; font-family: 'Geist Mono', monospace; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 9999px; font-weight: 700;">HTML5 GPS</span>
+    <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); text-align: center; font-family: 'Inter', sans-serif;">
+        <div style="margin-bottom: 15px;">
+            <span style="font-weight: 800; color: #ffffff; font-size: 16px;">📍 Share Your Location for Local Safety Alerts</span>
         </div>
         <button id="{btn_id}" onclick="requestGPS_{key_suffix}()" style="
-            width: 100%;
+            width: 100%; max-width: 400px;
             background: linear-gradient(135deg, #0891b2 0%, #0d9488 50%, #059669 100%);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 9999px;
-            padding: 10px 14px;
-            font-weight: 700;
-            font-size: 12.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
-            transition: all 0.2s ease;
+            color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 9999px;
+            padding: 12px 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35); transition: all 0.2s ease;
         ">
             🛰️ Access My Current Location
         </button>
-        <div id="{status_id}" style="font-size: 10.5px; color: #94a3b8; margin-top: 8px; text-align: center; font-family: 'Geist Mono', monospace;">
-            Click to detect your current latitude & longitude
+        <div id="{status_id}" style="font-size: 12.5px; color: #94a3b8; margin-top: 12px;">
+            Click to securely detect your latitude & longitude
         </div>
     </div>
     <script>
     function requestGPS_{key_suffix}() {{
         const btn = document.getElementById("{btn_id}");
         const status = document.getElementById("{status_id}");
-        if (!navigator.geolocation) {{
-            status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported by browser.</span>";
-            return;
-        }}
+        if (!navigator.geolocation) {{ status.innerHTML = "<span style='color: #f87171;'>❌ Geolocation not supported.</span>"; return; }}
+        
         btn.disabled = true;
-        btn.innerText = "⏳ Acquiring GPS Fix...";
-        status.innerHTML = "<span style='color: #38bdf8;'>Requesting browser permission...</span>";
+        btn.innerText = "⏳ Connecting to Satellite...";
+        status.innerHTML = "<span style='color: #38bdf8;'>Requesting permission...</span>";
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {{
+                // FIX: Instantly change the button to show SUCCESS
+                btn.innerText = "✅ Location Granted!";
+                btn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>Your location has been securely received! Scroll down to view the map.</span>";
+                
                 const lat = pos.coords.latitude.toFixed(5);
                 const lon = pos.coords.longitude.toFixed(5);
-                const acc = Math.round(pos.coords.accuracy);
-                status.innerHTML = "<span style='color: #34d399; font-weight: 600;'>✅ Acquired: " + lat + ", " + lon + " (±" + acc + "m). Updating...</span>";
-                
                 try {{
                     const target = window.top || window.parent;
                     const url = new URL(target.location.href);
                     url.searchParams.set("user_lat", lat);
                     url.searchParams.set("user_lon", lon);
                     target.location.href = url.href;
-                }} catch(e) {{
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("user_lat", lat);
-                    url.searchParams.set("user_lon", lon);
-                    window.location.href = url.href;
-                }}
+                }} catch(e) {{}}
             }},
             (err) => {{
-                btn.disabled = false;
-                btn.innerText = "🛰️ Access My Current Location";
-                let msg = err.message;
-                if (err.code === 1) msg = "Permission denied. Please allow location access in your browser.";
-                else if (err.code === 2) msg = "GPS position unavailable.";
-                else if (err.code === 3) msg = "GPS request timed out.";
-                status.innerHTML = "<span style='color: #f87171;'>⚠️ " + msg + "</span>";
+                btn.disabled = false; btn.innerText = "🛰️ Access My Current Location";
+                status.innerHTML = "<span style='color: #f87171;'>⚠️ Permission denied. Please allow location access.</span>";
             }},
-            {{ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }}
+            {{ enableHighAccuracy: true, timeout: 12000 }}
         );
     }}
     </script>
     """
-    st.components.v1.html(geo_html, height=115)
+    st.components.v1.html(geo_html, height=150)
 
 # Page Configuration
 st.set_page_config(
@@ -150,6 +340,8 @@ radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1.2px, transparent 
 radial-gradient(125% 125% at 50% 10%, #030712 40%, #4338ca 100%) !important;
 background-size: 24px 24px, 100% 100% !important;
 background-attachment: fixed !important;
+[data-testid="stHeader"] {
+    background-color: transparent !important;
 }
 
 /* Container Spacing */
@@ -390,12 +582,30 @@ elif "user_lat" in st.query_params and "user_lon" in st.query_params:
         user_lat = None
         user_lon = None
 
+# Query parameters for Tab 2 location search
+if "tab2_loc" in st.query_params:
+    st.session_state["tab2_location_search"] = st.query_params["tab2_loc"]
+    if "tab2_lat" in st.query_params and "tab2_lon" in st.query_params:
+        try:
+            p_lat = float(st.query_params["tab2_lat"])
+            p_lon = float(st.query_params["tab2_lon"])
+            p_dist = st.query_params.get("tab2_dist", "New Delhi")
+            st.session_state["tab2_selected_location"] = {
+                "name": st.query_params["tab2_loc"],
+                "district": p_dist,
+                "lat": p_lat,
+                "lon": p_lon,
+                "premises": "Street & Public Roadways"
+            }
+        except (ValueError, TypeError):
+            pass
+
 # --- SIDEBAR GEOLOCATION SECTION ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Live Movement & Risk Radar")
 
 if user_lat is None:
-    render_gps_locator(key_suffix="_side")
+   # render_gps_locator(key_suffix="_side")
     st.sidebar.caption("Or test location scenarios:")
     col_g1, col_g2 = st.sidebar.columns(2)
     with col_g1:
@@ -508,15 +718,7 @@ selected_day = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Map Layer & Zoom Controls")
-show_heat = st.sidebar.checkbox("Show Density HeatMap", value=True)
-show_spots = st.sidebar.checkbox("Show DBSCAN Hotspot Corridors", value=True)
-show_incidents = st.sidebar.checkbox("Show Clustered Incident Pins", value=True)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔮 Predictive Policing")
-show_future_heatmap = st.sidebar.checkbox("Generate Future Crime Heatmap (Next 24H)", value=False)
-
+st.sidebar.subheader("Map View Scale")
 map_zoom_sidebar = st.sidebar.slider(
     "Map Zoom Scale",
     min_value=10,
@@ -526,28 +728,6 @@ map_zoom_sidebar = st.sidebar.slider(
     help="Adjust initial zoom (11=City, 13=District, 15=Hotspot, 17=Street)"
 )
 st.session_state["map_zoom"] = map_zoom_sidebar
-
-with st.sidebar.expander("🌍 Google Maps Key (Optional)", expanded=False):
-    st.markdown(
-        "<div style='font-size: 11px; color: #10b981; margin-bottom: 6px; font-weight: 600;'>"
-        "✓ The default Sentinel Radar is 100% Free (OpenStreetMap & ESRI Satellite with 0 keys required)."
-        "</div>",
-        unsafe_allow_html=True
-    )
-    gmaps_api_input = st.text_input(
-        "Google Maps API Key (Optional)",
-        value=st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", "")),
-        type="password",
-        help="Optional: Only needed if you switch to Google Maps mode. Default map is 100% free."
-    )
-    if gmaps_api_input:
-        st.session_state["google_maps_api_key"] = gmaps_api_input
-    st.markdown(
-        "<div style='font-size: 11px; color: #94a3b8; margin-top: 4px;'>"
-        "Need a key? Get one on <a href='https://console.cloud.google.com/google/maps-apis/overview?utm_campaign=gmp_git_agentskills_v1' target='_blank' style='color: #818cf8;'>Google Cloud Console</a>."
-        "</div>",
-        unsafe_allow_html=True
-    )
 
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
@@ -574,280 +754,76 @@ elif time_preset == "Late Night (22:00-04:00)":
     filtered_df = filtered_df[filtered_df["hour"].isin([22, 23, 0, 1, 2, 3, 4])]
 
 # Cruip Open PRO Header, Hero & Bento Grid
-cruip_layout_html = """
+# --- 1. RAKSHAK.AI HEADER (AT THE VERY TOP) ---
+header_html = """
 <style>
-.cruip-header-wrapper {
-margin-bottom: 24px;
-}
-.cruip-header-nav {
-background: rgba(15, 23, 42, 0.75);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 20px;
-padding: 10px 24px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-flex-wrap: wrap;
-gap: 12px;
-}
-.cruip-logo-icon {
-width: 38px;
-height: 38px;
-border-radius: 12px;
-background: linear-gradient(135deg, #6366f1, #4f46e5);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 18px;
-box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-.cruip-badge-mini {
-font-size: 10px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-background: rgba(99, 102, 241, 0.15);
-color: #a5b4fc;
-border: 1px solid rgba(129, 140, 248, 0.35);
-padding: 2px 8px;
-border-radius: 9999px;
-text-transform: uppercase;
-letter-spacing: 0.04em;
-}
-.cruip-status-pill {
-display: flex;
-align-items: center;
-gap: 6px;
-color: #34d399;
-background: rgba(16, 185, 129, 0.1);
-padding: 5px 12px;
-border-radius: 9999px;
-border: 1px solid rgba(16, 185, 129, 0.25);
-font-family: 'Geist Mono', monospace;
-}
-.cruip-status-dot {
-width: 6px;
-height: 6px;
-border-radius: 50%;
-background: #34d399;
-box-shadow: 0 0 8px #34d399;
-}
-.cruip-hero-section {
-text-align: center;
-padding: 34px 20px 28px 20px;
-position: relative;
-max-width: 980px;
-margin: 0 auto;
-}
-.cruip-hero-eyebrow {
-display: inline-flex;
-align-items: center;
-gap: 12px;
-margin-bottom: 16px;
-}
-.cruip-eyebrow-line {
-height: 1px;
-width: 32px;
-background: linear-gradient(to right, transparent, rgba(129, 140, 248, 0.5));
-}
-.cruip-hero-eyebrow span:last-child {
-background: linear-gradient(to left, transparent, rgba(129, 140, 248, 0.5));
-}
-.cruip-eyebrow-text {
-font-size: 11.5px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-text-transform: uppercase;
-letter-spacing: 0.08em;
-background: linear-gradient(to right, #a5b4fc, #c7d2fe);
--webkit-background-clip: text;
-background-clip: text;
-color: transparent;
-}
-.cruip-hero-h1 {
-font-size: clamp(2.2rem, 4.4vw, 3.4rem);
-font-weight: 900;
-letter-spacing: -0.035em;
-line-height: 1.15;
-margin: 0 0 16px 0;
-text-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
-}
-.cruip-hero-sub {
-font-size: 15px;
-color: #94a3b8;
-line-height: 1.65;
-max-width: 820px;
-margin: 0 auto 22px auto;
-}
-.cruip-hero-chips {
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 10px;
-flex-wrap: wrap;
-margin-bottom: 24px;
-}
-.cruip-chip {
-display: inline-flex;
-align-items: center;
-gap: 6px;
-background: rgba(15, 23, 42, 0.7);
-border: 1px solid rgba(255, 255, 255, 0.1);
-border-radius: 9999px;
-padding: 5px 14px;
-font-size: 11px;
-font-family: 'Geist Mono', monospace;
-color: #e2e8f0;
-box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-transition: border-color 0.2s ease, transform 0.2s ease;
-}
-.cruip-chip:hover {
-border-color: rgba(99, 102, 241, 0.5);
-transform: translateY(-1px);
-}
-.cruip-bento-grid {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-gap: 16px;
-margin-bottom: 28px;
-}
-.cruip-card {
-background: rgba(15, 23, 42, 0.5);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 20px;
-padding: 22px;
-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cruip-card:hover {
-border-color: rgba(99, 102, 241, 0.4);
-transform: translateY(-2px);
-box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.12);
-}
-.cruip-card-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 12px;
-}
-.cruip-card-icon {
-width: 34px;
-height: 34px;
-border-radius: 10px;
-background: rgba(99, 102, 241, 0.12);
-border: 1px solid rgba(129, 140, 248, 0.25);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 16px;
-}
-.cruip-card-tag {
-font-size: 10px;
-font-family: 'Geist Mono', monospace;
-font-weight: 700;
-color: #818cf8;
-background: rgba(99, 102, 241, 0.1);
-padding: 2px 8px;
-border-radius: 9999px;
-text-transform: uppercase;
-letter-spacing: 0.05em;
-}
-.cruip-card-title {
-font-size: 15.5px;
-font-weight: 700;
-color: #f1f5f9;
-margin: 0 0 6px 0;
-letter-spacing: -0.015em;
-}
-.cruip-card-desc {
-font-size: 12.5px;
-color: #94a3b8;
-line-height: 1.6;
-margin: 0;
-}
+.cruip-header-wrapper { margin-bottom: 24px; }
+.cruip-header-nav { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 12px; }
+.cruip-bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.cruip-card { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.25s; }
+.cruip-card:hover { border-color: rgba(99, 102, 241, 0.4); transform: translateY(-2px); }
+.cruip-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cruip-card-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(129, 140, 248, 0.25); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.cruip-card-tag { font-size: 10px; font-family: 'Geist Mono', monospace; font-weight: 700; color: #818cf8; background: rgba(99, 102, 241, 0.1); padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; }
+.cruip-card-title { font-size: 15.5px; font-weight: 700; color: #f1f5f9; margin: 0 0 6px 0; }
+.cruip-card-desc { font-size: 12.5px; color: #94a3b8; line-height: 1.6; margin: 0; }
 </style>
 
 <div class="cruip-header-wrapper">
-<div class="cruip-header-nav">
-<div style="display: flex; align-items: center; gap: 12px;">
-<div class="cruip-logo-icon">🛡️</div>
-<div>
-<div style="display: flex; align-items: center; gap: 8px;">
-<span style="font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Rakshak.ai</span>
-<span class="cruip-badge-mini">Open PRO • Delhi Police AI</span>
-</div>
-<div style="font-size: 11px; color: #94a3b8;">Autonomous Spatial Forensics & Civic Safety Engine</div>
-</div>
-</div>
-<div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
-<div class="cruip-status-pill">
-<span class="cruip-status-dot"></span>
-<span>All ML Engines Active</span>
-</div>
-<span style="color: #475569;">•</span>
-<span style="color: #94a3b8; font-family: 'Geist Mono', monospace;">IST (Asia/Kolkata)</span>
-</div>
-</div>
-</div>
-
-<div class="cruip-hero-section">
-<div class="cruip-hero-eyebrow">
-<span class="cruip-eyebrow-line"></span>
-<span class="cruip-eyebrow-text">PREDICTIVE CIVIC SAFETY & REPEAT VICTIMIZATION FORENSICS</span>
-<span class="cruip-eyebrow-line"></span>
-</div>
-<h1 class="cruip-shimmer-title cruip-hero-h1">
-Algorithmic Crime Forensics & Autonomous Agent Deterrence
-</h1>
-<p class="cruip-hero-sub">
-Combining <b>Koper Curve Patrol Routing (12-15m)</b>, <b>Knox Spatio-Temporal Contagion</b>, and <b>Safest Corridor Navigation</b> with verifiable on-chain micro-settlement across 15 Delhi Police Districts.
-</p>
-<div class="cruip-hero-chips">
-<span class="cruip-chip"><b style="color: #818cf8;">15</b> Police Districts</span>
-<span class="cruip-chip"><b style="color: #34d399;">98.4%</b> Geocoding Precision</span>
-<span class="cruip-chip"><b style="color: #fbbf24;">DBSCAN ε=600m</b> Spatio-Temporal Hotspots</span>
-<span class="cruip-chip"><b style="color: #c084fc;">60fps</b> Interactive Movement Radar</span>
-</div>
-</div>
-
-<div class="cruip-bento-grid">
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">📍</div>
-<span class="cruip-card-tag">Unsupervised ML</span>
-</div>
-<div class="cruip-card-title">DBSCAN ε=600m Spatial Clustering</div>
-<p class="cruip-card-desc">
-Automatically isolates high-density crime corridors from ambient noise across 15 districts, prioritizing patrol intervention where repeat offenses cluster.
-</p>
-</div>
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">⏱️</div>
-<span class="cruip-card-tag">Criminology Law</span>
-</div>
-<div class="cruip-card-title">Koper Curve 12-15m Deterrence</div>
-<p class="cruip-card-desc">
-Calculates optimal stationary patrol stops between 12 and 15 minutes, yielding up to 2 hours of residual deterrence without exhausting tactical units.
-</p>
-</div>
-<div class="cruip-card">
-<div class="cruip-card-header">
-<div class="cruip-card-icon">⚡</div>
-<span class="cruip-card-tag">Epidemiology Forensics</span>
-</div>
-<div class="cruip-card-title">Knox Space-Time Contagion</div>
-<p class="cruip-card-desc">
-Evaluates space-time interaction windows to flag secondary victimization risks within 72 hours and chart safest pedestrian corridors in real time.
-</p>
-</div>
+    <div class="cruip-header-nav">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <!-- Ashoka Emblem -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" width="45" style="filter: brightness(0) invert(1);">
+            <div>
+                <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; margin-bottom: 2px;">Rakshak.ai</div>
+                <div style="font-size: 14px; color: #94a3b8; font-weight: 500;">Safety Portal for Citizens</div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 6px 14px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25); font-family: 'Geist Mono', monospace; font-weight: bold;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+                Safety Systems Active
+            </div>
+        </div>
+    </div>
 </div>
 """
-st.markdown(cruip_layout_html, unsafe_allow_html=True)
+st.markdown(header_html, unsafe_allow_html=True)
+
+# --- 2. GPS LOCATION BUTTON (Right under header) ---
+if user_lat is None:
+    render_gps_locator(key_suffix="_main_top")
+
+# --- 3. CITIZEN FEATURES / INFO BOXES (Simplified language) ---
+bento_html = """
+<div class="cruip-bento-grid">
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">📍</div>
+            <span class="cruip-card-tag">AI MAPPING</span>
+        </div>
+        <div class="cruip-card-title">Identify Danger Zones</div>
+        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">🚓</div>
+            <span class="cruip-card-tag">POLICE SUPPORT</span>
+        </div>
+        <div class="cruip-card-title">Smart Patrol Routing</div>
+        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
+    </div>
+    <div class="cruip-card">
+        <div class="cruip-card-header">
+            <div class="cruip-card-icon">⚡</div>
+            <span class="cruip-card-tag">PREDICTIVE TECH</span>
+        </div>
+        <div class="cruip-card-title">Predict Future Threats</div>
+        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
+    </div>
+</div>
+"""
+st.markdown(bento_html, unsafe_allow_html=True) 
 
 # Live GPS Banner if location is active (Once UI Glassmorphic)
 if user_lat is not None:
@@ -902,12 +878,10 @@ with kpi5:
     st.metric("High Risk Share", f"{high_risk_pct:.1f}%", "Active Selection")
 
 # Main Navigation Tabs
-tab1, tab_clean, tab_pred, tab2, tab4, tab5 = st.tabs([
+tab1, tab_clean, tab2, tab5 = st.tabs([
     "🗺️ Interactive Hotspot Map",
     "🧹 Data Cleaning & FIR Verification",
-    "🚔 Predictive Policing & Tactics",
     "⚡ Real-Time Premises Risk Scorer",
-    "📊 District & Temporal Analytics",
     "🔥 x402 Protocol & Algorand Agent"
 ])
 
@@ -932,104 +906,50 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        map_col, zoom_tb_col = st.columns([1.5, 1.8])
-        with map_col:
-            map_mode = st.radio(
-                "Select Map Experience:",
-                [
-                    "⚡ Sentinel 60fps Radar & Satellite (100% Free • OpenStreetMap & ESRI)",
-                    "🗺️ Static Density Heatmap (Folium)",
-                    "🌍 Google Maps Platform (Optional • Requires API Key)"
-                ],
-                index=0,
-                horizontal=True
-            )
-        with zoom_tb_col:
-            st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 4px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
-            z1, z2, z3, z4 = st.columns(4)
-            with z1:
-                if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
-                    st.session_state["map_zoom"] = 11
-                    st.rerun()
-            with z2:
-                if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
-                    st.session_state["map_zoom"] = 13
-                    st.rerun()
-            with z3:
-                if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
-                    st.session_state["map_zoom"] = 15
-                    st.rerun()
-            with z4:
-                if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
-                    st.session_state["map_zoom"] = 17
-                    st.rerun()
+        st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 6px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
+        z1, z2, z3, z4, z_space = st.columns([1, 1, 1, 1, 2])
+        with z1:
+            if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
+                st.session_state["map_zoom"] = 11
+                st.rerun()
+        with z2:
+            if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
+                st.session_state["map_zoom"] = 13
+                st.rerun()
+        with z3:
+            if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
+                st.session_state["map_zoom"] = 15
+                st.rerun()
+        with z4:
+            if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
+                st.session_state["map_zoom"] = 17
+                st.rerun()
 
         current_zoom = st.session_state.get("map_zoom", 13)
 
-        if map_mode.startswith("⚡"):
-            # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
-            smooth_html = create_smooth_realtime_leaflet_html(
-                hotspots_df=cluster_engine.hotspots_df,
-                initial_user_lat=user_lat,
-                initial_user_lon=user_lon,
-                initial_zoom=current_zoom,
-                incidents_df=filtered_df
-            )
-            # Cruip Showcase Terminal Header
-            st.markdown("""
+        # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
+        smooth_html = create_smooth_realtime_leaflet_html(
+            hotspots_df=cluster_engine.hotspots_df,
+            initial_user_lat=user_lat,
+            initial_user_lon=user_lon,
+            initial_zoom=current_zoom,
+            incidents_df=filtered_df
+        )
+        # Cruip Showcase Terminal Header
+        st.markdown("""
 <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
-    </div>
-    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-        60 FPS TELEMETRY • ZERO API KEY REQUIRED
-    </div>
+<div style="display: flex; align-items: center; gap: 8px;">
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+    <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
+</div>
+<div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
+    60 FPS TELEMETRY • ZERO API KEY REQUIRED
+</div>
 </div>
 """, unsafe_allow_html=True)
-            st.components.v1.html(smooth_html, height=720)
-        elif map_mode.startswith("🌍"):
-            active_key = st.session_state.get("google_maps_api_key", os.environ.get("GOOGLE_MAPS_API_KEY", ""))
-            gmaps_html = create_google_maps_sentinel_html(
-                hotspots_df=cluster_engine.hotspots_df,
-                initial_user_lat=user_lat,
-                initial_user_lon=user_lon,
-                initial_zoom=current_zoom,
-                incidents_df=filtered_df,
-                api_key=active_key
-            )
-            # Cruip Showcase Terminal Header
-            st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-google-maps.live • Google Maps Platform Vector Night 3D & 360° Street View</span>
-    </div>
-    <div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25);">
-        GOOGLE MAPS PLATFORM • OPTIONAL API KEY
-    </div>
-</div>
-""", unsafe_allow_html=True)
-            st.components.v1.html(gmaps_html, height=750)
-            st.caption("Google Maps")
-        else:
-            # Folium Map with returned_objects=[] to eliminate re-run lag
-            crime_map = create_delhi_crime_map(
-                filtered_df,
-                hotspots_df=cluster_engine.hotspots_df,
-                show_heatmap=show_heat,
-                show_hotspots=show_spots,
-                show_pins=show_incidents,
-                user_location=(user_lat, user_lon) if user_lat else None,
-                show_future_heatmap=show_future_heatmap,
-                predictor=predictor,
-                zoom_level=current_zoom
-            )
-            st_folium(crime_map, width=None, height=580, returned_objects=[])
+        st.components.v1.html(smooth_html, height=720)
         
         # Hotspots Table
         st.markdown("### Top Identified DBSCAN Crime Hotspots")
@@ -1127,9 +1047,9 @@ with tab_clean:
             - **Rule**: Prune any record with missing lat/lon, crime type, premises, or timestamp.
             """)
         with st.expander("3. Delhi Territorial Geofencing (NCT Bounding Box)"):
-            st.markdown("""
+            st.markdown(r"""
             - **Problem**: Coordinate transpositions or faulty GPS units record incidents in neighboring states (UP, Haryana) or oceans.
-            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\\text{N} - 28.95^\circ\\text{N}$, Longitude $76.80^\circ\\text{E} - 77.50^\circ\\text{E}$.
+            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\text{N} - 28.95^\circ\text{N}$, Longitude $76.80^\circ\text{E} - 77.50^\circ\text{E}$.
             """)
         with st.expander("4. Duplicate Incident Deduplication"):
             st.markdown("""
@@ -1154,147 +1074,7 @@ with tab_clean:
         cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
         st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
 
-# --- TAB: PREDICTIVE POLICING & TACTICS ---
-with tab_pred:
-    st.subheader("🚔 Predictive Policing & Strategic Patrol Intelligence")
-    st.caption("Criminological patrol routing (Koper Curve), Knox near-repeat contagion, and emergency choke-point interception.")
 
-    pred_subtab1, pred_subtab2, pred_subtab3, pred_subtab4 = st.tabs([
-        "🚔 Patrol Beat Optimizer (Koper Curve)",
-        "🔁 Knox Near-Repeat Contagion",
-        "🛡️ Safest Corridor Navigator",
-        "🛑 Tactical Choke-Point Pickets"
-    ])
-
-    # 1. Patrol Beat Optimizer
-    with pred_subtab1:
-        st.markdown("### 🚔 Traveling Salesperson (TSP) Patrol Beat Optimizer")
-        st.caption("Computes multi-stop patrol loops for PCR vans and Cheetah motorcycle units with Koper Curve deterrence dwell times.")
-
-        p_col1, p_col2, p_col3 = st.columns(3)
-        with p_col1:
-            p_shift = st.selectbox("Patrol Shift", ["Night (22:00-06:00)", "Evening Rush (17:00-22:00)", "Day Patrol (08:00-17:00)"], index=0)
-        with p_col2:
-            p_units = st.slider("Active PCR Units", 1, 8, 4)
-        with p_col3:
-            p_start_dist = st.selectbox("Dispatch Base District", sorted(list(DISTRICTS.keys())), index=0)
-
-        # Generate sample itinerary from DBSCAN clusters
-        hotspots_sample = [
-            {"name": "Rajiv Chowk Metro Inner Circle", "district": "New Delhi", "lat": 28.6328, "lon": 77.2197, "riskScore": 0.84, "riskLevel": "HIGH"},
-            {"name": "Paharganj Railway Approach", "district": "Central", "lat": 28.6435, "lon": 77.2105, "riskScore": 0.76, "riskLevel": "HIGH"},
-            {"name": "Chandni Chowk Main Bazaar", "district": "Central", "lat": 28.6562, "lon": 77.2301, "riskScore": 0.79, "riskLevel": "HIGH"},
-            {"name": "Kashmere Gate Interstate Terminal", "district": "North", "lat": 28.6675, "lon": 77.2285, "riskScore": 0.88, "riskLevel": "HIGH"},
-        ]
-        start_c = DISTRICTS[p_start_dist]["center"]
-        optimizer = PatrolBeatOptimizer()
-        plan = optimizer.generate_patrol_itinerary(start_c[0], start_c[1], hotspots_sample, max_stops=4)
-
-        m_kpi1, m_kpi2, m_kpi3 = st.columns(3)
-        with m_kpi1:
-            st.metric("Total Patrol Circuit", f"{plan['total_distance_km']} km", "Optimal Loop")
-        with m_kpi2:
-            st.metric("Est. Total Time", f"{plan['total_duration_minutes']} mins", "Includes Dwell Times")
-        with m_kpi3:
-            st.metric("Coverage Efficiency", plan["coverage_efficiency_score"], "Top Corridors")
-
-        st.info(f"⚠️ **Shift-Handover Advisory:** {plan['shift_handover_advisory']}")
-
-        st.markdown("#### 📋 Recommended Step-by-Step Patrol Schedule")
-        itinerary_df = pd.DataFrame(plan["itinerary"])[[
-            "stop_order", "name", "risk_level", "travel_dist_km", "travel_time_min", "koper_dwell_min", "tactical_task"
-        ]].rename(columns={
-            "stop_order": "Stop #",
-            "name": "Target Hotspot",
-            "risk_level": "Risk Tier",
-            "travel_dist_km": "Leg Dist (km)",
-            "travel_time_min": "Transit Time (mins)",
-            "koper_dwell_min": "Koper Dwell Time (mins)",
-            "tactical_task": "Tactical Action"
-        })
-        st.dataframe(itinerary_df, use_container_width=True, hide_index=True)
-
-    # 2. Knox Near-Repeat
-    with pred_subtab2:
-        st.markdown("### 🔁 Knox Spatio-Temporal Contagion Forecaster")
-        st.caption("Criminological Near-Repeat test: when a crime occurs, adjacent premises within 400m face a temporary surge in vulnerability for 48–72 hours.")
-
-        knox_eng = KnoxNearRepeatEngine()
-        k_col1, k_col2 = st.columns(2)
-        with k_col1:
-            k_lat = st.number_input("Anchor Incident Latitude", value=28.6328, format="%.4f")
-            k_lon = st.number_input("Anchor Incident Longitude", value=77.2197, format="%.4f")
-        with k_col2:
-            k_hours = st.slider("Hours Elapsed Since Incident", 1, 72, 8)
-            k_crime = st.selectbox("Anchor Incident Type", ["Snatching (Chain/Phone)", "Street Robbery", "Motor Vehicle Theft", "Burglary"])
-
-        mock_crimes = pd.DataFrame([{"lat": k_lat, "lon": k_lon, "crime": k_crime, "hours_ago": k_hours}])
-        knox_result = knox_eng.calculate_near_repeat_risk(k_lat + 0.0015, k_lon + 0.0015, mock_crimes)
-
-        knox_c1, knox_c2 = st.columns(2)
-        with knox_c1:
-            st.metric("Contagion Status", knox_result["contagion_level"], f"{knox_result['max_risk_multiplier']}x Multiplier")
-        with knox_c2:
-            st.metric("Contagion Bandwidth", "450 Meters", "Knox Threshold")
-
-        st.success(f"🎯 **Tactical Directive:** {knox_result['tactical_guidance']}")
-
-    # 3. Safest Corridor Navigator
-    with pred_subtab3:
-        st.markdown("### 🛡️ Safest Corridor vs. Shortest Path Navigation")
-        st.caption("Contrasts raw shortest direct path against statistically protected corridors guarded by 24/7 pickets and full street lighting.")
-
-        router = SafeCorridorRouter()
-        c_col1, c_col2 = st.columns(2)
-        with c_col1:
-            route_origin = st.text_input("Origin Landmark", "Connaught Place Outer Circle")
-        with c_col2:
-            route_dest = st.text_input("Destination Landmark", "Civil Lines VIP Enclave")
-
-        comparison = router.compute_route_comparison(28.6328, 77.2197, 28.6820, 77.2180)
-
-        r_col1, r_col2 = st.columns(2)
-        with r_col1:
-            st.markdown("#### 🔴 Shortest Direct Route")
-            st.write(f"**Distance:** `{comparison['direct_route']['distance_km']} km`")
-            st.write(f"**Estimated Time:** `{comparison['direct_route']['estimated_time_min']} mins`")
-            st.error(f"**Threat Exposure:** {comparison['direct_route']['threat_exposure']}")
-            st.caption(comparison['direct_route']['hazard_summary'])
-
-        with r_col2:
-            st.markdown("#### 🟢 Recommended Safest Corridor")
-            st.write(f"**Distance:** `{comparison['safest_corridor']['distance_km']} km`")
-            st.write(f"**Estimated Time:** `{comparison['safest_corridor']['estimated_time_min']} mins`")
-            st.success(f"**Threat Exposure:** {comparison['safest_corridor']['threat_exposure']} ({comparison['safest_corridor']['protective_gain']})")
-            st.caption(f"Guarded Waypoint: {comparison['safest_corridor']['safe_waypoint']} ({comparison['safest_corridor']['security_features']})")
-
-    # 4. Tactical Choke Points
-    with pred_subtab4:
-        st.markdown("### 🛑 Tactical Emergency Choke-Point & Barricade Placer")
-        st.caption("Calculates fleeing offender escape radius and recommends static police barricades to seal highway exits.")
-
-        planner = TacticalInterceptionPlanner()
-        ch_col1, ch_col2 = st.columns(2)
-        with ch_col1:
-            ch_mins = st.slider("Minutes Elapsed Since 112 FIR", 2, 20, 6)
-        with ch_col2:
-            ch_mode = st.selectbox("Offender Transport Mode", ["Motorcycle (38 km/h)", "Car (30 km/h)", "On Foot (8 km/h)"])
-
-        interception = planner.plan_interception(28.6328, 77.2197, minutes_elapsed=ch_mins)
-
-        st.metric("Offender Escape Radius", f"{interception['escape_radius_km']} km", f"{interception['escape_radius_meters']}m Perimeter")
-        st.warning(f"📢 **Emergency 112 Net Broadcast:** {interception['tactical_broadcast']}")
-
-        st.markdown("#### 🎯 Priority Choke-Point Barricades")
-        cp_df = pd.DataFrame(interception["recommended_barricades"])[[
-            "name", "distance_km", "capacity", "intercept_feasibility"
-        ]].rename(columns={
-            "name": "Barricade Junction",
-            "distance_km": "Distance from Crime (km)",
-            "capacity": "Junction Role",
-            "intercept_feasibility": "Interception Feasibility"
-        })
-        st.dataframe(cp_df, use_container_width=True, hide_index=True)
 
 # --- TAB 2: REAL-TIME PREMISES RISK SCORER ---
 with tab2:
@@ -1311,41 +1091,62 @@ with tab2:
 
     col_input, col_result = st.columns([1.1, 1.2])
     
-    # Preset Delhi premises coordinates
-    landmark_presets = {}
-    if user_lat is not None:
-        closest_d, _, _ = find_nearest_delhi_jurisdiction(user_lat, user_lon)
-        landmark_presets["📍 My Live GPS Location"] = (closest_d, "Street & Public Roadways", user_lat, user_lon)
-
-    landmark_presets.update({
-        "Rajiv Chowk Metro (Connaught Place)": ("New Delhi", "Transit & Metro Hub", 28.6328, 77.2195),
-        "Karol Bagh Gaffar Market": ("Central", "Commercial & Retail Market", 28.6517, 77.1906),
-        "Kashmere Gate ISBT & Metro": ("North", "Transit & Metro Hub", 28.6675, 77.2285),
-        "Nehru Place IT & Electronics Complex": ("South-East", "Commercial & Retail Market", 28.5494, 77.2528),
-        "Hauz Khas Village Social Hub": ("South", "Commercial & Retail Market", 28.5535, 77.1945),
-        "Rohini Sector 18 DDA Market": ("Rohini", "Commercial & Retail Market", 28.7410, 77.1320),
-        "Dwarka Sector 21 Metro Terminal": ("Dwarka", "Transit & Metro Hub", 28.5520, 77.0580),
-        "Anand Vihar ISBT & Terminal": ("Shahdara", "Transit & Metro Hub", 28.6480, 77.3160),
-        "Bawana Industrial Estate Sector 3": ("Outer-North", "Industrial & Warehouse Estates", 28.7980, 77.0420),
-        "Mehrauli Archaeological Park": ("South", "Parks & Isolated Environs", 28.5240, 77.1850)
-    })
-    
     with col_input:
-        st.markdown("#### Input Premises & Temporal Parameters")
-        preset_default_idx = 0 if user_lat is not None else 1
-        preset_choice = st.selectbox("Quick Landmark / GPS Preset", list(landmark_presets.keys()) + ["Custom Coordinates"], index=0)
+        st.markdown("#### 🔍 Search Location & Temporal Parameters")
+        st.caption("Type any Delhi locality, landmark, colony, market, or metro station.")
         
-        if preset_choice != "Custom Coordinates":
-            p_dist, p_prem, p_lat, p_lon = landmark_presets[preset_choice]
-            pred_district = st.selectbox("District", sorted(list(df["district"].unique())), index=sorted(list(df["district"].unique())).index(p_dist))
-            pred_premises = st.selectbox("Premises Category", sorted(list(df["premises_type"].unique())), index=sorted(list(df["premises_type"].unique())).index(p_prem))
-            pred_lat = st.number_input("Latitude", value=float(p_lat), format="%.4f")
-            pred_lon = st.number_input("Longitude", value=float(p_lon), format="%.4f")
+        # Exact Floating Predictive Search Bar from Map View
+        initial_search_query = st.session_state.get("tab2_location_search", "Rajiv Chowk Metro Station")
+        if user_lat is not None and "tab2_selected_location" not in st.session_state:
+            initial_search_query = "Live GPS Location"
+
+        search_result = render_predictive_search(default_query=initial_search_query, key="tab2_predictive_search_component")
+
+        # Resolve selected location
+        if search_result and isinstance(search_result, dict):
+            st.session_state["tab2_selected_location"] = search_result
+            st.session_state["tab2_location_search"] = search_result.get("name", "")
+            selected_location = search_result
+        elif "tab2_selected_location" in st.session_state:
+            selected_location = st.session_state["tab2_selected_location"]
+        elif user_lat is not None:
+            closest_d, _, _ = find_nearest_delhi_jurisdiction(user_lat, user_lon)
+            selected_location = {
+                "name": "Live GPS Position",
+                "district": closest_d,
+                "premises": "Street & Public Roadways",
+                "lat": user_lat,
+                "lon": user_lon
+            }
         else:
-            pred_district = st.selectbox("District", sorted(list(df["district"].unique())), index=0)
-            pred_premises = st.selectbox("Premises Category", sorted(list(df["premises_type"].unique())), index=0)
-            pred_lat = st.number_input("Latitude", value=28.6139, format="%.4f")
-            pred_lon = st.number_input("Longitude", value=77.2090, format="%.4f")
+            selected_location = {
+                "name": "Rajiv Chowk Metro Station",
+                "district": "New Delhi",
+                "premises": "Transit & Metro Hub",
+                "lat": 28.6328,
+                "lon": 77.2197
+            }
+
+        # Premises Category Selection
+        premises_options = sorted(list(df["premises_type"].unique()))
+        default_prem_idx = 0
+        loc_prem = selected_location.get("premises", "")
+        if loc_prem in premises_options:
+            default_prem_idx = premises_options.index(loc_prem)
+        pred_premises = st.selectbox("Premises Vulnerability Type", premises_options, index=default_prem_idx)
+        
+        # Derive precise jurisdiction from geographic coordinates
+        loc_lat = selected_location.get("lat", 28.6328)
+        loc_lon = selected_location.get("lon", 77.2197)
+        pred_district, _, _ = find_nearest_delhi_jurisdiction(loc_lat, loc_lon)
+        
+        # Auto-resolved Location Context Pill
+        st.markdown(f"""
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; margin-top: 4px; margin-bottom: 12px; font-size: 11.5px; color: #cbd5e1; font-family: 'Geist Mono', monospace;">
+            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 2px;">🎯 Resolved Location: {selected_location.get('name', 'Delhi NCT')}</div>
+            <div>Jurisdiction: <b style="color: #f1f5f9;">{pred_district} District</b> | Coordinates: <code>{loc_lat:.4f}°N, {loc_lon:.4f}°E</code></div>
+        </div>
+        """, unsafe_allow_html=True)
             
         pred_hour = st.slider("Hour of Day", 0, 23, 21, format="%02d:00 hrs")
         pred_day = st.selectbox("Day of Week", ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"])
@@ -1353,25 +1154,50 @@ with tab2:
         predict_btn = st.button("🚨 Calculate Incident Risk Index", type="primary", use_container_width=True)
         
     with col_result:
-        st.markdown("#### AI Risk Assessment & Patrol Guidance")
+        st.markdown("#### AI Risk Assessment & Nearest Police Station")
         if predict_btn or True:  # Run by default for immediate responsiveness
+            pred_lat = loc_lat
+            pred_lon = loc_lon
+            
             result = predictor.predict_risk(pred_district, pred_premises, pred_hour, pred_day, pred_lat, pred_lon)
+            nearest_ps = get_detailed_nearest_police_station(pred_lat, pred_lon)
             
             prob = result["high_risk_probability"]
             color = result["risk_color"]
             
             st.markdown(f"""
-            <div style="background-color: #FFFFFF; border-left: 6px solid {color}; border-radius: 8px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 15px;">
+            <div style="background-color: #FFFFFF; border-left: 6px solid {color}; border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); margin-bottom: 15px;">
                 <span style="font-size: 0.85rem; text-transform: uppercase; color: #6B7280; font-weight: 700;">Premises Security Status</span>
                 <h2 style="margin: 4px 0 8px 0; color: {color};">{result['risk_level']}</h2>
                 <div style="font-size: 2.2rem; font-weight: 800; color: #111827;">{prob}% <span style="font-size: 1rem; color: #6B7280; font-weight: normal;">High-Risk Probability</span></div>
             </div>
             """, unsafe_allow_html=True)
             
+            # Nearest Police Station Spotlight Card
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(56, 189, 248, 0.4); border-left: 5px solid #38bdf8; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; font-family: 'Geist Mono', monospace; display: flex; align-items: center; gap: 6px;">
+                        🚔 NEAREST POLICE STATION
+                    </span>
+                    <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        {nearest_ps['distance_km']} km away
+                    </span>
+                </div>
+                <div style="font-size: 15px; font-weight: 800; color: #f8fafc; margin-bottom: 4px;">{nearest_ps['name']}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">📍 {nearest_ps['address']}</div>
+                <div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: #cbd5e1; font-family: 'Geist Mono', monospace;">
+                    <span>📞 Emergency: <b style="color: #34d399;">112</b></span>
+                    <span>☎️ Desk: <b style="color: #38bdf8;">{nearest_ps.get('phone', '100')}</b></span>
+                    <span>🛡️ District: <b style="color: #f1f5f9;">{nearest_ps['district']}</b></span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
             # Additional diagnostic cards
             d1, d2 = st.columns(2)
             with d1:
-                st.info(f"📍 **Distance to Nearest DBSCAN Hotspot:**\n\n**{result['dist_to_hotspot_km']} km**")
+                st.info(f"📍 **Distance to Nearest Hotspot:**\n\n**{result['dist_to_hotspot_km']} km**")
             with d2:
                 time_desc = "Night Window (22:00-05:00)" if result["temporal_factors"]["is_night"] else ("Rush Hour Window" if result["temporal_factors"]["is_rush_hour"] else "Standard Window")
                 st.info(f"⏰ **Temporal Profile:**\n\n**{time_desc}**")
@@ -1447,39 +1273,6 @@ if False:
     *"When evaluating Delhi's crime geography, K-Means was unsuitable because urban offenses follow non-convex infrastructure corridors like metro lines and commercial markets. DBSCAN with a 600m Haversine radius not only adapts to arbitrary corridor geometries, but critically isolates 1-2% of noise incidents. In law enforcement resource allocation, false positive hotspots waste critical patrol units, making density-based clustering with noise rejection mathematically and operationally superior."*
     """)
 
-# --- TAB 4: DISTRICT & TEMPORAL ANALYTICS ---
-with tab4:
-    st.subheader("District & Temporal Pattern Analytics")
-    
-    col_g1, col_g2 = st.columns(2)
-    
-    with col_g1:
-        st.markdown("#### Crime Frequency by Hour of Day")
-        hourly_counts = filtered_df.groupby("hour")["record_id"].count().reset_index()
-        hourly_counts.columns = ["Hour (24h)", "Incident Count"]
-        st.bar_chart(hourly_counts.set_index("Hour (24h)"))
-        
-    with col_g2:
-        st.markdown("#### Vulnerability by Premises Category")
-        premises_counts = filtered_df["premises_type"].value_counts().reset_index()
-        premises_counts.columns = ["Premises Type", "Total Incidents"]
-        st.bar_chart(premises_counts.set_index("Premises Type"))
-        
-    st.markdown("---")
-    col_g3, col_g4 = st.columns(2)
-    
-    with col_g3:
-        st.markdown("#### Top Crime Categories Across Selected Filter")
-        crime_counts = filtered_df["crime_category"].value_counts().reset_index()
-        crime_counts.columns = ["Crime Category", "Count"]
-        st.dataframe(crime_counts, use_container_width=True, hide_index=True)
-        
-    with col_g4:
-        st.markdown("#### ML Feature Importance (XGBoost / Gradient Boosting)")
-        top_features = predictor.metrics.get("top_features", [])
-        if top_features:
-            feat_df = pd.DataFrame(top_features[:8])
-            st.bar_chart(feat_df.set_index("feature"))
 
 # --- TAB 5: x402 PROTOCOL & ALGORAND AGENT ---
 with tab5:
