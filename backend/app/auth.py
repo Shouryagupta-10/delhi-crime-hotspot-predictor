@@ -25,42 +25,42 @@ def _verify_password(password: str, stored_hash: str, stored_salt_hex: str) -> b
         return False
 
 def _init_default_users() -> dict:
-    """Default verified law enforcement and civilian accounts."""
+    """Default citizen and safety commuter accounts."""
     users = {}
     
-    # 1. Senior Inspector Account
-    hash1, salt1 = _hash_password("Password@123")
-    users["inspector@delhipolice.gov.in"] = {
-        "name": "Inspector Rajeev Sharma",
-        "email": "inspector@delhipolice.gov.in",
-        "role": "Senior Crime Branch Inspector",
-        "district": "Central",
+    # 1. Citizen Commuter Account
+    hash1, salt1 = _hash_password("Citizen@2026")
+    users["ananya.sharma@gmail.com"] = {
+        "name": "Ananya Sharma",
+        "email": "ananya.sharma@gmail.com",
+        "role": "Daily Metro & Walking Commuter",
+        "district": "South Delhi",
         "hash": hash1,
         "salt": salt1,
         "created_at": "2026-01-15T09:00:00Z",
         "is_verified": True
     }
     
-    # 2. Patrol Dispatcher Account
-    hash2, salt2 = _hash_password("Dispatch@2026")
-    users["dispatch@delhipolice.gov.in"] = {
-        "name": "Sub-Inspector Priya Verma",
-        "email": "dispatch@delhipolice.gov.in",
-        "role": "Rapid Patrol Dispatcher",
-        "district": "New Delhi",
+    # 2. Neighborhood Watch Member
+    hash2, salt2 = _hash_password("Safety@2026")
+    users["rahul.verma@gmail.com"] = {
+        "name": "Rahul Verma",
+        "email": "rahul.verma@gmail.com",
+        "role": "Neighborhood Safety Volunteer",
+        "district": "Central Delhi",
         "hash": hash2,
         "salt": salt2,
         "created_at": "2026-02-01T14:30:00Z",
         "is_verified": True
     }
 
-    # 3. Citizen Safety Analyst
-    hash3, salt3 = _hash_password("Citizen@2026")
-    users["citizen@rakshak.ai"] = {
-        "name": "Ananya Sen (Civic Analyst)",
-        "email": "citizen@rakshak.ai",
-        "role": "Civic Community Safety Member",
-        "district": "South",
+    # 3. Student / Night Traveler
+    hash3, salt3 = _hash_password("Delhi@2026")
+    users["rohit.gupta@delhiuniv.ac.in"] = {
+        "name": "Rohit Gupta",
+        "email": "rohit.gupta@delhiuniv.ac.in",
+        "role": "Student & Night Traveler",
+        "district": "North Delhi",
         "hash": hash3,
         "salt": salt3,
         "created_at": "2026-03-01T10:00:00Z",
@@ -93,64 +93,65 @@ def save_users(users: dict) -> None:
 
 def authenticate_user(email: str, password: str) -> tuple[bool, str, dict]:
     """
-    Authenticates a user against the store.
+    Authenticates a citizen against the store.
     Returns: (success, message, user_data)
     """
     email = (email or "").strip().lower()
     if not email or not password:
-        return False, "Please provide both email and password.", {}
+        return False, "Please provide both your email and password.", {}
 
     users = load_users()
     user = users.get(email)
     if not user:
-        return False, "Invalid email or password.", {}
+        return False, "Invalid email or password. Please check your credentials.", {}
 
     if not _verify_password(password, user["hash"], user["salt"]):
-        return False, "Invalid email or password.", {}
+        return False, "Invalid email or password. Please check your credentials.", {}
 
-    return True, "Login successful!", user
+    return True, "Login successful! Welcome back.", user
 
 def register_user(email: str, password: str, name: str, role: str, district: str) -> tuple[bool, str, dict]:
     """
-    Registers a new user and persists their account.
+    Registers a new citizen user and persists their account.
     Returns: (success, message, user_data)
     """
     email = (email or "").strip().lower()
     name = (name or "").strip()
     
-    if not email or "@" not in email or "." not in email:
+    if not email or "@" not in email:
         return False, "Please enter a valid email address.", {}
-    if not password or len(password) < 8:
-        return False, "Password must be at least 8 characters long.", {}
+    
     if not name:
-        return False, "Please enter your full name.", {}
+        return False, "Please enter your name.", {}
+        
+    if not password or len(password) < 6:
+        return False, "Password must be at least 6 characters long.", {}
 
     users = load_users()
     if email in users:
-        return False, "An account with this email already exists.", {}
+        return False, "An account with this email address already exists. Please sign in.", {}
 
     pwd_hash, salt = _hash_password(password)
     new_user = {
         "name": name,
         "email": email,
-        "role": role or "Patrol Officer",
-        "district": district or "Central",
+        "role": role or "Citizen User",
+        "district": district or "Delhi NCR",
         "hash": pwd_hash,
         "salt": salt,
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "is_verified": True
     }
     users[email] = new_user
     save_users(users)
-    return True, "Officer account registered successfully! You can now log in.", new_user
+    return True, "Account created successfully! You are now logged in.", new_user
 
 def check_rate_limit() -> tuple[bool, str]:
-    """Checks for brute force attempts."""
     now = time.time()
     lockout_until = st.session_state.get("auth_lockout_until", 0)
     if now < lockout_until:
         rem_sec = int(lockout_until - now)
-        return False, f"Too many failed login attempts. Portal temporarily locked for {rem_sec} seconds."
+        return False, f"Too many failed login attempts. Please wait {rem_sec} seconds before trying again."
     return True, ""
 
 def record_failed_attempt():
@@ -162,10 +163,10 @@ def record_failed_attempt():
 
 def record_successful_login(user: dict):
     st.session_state["authenticated"] = True
-    st.session_state["user_email"] = user.get("email", "officer@delhipolice.gov.in")
-    st.session_state["user_name"] = user.get("name", "Verified Officer")
-    st.session_state["user_role"] = user.get("role", "Patrol Officer")
-    st.session_state["user_district"] = user.get("district", "Central")
+    st.session_state["user_email"] = user.get("email", "citizen@rakshak.ai")
+    st.session_state["user_name"] = user.get("name", "Citizen User")
+    st.session_state["user_role"] = user.get("role", "Citizen Commuter")
+    st.session_state["user_district"] = user.get("district", "Delhi NCR")
     st.session_state["auth_failed_attempts"] = 0
     st.session_state["auth_lockout_until"] = 0
 
@@ -180,7 +181,7 @@ def logout_user():
 
 def render_cruip_login_page():
     """
-    Renders the Cruip Open PRO styled secure authentication portal.
+    Renders the citizen-centric Cruip Open PRO styled secure authentication portal.
     Halts main app execution until the user is authenticated.
     """
     st.markdown("""
@@ -202,9 +203,9 @@ def render_cruip_login_page():
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(99, 102, 241, 0.15);
-        border: 1px solid rgba(129, 140, 248, 0.35);
-        color: #c7d2fe;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: #34d399;
         padding: 4px 14px;
         border-radius: 9999px;
         font-size: 11px;
@@ -214,7 +215,7 @@ def render_cruip_login_page():
         letter-spacing: 0.05em;
     }
     .login-title {
-        font-size: 27px;
+        font-size: 28px;
         font-weight: 900;
         color: #ffffff;
         letter-spacing: -0.02em;
@@ -246,16 +247,17 @@ def render_cruip_login_page():
     <div class="login-hero-container">
         <div class="login-badge">
             <span style="width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
-            DELHI POLICE SENTINEL GATEWAY
+            CITIZEN SAFETY PORTAL
         </div>
-        <div class="login-title">Rakshak.ai Security Enclave</div>
+        <div class="login-title">Rakshak.ai</div>
         <div class="login-subtitle">
-            Secure Authentication Portal for Law Enforcement, Patrol Dispatches, and Civic Safety Forensics.
+            Sign in to access real-time neighborhood danger heatmaps, live safe walking corridors, emergency SOS, and safe travel navigation.
         </div>
         <div class="feature-pill-bar">
-            <span class="feature-pill">🔐 PBKDF2-SHA256 Encryption</span>
-            <span class="feature-pill">🛡️ DBSCAN Enclave</span>
-            <span class="feature-pill">⚡ 60fps Radar Access</span>
+            <span class="feature-pill">🚶 Safe Walking Routes</span>
+            <span class="feature-pill">🚗 Safe Vehicle Corridors</span>
+            <span class="feature-pill">🚨 Real-Time Risk Alerts</span>
+            <span class="feature-pill">🔒 Private & Secure</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -268,59 +270,61 @@ def render_cruip_login_page():
 
     auth_tab_choice = st.radio(
         "Authentication Action",
-        ["🔐 Sign In (Existing Officer)", "📝 Register Officer Credentials", "🚀 Instant 1-Click Demo Login"],
+        ["🔐 Sign In", "📝 Create Citizen Account", "🚀 Instant 1-Click Guest Access"],
         horizontal=True,
         label_visibility="collapsed"
     )
 
     col_wrap = st.columns([1, 2, 1])
     with col_wrap[1]:
+        # --- TAB 1: SIGN IN ---
         if auth_tab_choice.startswith("🔐 Sign In"):
-            with st.form("form_officer_login"):
-                st.markdown("##### 👤 Enter Officer Credentials")
-                login_email = st.text_input("Official Email ID", placeholder="inspector@delhipolice.gov.in", key="in_login_email")
+            with st.form("form_citizen_login"):
+                st.markdown("##### 👤 Sign in to your Account")
+                login_email = st.text_input("Email Address", placeholder="e.g. ananya.sharma@gmail.com", key="in_login_email")
                 login_password = st.text_input("Password", type="password", placeholder="••••••••", key="in_login_pwd")
                 
-                submitted = st.form_submit_button("🔓 Log In to Dashboard", use_container_width=True)
+                submitted = st.form_submit_button("🔓 Sign In & Explore Safe Routes", use_container_width=True)
                 
                 if submitted:
                     ok, msg, user_data = authenticate_user(login_email, login_password)
                     if ok:
                         record_successful_login(user_data)
-                        st.success(f"✅ Verified: Welcome {user_data['name']}!")
+                        st.success(f"✅ Welcome back, {user_data['name']}!")
                         time.sleep(0.4)
                         st.rerun()
                     else:
                         record_failed_attempt()
                         st.error(f"❌ {msg}")
             
-            st.caption("💡 Default demo account: `inspector@delhipolice.gov.in` | Password: `Password@123`")
+            st.caption("💡 Quick test account: `ananya.sharma@gmail.com` | Password: `Citizen@2026` or use the **Instant 1-Click Guest Access** tab.")
 
-        elif auth_tab_choice.startswith("📝 Register"):
-            with st.form("form_officer_register"):
-                st.markdown("##### 📝 Create Official Account")
-                reg_name = st.text_input("Full Officer Name", placeholder="e.g. Inspector Rajat Singh")
-                reg_email = st.text_input("Official Email ID", placeholder="r.singh@delhipolice.gov.in")
+        # --- TAB 2: CREATE CITIZEN ACCOUNT ---
+        elif auth_tab_choice.startswith("📝 Create"):
+            with st.form("form_citizen_register"):
+                st.markdown("##### 📝 Create Your Free Citizen Account")
+                reg_name = st.text_input("Your Full Name", placeholder="e.g. Ananya Sharma")
+                reg_email = st.text_input("Email Address", placeholder="e.g. ananya@example.com")
                 
                 c_role, c_dist = st.columns(2)
                 with c_role:
                     reg_role = st.selectbox(
-                        "Designation / Role",
-                        ["Senior Crime Branch Inspector", "Rapid Patrol Dispatcher", "Station House Officer (SHO)", "Geospatial Analyst", "Civic Safety Officer"]
+                        "Primary Commute / Safety Profile",
+                        ["Daily Metro & Walking Commuter", "Student / Night Traveler", "Neighborhood Resident", "Senior Citizen Commuter", "Neighborhood Safety Volunteer"]
                     )
                 with c_dist:
                     reg_district = st.selectbox(
-                        "Primary Jurisdiction",
-                        ["Central", "New Delhi", "North", "South", "South-East", "South-West", "West", "North-West", "Rohini", "Dwarka", "East", "Shahdara", "North-East", "Outer", "Outer-North"]
+                        "Your Primary District / Neighborhood",
+                        ["South Delhi", "Central Delhi", "New Delhi", "North Delhi", "South-East", "South-West", "West Delhi", "North-West", "Rohini", "Dwarka", "East Delhi", "Shahdara", "North-East", "Outer Delhi", "Outer-North"]
                     )
                 
                 c_p1, c_p2 = st.columns(2)
                 with c_p1:
-                    reg_p1 = st.text_input("New Password", type="password", placeholder="Min 8 characters")
+                    reg_p1 = st.text_input("Password", type="password", placeholder="Min 6 characters")
                 with c_p2:
                     reg_p2 = st.text_input("Confirm Password", type="password", placeholder="Confirm password")
                 
-                reg_submit = st.form_submit_button("📝 Register & Issue Credentials", use_container_width=True)
+                reg_submit = st.form_submit_button("📝 Create Free Account", use_container_width=True)
                 if reg_submit:
                     if reg_p1 != reg_p2:
                         st.error("❌ Passwords do not match.")
@@ -334,44 +338,47 @@ def render_cruip_login_page():
                         else:
                             st.error(f"❌ {msg}")
 
+        # --- TAB 3: INSTANT GUEST & DEMO ACCESS ---
         elif auth_tab_choice.startswith("🚀 Instant"):
             st.markdown("""
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 14px;">
-                <div style="font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 6px;">⚡ Quick Evaluator / Demo Access</div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 16px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 14px;">
+                <div style="font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 6px;">⚡ Instant One-Click Citizen Access</div>
                 <div style="font-size: 12.5px; color: #94a3b8;">
-                    Instantly authenticate into Rakshak.ai with pre-configured verified credentials. No typing required.
+                    No registration or password typing needed. Pick a profile or continue as a guest to explore Delhi safe routes instantly:
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
+            # Big prominent guest button
+            if st.button("👤 Continue as Public Citizen (Instant Explorer)", use_container_width=True, type="primary"):
+                record_successful_login({
+                    "name": "Delhi Citizen",
+                    "email": "citizen@delhi.gov.in",
+                    "role": "Public Citizen",
+                    "district": "Delhi NCR"
+                })
+                st.success("✅ Welcome to Rakshak.ai! Loading safety dashboard...")
+                time.sleep(0.3)
+                st.rerun()
+
+            st.markdown("<div style='margin-top: 12px; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; text-align: center;'>— Or Choose a Sample Citizen Profile —</div>", unsafe_allow_html=True)
+
             c_d1, c_d2 = st.columns(2)
             with c_d1:
-                if st.button("🛡️ Inspector Sharma (Central)", use_container_width=True):
+                if st.button("🚶 Ananya (Metro Commuter)", use_container_width=True):
                     users = load_users()
-                    demo_user = users.get("inspector@delhipolice.gov.in")
+                    demo_user = users.get("ananya.sharma@gmail.com")
                     if demo_user:
                         record_successful_login(demo_user)
-                        st.success("Authenticated as Senior Inspector Sharma!")
+                        st.success("Logged in as Ananya Sharma (South Delhi Commuter)!")
                         time.sleep(0.3)
                         st.rerun()
             with c_d2:
-                if st.button("🚓 Dispatcher Verma (New Delhi)", use_container_width=True):
+                if st.button("🛡️ Rahul (Safety Volunteer)", use_container_width=True):
                     users = load_users()
-                    demo_user = users.get("dispatch@delhipolice.gov.in")
+                    demo_user = users.get("rahul.verma@gmail.com")
                     if demo_user:
                         record_successful_login(demo_user)
-                        st.success("Authenticated as Dispatcher Verma!")
+                        st.success("Logged in as Rahul Verma (Central Delhi Resident)!")
                         time.sleep(0.3)
                         st.rerun()
-            
-            st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
-            if st.button("👤 Continue as Public Citizen (Guest Explorer)", use_container_width=True):
-                record_successful_login({
-                    "name": "Citizen Explorer",
-                    "email": "citizen@delhi.gov.in",
-                    "role": "Public Citizen",
-                    "district": "All Districts"
-                })
-                st.success("Authenticated as Citizen Explorer!")
-                time.sleep(0.3)
-                st.rerun()
