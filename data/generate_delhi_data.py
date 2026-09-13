@@ -234,7 +234,7 @@ try:
 except (ImportError, ValueError):
     from cleaner import clean_crime_dataset
 
-def generate_delhi_crime_dataset(num_records=25000, output_path=None, raw_output_path=None, inject_noise=True, start_year=2015):
+def generate_delhi_crime_dataset(num_records=35000, output_path=None, raw_output_path=None, inject_noise=True, start_year=2015):
     """
     Generates realistic raw Delhi police incident reports spanning past 10 years (from 2015
     to recent date) with confirmation statuses, temporal dynamics, and geocodes. Applies
@@ -380,6 +380,17 @@ def generate_delhi_crime_dataset(num_records=25000, output_path=None, raw_output
     
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     clean_df.to_csv(output_path, index=False)
+    
+    # Also sync to backend/data if present
+    backend_data_dir = os.path.join(os.path.dirname(base_dir), "backend", "data")
+    if os.path.exists(backend_data_dir):
+        try:
+            import shutil
+            shutil.copy(raw_output_path, os.path.join(backend_data_dir, os.path.basename(raw_output_path)))
+            shutil.copy(output_path, os.path.join(backend_data_dir, os.path.basename(output_path)))
+        except Exception as e:
+            print(f"Note: Could not sync to backend/data: {e}")
+
     print(f"\n✅ Data Cleaning Pipeline Completed Successfully:")
     print(f"   Raw Ingestion:        {audit['raw_count']} records")
     print(f"   Unconfirmed Dropped:  {audit['unconfirmed_dropped']}")

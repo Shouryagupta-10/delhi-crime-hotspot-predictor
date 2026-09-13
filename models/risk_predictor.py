@@ -243,6 +243,16 @@ class DelhiCrimeRiskPredictor:
         }
         joblib.dump(bundle, model_path)
         print(f"Saved trained model bundle to {model_path}")
+        
+        # Also sync to backend/models if directory exists
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(model_path)))
+        backend_model_dir = os.path.join(base_dir, "backend", "models")
+        if os.path.exists(backend_model_dir):
+            try:
+                import shutil
+                shutil.copy(model_path, os.path.join(backend_model_dir, os.path.basename(model_path)))
+            except Exception as e:
+                print(f"Note: Could not sync to backend/models: {e}")
 
     @classmethod
     def load(cls, model_path: str):

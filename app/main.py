@@ -747,6 +747,33 @@ selected_day = st.sidebar.selectbox(
     ["All Days", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 )
 
+# 10-Year Historical Horizon Filter (2015 to Current Date)
+st.sidebar.markdown("---")
+st.sidebar.subheader("📅 10-Year Historical Window")
+min_yr = int(active_source_df["year"].min()) if "year" in active_source_df.columns else 2015
+max_yr = int(active_source_df["year"].max()) if "year" in active_source_df.columns else 2026
+
+year_filter_mode = st.sidebar.radio(
+    "Temporal Horizon",
+    [f"All 10+ Years ({min_yr} - {max_yr})", "Custom Year Range", "Single Year Focus"],
+    index=0
+)
+
+selected_years_range = (min_yr, max_yr)
+selected_single_yr = max_yr
+
+if year_filter_mode == "Custom Year Range":
+    selected_years_range = st.sidebar.slider(
+        "Select Incident Years",
+        min_value=min_yr,
+        max_value=max_yr,
+        value=(min_yr, max_yr),
+        step=1
+    )
+elif year_filter_mode == "Single Year Focus":
+    available_years = sorted(active_source_df["year"].dropna().astype(int).unique(), reverse=True) if "year" in active_source_df.columns else list(range(2026, 2014, -1))
+    selected_single_yr = st.sidebar.selectbox("Select Target Year", available_years, index=0)
+
 st.sidebar.markdown("---")
 st.sidebar.subheader("Map View Scale")
 map_zoom_sidebar = st.sidebar.slider(
@@ -761,6 +788,12 @@ st.session_state["map_zoom"] = map_zoom_sidebar
 
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
+
+if "year" in filtered_df.columns:
+    if year_filter_mode == "Custom Year Range":
+        filtered_df = filtered_df[(filtered_df["year"] >= selected_years_range[0]) & (filtered_df["year"] <= selected_years_range[1])]
+    elif year_filter_mode == "Single Year Focus":
+        filtered_df = filtered_df[filtered_df["year"] == selected_single_yr]
 
 if selected_district != "All Districts":
     filtered_df = filtered_df[filtered_df["district"] == selected_district]
@@ -906,7 +939,8 @@ with tab1:
         st.components.v1.html(smooth_html, height=720)
         
         # Hotspots Table
-        st.markdown("### Top Identified DBSCAN Crime Hotspots")
+        st.markdown("### Top Identified DBSCAN Crime Hotspots (10-Year Geospatial Corridors)")
+        st.caption("Discovered via Haversine DBSCAN clustering (eps=600m, min_samples=18). Click headers to sort by incidents or severity.")
         if cluster_engine.hotspots_df is not None and not cluster_engine.hotspots_df.empty:
             hotspot_display = cluster_engine.hotspots_df.copy()
             hotspot_display["Risk Level"] = hotspot_display["avg_risk"].apply(
@@ -915,13 +949,15 @@ with tab1:
             st.dataframe(
                 hotspot_display[[
                     "cluster_id", "district", "dominant_premises", "primary_crime",
-                    "incident_count", "avg_severity", "avg_risk", "Risk Level"
+                    "incident_count", "centroid_lat", "centroid_lon", "avg_severity", "avg_risk", "Risk Level"
                 ]].rename(columns={
                     "cluster_id": "Cluster #",
                     "district": "District",
                     "dominant_premises": "Dominant Premises",
                     "primary_crime": "Primary Crime",
                     "incident_count": "Incidents",
+                    "centroid_lat": "Latitude",
+                    "centroid_lon": "Longitude",
                     "avg_severity": "Avg Severity (1-5)",
                     "avg_risk": "Risk Index (0-1)"
                 }),

@@ -14,13 +14,10 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
-# Add parent and project root directories to sys.path
+# Add parent directory to sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECT_ROOT = os.path.dirname(BASE_DIR) if os.path.basename(BASE_DIR) == "backend" else BASE_DIR
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
@@ -545,11 +542,8 @@ if not st.session_state.get("authenticated", False):
 
 @st.cache_data
 def load_data():
-    data_dir = os.path.join(BASE_DIR, "data")
-    if not os.path.exists(data_dir):
-        data_dir = os.path.join(PROJECT_ROOT, "data")
-    csv_path = os.path.join(data_dir, "delhi_crime_records.csv")
-    raw_path = os.path.join(data_dir, "raw_delhi_police_reports.csv")
+    csv_path = os.path.join(BASE_DIR, "data", "delhi_crime_records.csv")
+    raw_path = os.path.join(BASE_DIR, "data", "raw_delhi_police_reports.csv")
     if not os.path.exists(csv_path) or not os.path.exists(raw_path):
         from data.generate_delhi_data import generate_delhi_crime_dataset
         df = generate_delhi_crime_dataset(output_path=csv_path, raw_output_path=raw_path)
@@ -561,10 +555,6 @@ def load_data():
 @st.cache_resource
 def load_or_train_models(df):
     model_path = os.path.join(BASE_DIR, "models", "saved_models.pkl")
-    if not os.path.exists(model_path):
-        alt_model_path = os.path.join(PROJECT_ROOT, "models", "saved_models.pkl")
-        if os.path.exists(alt_model_path):
-            model_path = alt_model_path
     if os.path.exists(model_path):
         try:
             predictor = DelhiCrimeRiskPredictor.load(model_path)
@@ -572,10 +562,7 @@ def load_or_train_models(df):
         except Exception:
             pass
     predictor = DelhiCrimeRiskPredictor(use_xgboost=True)
-    data_dir = os.path.join(BASE_DIR, "data")
-    if not os.path.exists(data_dir):
-        data_dir = os.path.join(PROJECT_ROOT, "data")
-    csv_path = os.path.join(data_dir, "delhi_crime_records.csv")
+    csv_path = os.path.join(BASE_DIR, "data", "delhi_crime_records.csv")
     predictor.train_and_evaluate(csv_path)
     predictor.save(model_path)
     return predictor
@@ -728,15 +715,6 @@ st.sidebar.subheader("Filter & Simulation Controls")
 is_clean_mode = data_stream_mode.startswith("✅")
 active_source_df = df if is_clean_mode else raw_df
 
-# 10-Year Historical Timeline Filter
-if "year" in active_source_df.columns:
-    available_years = sorted([int(y) for y in active_source_df["year"].dropna().unique()])
-else:
-    available_years = sorted(list(range(2015, 2027)))
-
-year_options = ["All 10 Years (2015–2026)", "Recent 3 Years (2024–2026)", "Past 5 Years (2022–2026)"] + [str(y) for y in reversed(available_years)]
-selected_timeline = st.sidebar.selectbox("📅 10-Year Crime Timeline", year_options, index=0)
-
 # District Filter
 all_districts = ["All Districts"] + sorted([str(d) for d in active_source_df["district"].dropna().unique()])
 selected_district = st.sidebar.selectbox("Police District", all_districts, index=0)
@@ -769,6 +747,33 @@ selected_day = st.sidebar.selectbox(
     ["All Days", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 )
 
+# 10-Year Historical Horizon Filter (2015 to Current Date)
+st.sidebar.markdown("---")
+st.sidebar.subheader("📅 10-Year Historical Window")
+min_yr = int(active_source_df["year"].min()) if "year" in active_source_df.columns else 2015
+max_yr = int(active_source_df["year"].max()) if "year" in active_source_df.columns else 2026
+
+year_filter_mode = st.sidebar.radio(
+    "Temporal Horizon",
+    [f"All 10+ Years ({min_yr} - {max_yr})", "Custom Year Range", "Single Year Focus"],
+    index=0
+)
+
+selected_years_range = (min_yr, max_yr)
+selected_single_yr = max_yr
+
+if year_filter_mode == "Custom Year Range":
+    selected_years_range = st.sidebar.slider(
+        "Select Incident Years",
+        min_value=min_yr,
+        max_value=max_yr,
+        value=(min_yr, max_yr),
+        step=1
+    )
+elif year_filter_mode == "Single Year Focus":
+    available_years = sorted(active_source_df["year"].dropna().astype(int).unique(), reverse=True) if "year" in active_source_df.columns else list(range(2026, 2014, -1))
+    selected_single_yr = st.sidebar.selectbox("Select Target Year", available_years, index=0)
+
 st.sidebar.markdown("---")
 st.sidebar.subheader("Map View Scale")
 map_zoom_sidebar = st.sidebar.slider(
@@ -784,26 +789,11 @@ st.session_state["map_zoom"] = map_zoom_sidebar
 # Filter Dataset based on controls
 filtered_df = active_source_df.copy()
 
-# Timeline filtering
-if selected_timeline == "Recent 3 Years (2024–2026)":
-    if "year" in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df["year"] >= 2024]
-    else:
-        filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year >= 2024]
-elif selected_timeline == "Past 5 Years (2022–2026)":
-    if "year" in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df["year"] >= 2022]
-    else:
-        filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year >= 2022]
-elif selected_timeline != "All 10 Years (2015–2026)":
-    try:
-        chosen_year = int(selected_timeline)
-        if "year" in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df["year"] == chosen_year]
-        else:
-            filtered_df = filtered_df[pd.to_datetime(filtered_df["date"]).dt.year == chosen_year]
-    except Exception:
-        pass
+if "year" in filtered_df.columns:
+    if year_filter_mode == "Custom Year Range":
+        filtered_df = filtered_df[(filtered_df["year"] >= selected_years_range[0]) & (filtered_df["year"] <= selected_years_range[1])]
+    elif year_filter_mode == "Single Year Focus":
+        filtered_df = filtered_df[filtered_df["year"] == selected_single_yr]
 
 if selected_district != "All Districts":
     filtered_df = filtered_df[filtered_df["district"] == selected_district]
@@ -829,6 +819,41 @@ elif time_preset == "Late Night (22:00-04:00)":
 # Cruip Open PRO Header, Hero & Bento Grid
 # --- 1. RAKSHAK.AI HEADER (AT THE VERY TOP) ---
 header_html = """
+<style>
+/* 📱 Flutter-style Bottom Navigation for Mobile */
+@media (max-width: 768px) {
+    div[data-baseweb="tab-list"] {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        z-index: 99999;
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border-radius: 24px 24px 0 0 !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        padding: 12px 10px 24px 10px !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        scrollbar-width: none;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
+        gap: 8px !important;
+    }
+    div[data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
+    div[data-baseweb="tab"] {
+        flex-direction: column !important;
+        font-size: 11.5px !important;
+        padding: 10px 14px !important;
+        min-width: 100px;
+        text-align: center;
+        white-space: nowrap;
+        border-radius: 16px !important;
+    }
+    .block-container { padding-bottom: 110px !important; }
+}
+</style>
 <style>
 .cruip-header-wrapper { margin-bottom: 24px; }
 .cruip-header-nav { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 12px; }
@@ -901,38 +926,6 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        st.markdown(f"""
-        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
-            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 10px; border-radius: 6px;">
-                📅 Timeline: <b>{selected_timeline}</b>
-            </span>
-            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 10px; border-radius: 6px;">
-                🚨 Incidents In View: <b>{len(filtered_df):,}</b>
-            </span>
-            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 6px;">
-                📍 Active DBSCAN Hotspots: <b>{len(cluster_engine.hotspots_df) if cluster_engine.hotspots_df is not None else 0}</b>
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 6px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
-        z1, z2, z3, z4, z_space = st.columns([1, 1, 1, 1, 2])
-        with z1:
-            if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
-                st.session_state["map_zoom"] = 11
-                st.rerun()
-        with z2:
-            if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
-                st.session_state["map_zoom"] = 13
-                st.rerun()
-        with z3:
-            if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
-                st.session_state["map_zoom"] = 15
-                st.rerun()
-        with z4:
-            if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
-                st.session_state["map_zoom"] = 17
-                st.rerun()
-
         current_zoom = st.session_state.get("map_zoom", 13)
 
         # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
@@ -943,24 +936,11 @@ with tab1:
             initial_zoom=current_zoom,
             incidents_df=filtered_df
         )
-        # Cruip Showcase Terminal Header
-        st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-<div style="display: flex; align-items: center; gap: 8px;">
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-    <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
-</div>
-<div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-    60 FPS TELEMETRY • ZERO API KEY REQUIRED
-</div>
-</div>
-""", unsafe_allow_html=True)
         st.components.v1.html(smooth_html, height=720)
         
         # Hotspots Table
-        st.markdown("### Top Identified DBSCAN Crime Hotspots")
+        st.markdown("### Top Identified DBSCAN Crime Hotspots (10-Year Geospatial Corridors)")
+        st.caption("Discovered via Haversine DBSCAN clustering (eps=600m, min_samples=18). Click headers to sort by incidents or severity.")
         if cluster_engine.hotspots_df is not None and not cluster_engine.hotspots_df.empty:
             hotspot_display = cluster_engine.hotspots_df.copy()
             hotspot_display["Risk Level"] = hotspot_display["avg_risk"].apply(
@@ -969,13 +949,15 @@ with tab1:
             st.dataframe(
                 hotspot_display[[
                     "cluster_id", "district", "dominant_premises", "primary_crime",
-                    "incident_count", "avg_severity", "avg_risk", "Risk Level"
+                    "incident_count", "centroid_lat", "centroid_lon", "avg_severity", "avg_risk", "Risk Level"
                 ]].rename(columns={
                     "cluster_id": "Cluster #",
                     "district": "District",
                     "dominant_premises": "Dominant Premises",
                     "primary_crime": "Primary Crime",
                     "incident_count": "Incidents",
+                    "centroid_lat": "Latitude",
+                    "centroid_lon": "Longitude",
                     "avg_severity": "Avg Severity (1-5)",
                     "avg_risk": "Risk Index (0-1)"
                 }),
@@ -1074,25 +1056,13 @@ with tab_clean:
     )
     if inspector_mode.startswith("✅"):
         st.caption("Showing sample of verified records. All fields are 100% complete and validated.")
-        cols_to_show = ["record_id", "year", "date", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "hour", "latitude", "longitude", "risk_level"]
+        cols_to_show = ["record_id", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "date", "hour", "latitude", "longitude", "risk_level"]
         st.dataframe(df[[c for c in cols_to_show if c in df.columns]].head(15), use_container_width=True, hide_index=True)
     else:
         st.caption("Showing sample from raw feed highlighting unconfirmed statuses and missing fields.")
         raw_display = raw_df.head(25).copy()
-        cols_to_show = ["record_id", "year", "date", "confirmation_status", "district", "crime_category", "latitude", "longitude", "hour", "risk_level"]
+        cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
         st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
-
-    st.markdown("---")
-    st.markdown("### 📈 10-Year Historical Incident Distribution (2015 – 2026)")
-    st.caption("Verified police incident report volume across all 15 Delhi Police Districts over the past decade.")
-    if "year" in df.columns:
-        yearly_counts = df["year"].value_counts().sort_index()
-        year_dist_df = pd.DataFrame({"Year": yearly_counts.index.astype(str), "Verified FIRs": yearly_counts.values})
-        y_col1, y_col2 = st.columns([1.3, 0.7])
-        with y_col1:
-            st.bar_chart(year_dist_df.set_index("Year"), color="#3b82f6")
-        with y_col2:
-            st.dataframe(year_dist_df, use_container_width=True, hide_index=True)
 
 
 
