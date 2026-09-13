@@ -757,6 +757,41 @@ elif time_preset == "Late Night (22:00-04:00)":
 # --- 1. RAKSHAK.AI HEADER (AT THE VERY TOP) ---
 header_html = """
 <style>
+/* 📱 Flutter-style Bottom Navigation for Mobile */
+@media (max-width: 768px) {
+    div[data-baseweb="tab-list"] {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        z-index: 99999;
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border-radius: 24px 24px 0 0 !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        padding: 12px 10px 24px 10px !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        scrollbar-width: none;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
+        gap: 8px !important;
+    }
+    div[data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
+    div[data-baseweb="tab"] {
+        flex-direction: column !important;
+        font-size: 11.5px !important;
+        padding: 10px 14px !important;
+        min-width: 100px;
+        text-align: center;
+        white-space: nowrap;
+        border-radius: 16px !important;
+    }
+    .block-container { padding-bottom: 110px !important; }
+}
+</style>
+<style>
 .cruip-header-wrapper { margin-bottom: 24px; }
 .cruip-header-nav { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 12px; }
 .cruip-bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
@@ -824,25 +859,6 @@ with tab1:
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
     else:
-        st.markdown("<div style='font-weight: 700; font-size: 12px; color: #94a3b8; margin-bottom: 6px;'>🔍 Preset Zoom Levels:</div>", unsafe_allow_html=True)
-        z1, z2, z3, z4, z_space = st.columns([1, 1, 1, 1, 2])
-        with z1:
-            if st.button("🗺️ City", use_container_width=True, help="Full Delhi NCT Overview (11x)"):
-                st.session_state["map_zoom"] = 11
-                st.rerun()
-        with z2:
-            if st.button("🏙️ District", use_container_width=True, help="District Jurisdiction View (13x)"):
-                st.session_state["map_zoom"] = 13
-                st.rerun()
-        with z3:
-            if st.button("🚨 Hotspot", use_container_width=True, help="DBSCAN Cluster Core (15x)"):
-                st.session_state["map_zoom"] = 15
-                st.rerun()
-        with z4:
-            if st.button("🔎 Street", use_container_width=True, help="Street Detail (17x)"):
-                st.session_state["map_zoom"] = 17
-                st.rerun()
-
         current_zoom = st.session_state.get("map_zoom", 13)
 
         # Native hardware-accelerated 60fps Leaflet engine with outer navbar, autocomplete search, and Once UI styling
@@ -853,20 +869,6 @@ with tab1:
             initial_zoom=current_zoom,
             incidents_df=filtered_df
         )
-        # Cruip Showcase Terminal Header
-        st.markdown("""
-<div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; border-radius: 18px 18px 0 0; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
-<div style="display: flex; align-items: center; gap: 8px;">
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-    <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-    <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #94a3b8; margin-left: 8px;">sentinel-dispatch-radar.live • Open-Source Delhi NCT Sentinel (100% Free)</span>
-</div>
-<div style="font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-    60 FPS TELEMETRY • ZERO API KEY REQUIRED
-</div>
-</div>
-""", unsafe_allow_html=True)
         st.components.v1.html(smooth_html, height=720)
         
         # Hotspots Table

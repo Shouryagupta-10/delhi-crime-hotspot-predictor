@@ -1222,7 +1222,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               <button id="btnAll" class="pill-btn active" onclick="setLayerFilter('ALL')">All</button>
               <button id="btnHigh" class="pill-btn" onclick="setLayerFilter('HIGH')">🔴 High Risk</button>
               <button id="btnSafe" class="pill-btn" onclick="setLayerFilter('SAFE')">🟢 Safe Havens</button>
-              <button id="btnClusterToggle" class="pill-btn active" onclick="toggleIncidentClusters()">📌 Pins</button>
             </div>
           </div>
           
@@ -1230,7 +1229,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           <div class="nav-section">
             <button id="btnQuickNav" class="action-btn" style="background: linear-gradient(135deg, #0284c7, #4f46e5); border-color: #38bdf8; font-weight: 700;" onclick="openQuickRouteModal()">🧭 Route / ETA</button>
             <button id="btnLiveGps" class="action-btn live-btn" onclick="activateLiveGpsTracking()" title="Acquire and track device real GPS location">📡 Live GPS</button>
-            <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()" title="Preview Route Simulation Demo">🎬 Sim Demo</button>
             <button class="action-btn" onclick="centerOnMe()">📍 Me</button>
           </div>
           
@@ -1567,7 +1565,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         
         window.toggleIncidentClusters = function() {{
           showIncidents = !showIncidents;
-          const btn = document.getElementById('btnClusterToggle');
           if (showIncidents) {{
             map.addLayer(incidentClusterGroup);
             btn.classList.add('active');
@@ -2767,7 +2764,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           if (!currentNavRoute) return;
           const isFoot = (currentNavRoute.travelMode === 'foot');
           const btn = document.getElementById('navSimPlayBtn');
-          const simTopBtn = document.getElementById('btnSim');
           const modeBadge = document.getElementById('navModeBadge');
           const liveTrackBtn = document.getElementById('navLiveTrackBtn');
           
@@ -2872,7 +2868,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           if (clearUI) {{
             document.getElementById('navHud').style.display = 'none';
             document.getElementById('navStepsDrawer').style.display = 'none';
-            const btn = document.getElementById('btnSim');
             if (btn) {{ btn.innerText = '🎬 Sim Demo'; btn.classList.remove('active'); }}
             if (lastLiveGpsPos) {{
               updateUserPosition(lastLiveGpsPos.lat, lastLiveGpsPos.lon, 20, false, null);
@@ -3002,7 +2997,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             clearInterval(navDriveTimer);
             navDriveTimer = null;
             isDriving = false;
-            const simTopBtn = document.getElementById('btnSim');
             if (simTopBtn) {{
               simTopBtn.innerText = '🎬 Sim Demo';
               simTopBtn.classList.remove('active');
@@ -3114,7 +3108,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         }});
         
         window.toggleSimulation = function() {{
-          const btn = document.getElementById('btnSim');
           if (isDriving || navDriveTimer) {{
             toggleNavDriveSim();
             btn.innerText = '🎬 Sim Demo';
