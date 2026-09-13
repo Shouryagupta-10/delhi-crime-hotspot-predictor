@@ -591,21 +591,21 @@ st.sidebar.title("🛡️ Rakshak.ai")
 st.sidebar.markdown("**Civic Geospatial AI Dashboard**")
 
 # Active Session Badge & Sign Out in Sidebar
-user_name = st.session_state.get("user_name", "Verified Officer")
-user_role = st.session_state.get("user_role", "Law Enforcement")
+user_name = st.session_state.get("user_name", "Citizen Explorer")
+user_role = st.session_state.get("user_role", "Public Citizen")
 user_district = st.session_state.get("user_district", "Delhi NCR")
 st.sidebar.markdown(f"""
-<div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
-    <div style="font-size: 10.5px; text-transform: uppercase; color: #818cf8; font-weight: 800; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+<div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+    <div style="font-size: 10.5px; text-transform: uppercase; color: #34d399; font-weight: 800; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
         <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399;"></span>
-        Active Officer Session
+        Active Citizen Session
     </div>
     <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">👤 {user_name}</div>
     <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">{user_role} • {user_district}</div>
 </div>
 """, unsafe_allow_html=True)
 
-if st.sidebar.button("🚪 Sign Out", use_container_width=True, help="Securely end current session and lock dashboard"):
+if st.sidebar.button("🚪 Sign Out", use_container_width=True, help="Securely end current session and return to login screen"):
     logout_user()
 
 # Check for active Geolocation query params or session state
@@ -857,9 +857,9 @@ header_html = """
                 <span style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
                 Safety Systems Active
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; color: #818cf8; background: rgba(99, 102, 241, 0.12); padding: 6px 14px; border-radius: 9999px; border: 1px solid rgba(99, 102, 241, 0.3); font-family: 'Geist Mono', monospace; font-weight: 700;">
-                <span>🛡️</span>
-                """ + f"{st.session_state.get('user_name', 'Verified Officer')} ({st.session_state.get('user_district', 'Delhi NCR')})" + """
+            <div style="display: flex; align-items: center; gap: 8px; color: #34d399; background: rgba(16, 185, 129, 0.12); padding: 6px 14px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.3); font-family: 'Geist Mono', monospace; font-weight: 700;">
+                <span>👤</span>
+                """ + f"{st.session_state.get('user_name', 'Citizen Explorer')} ({st.session_state.get('user_district', 'Delhi NCR')})" + """
             </div>
         </div>
     </div>

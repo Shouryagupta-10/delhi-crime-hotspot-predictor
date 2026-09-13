@@ -1,31 +1,31 @@
 {
-  "inspector@delhipolice.gov.in": {
-    "name": "Inspector Rajeev Sharma",
-    "email": "inspector@delhipolice.gov.in",
-    "role": "Senior Crime Branch Inspector",
-    "district": "Central",
-    "hash": "89bd656ce159d900ed0a00e42d326221964c816e8c5bf43f59e8b2e201e7d879",
-    "salt": "95a6704c7cb68718649e60f45f1bf19e",
+  "ananya.sharma@gmail.com": {
+    "name": "Ananya Sharma",
+    "email": "ananya.sharma@gmail.com",
+    "role": "Daily Metro & Walking Commuter",
+    "district": "South Delhi",
+    "hash": "49d7ba46c84ec7fd029b7932fc0e08b110b793c69e04041a17f7d35e93587fd2",
+    "salt": "ece9c7554103164a6ad4c126624cb751",
     "created_at": "2026-01-15T09:00:00Z",
     "is_verified": true
   },
-  "dispatch@delhipolice.gov.in": {
-    "name": "Sub-Inspector Priya Verma",
-    "email": "dispatch@delhipolice.gov.in",
-    "role": "Rapid Patrol Dispatcher",
-    "district": "New Delhi",
-    "hash": "dcabf9707c6e943d86cfa98598b559e83faf3de4e986e209675badb24299cea2",
-    "salt": "beba0f52084e08ed98f5a79c9ab79638",
+  "rahul.verma@gmail.com": {
+    "name": "Rahul Verma",
+    "email": "rahul.verma@gmail.com",
+    "role": "Neighborhood Safety Volunteer",
+    "district": "Central Delhi",
+    "hash": "4cf86197d1145e9f1e280769ff47be0f8b99bbe1aa5c32bae915fb939b75df39",
+    "salt": "88dbd92571a2a84849a8744ac4a0e802",
     "created_at": "2026-02-01T14:30:00Z",
     "is_verified": true
   },
-  "citizen@rakshak.ai": {
-    "name": "Ananya Sen (Civic Analyst)",
-    "email": "citizen@rakshak.ai",
-    "role": "Civic Community Safety Member",
-    "district": "South",
-    "hash": "4e5ffd3d0615a8f9aab6b88b90fa8d8f6af254861ba30f92e6b16c7888eb4e88",
-    "salt": "20e04e1087a2707979d53f4d75f7fcf8",
+  "rohit.gupta@delhiuniv.ac.in": {
+    "name": "Rohit Gupta",
+    "email": "rohit.gupta@delhiuniv.ac.in",
+    "role": "Student & Night Traveler",
+    "district": "North Delhi",
+    "hash": "85f9e616eed41855aedebdb4c7042804af94c66c474b0841adde0369ec5abcd7",
+    "salt": "d90e3e70998194838479f5e267d235c3",
     "created_at": "2026-03-01T10:00:00Z",
     "is_verified": true
   }
