@@ -4,6 +4,8 @@ Renders choropleths, density heatmaps, and DBSCAN hotspot corridor polygons/circ
 """
 
 import folium
+import numpy as np
+import pandas as pd
 from folium.plugins import HeatMap, MarkerCluster, LocateControl, Fullscreen
 
 DELHI_CENTER = [28.6139, 77.2090]
@@ -309,7 +311,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
 
     incident_records = []
     if incidents_df is not None and not incidents_df.empty:
-        sample_size = min(400, len(incidents_df))
+        sample_size = min(800, len(incidents_df))
         sample_df = incidents_df.sample(n=sample_size, random_state=42) if len(incidents_df) > sample_size else incidents_df
         for _, r in sample_df.iterrows():
             try:
@@ -323,6 +325,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                     "riskLevel": str(r.get("risk_level", "Medium")),
                     "riskIndex": float(r.get("risk_index", 0.5)),
                     "hour": int(r.get("hour", 12)),
+                    "date": str(r.get("date", "")),
+                    "year": str(int(r.get("year"))) if (pd.notnull(r.get("year")) and str(r.get("year")).replace('.0', '').isdigit()) else (str(r.get("date", ""))[:4] if str(r.get("date", "")) else ""),
                     "district": str(r.get("district", "Delhi"))
                 })
             except Exception:
@@ -1546,15 +1550,17 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             }});
             
             cm.bindPopup(`
-              <div style="width: 230px; font-family: -apple-system, sans-serif;">
-                <div style="background: rgba(255,255,255,0.06); padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <div style="width: 240px; font-family: -apple-system, sans-serif;">
+                <div style="background: rgba(255,255,255,0.06); padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 10px; font-weight: 800; color: ${{color}}; text-transform: uppercase;">${{inc.riskLevel}} Risk Incident</span>
-                  <div style="font-weight: 700; color: #fff; font-size: 12px; margin-top: 2px;">${{inc.crime}}</div>
+                  <span style="font-size: 10px; font-weight: 700; color: #94a3b8; font-family: monospace; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px;">${{inc.year || ''}}</span>
                 </div>
-                <div style="padding: 10px 12px; font-size: 11px;">
+                <div style="padding: 8px 12px 4px; font-weight: 700; color: #fff; font-size: 12px;">${{inc.crime}}</div>
+                <div style="padding: 0 12px 10px; font-size: 11px;">
                   <div style="color: #cbd5e1; margin-bottom: 3px;"><b>Premises:</b> ${{inc.premises}}</div>
                   <div style="color: #cbd5e1; margin-bottom: 3px;"><b>Landmark:</b> ${{inc.landmark || 'Delhi NCT'}}</div>
-                  <div style="color: #94a3b8; font-size: 10.5px; margin-top: 6px;">${{String(inc.hour).padStart(2, '0')}}:00 hrs &bull; ${{inc.district}} Jurisdiction</div>
+                  <div style="color: #94a3b8; font-size: 10.5px; margin-top: 6px;">📅 ${{inc.date || ''}} &bull; ${{String(inc.hour).padStart(2, '0')}}:00 hrs</div>
+                  <div style="color: #64748b; font-size: 9.5px; margin-top: 3px; font-family: monospace;">FIR: ${{inc.id}} &bull; ${{inc.district}}</div>
                 </div>
               </div>
             `);

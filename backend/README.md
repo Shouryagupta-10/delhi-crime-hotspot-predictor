@@ -40,9 +40,11 @@ The x402 server runs on `http://localhost:4020`.
 - `app/`:
   - `main.py`: Interactive Streamlit application.
   - `map_renderer.py`: Folium geospatial map renderer.
-- `data/`:
-  - `delhi_crime_records.csv`: 7,500 Delhi crime incidents across 15 districts.
-  - `generate_delhi_data.py`: Synthetic dataset generator with grounded Delhi coordinates.
+- `../data/` (Project Root Data):
+  - `delhi_crime_records.csv`: 18,468 verified Delhi crime incidents across 15 districts (2015–2026).
+  - `raw_delhi_police_reports.csv`: 25,375 raw police incident logs.
+  - `generate_delhi_data.py`: Dataset generator with grounded Delhi coordinates.
+  - `cleaner.py`: 6-stage FIR verification and data cleaning pipeline.
 - `x402-server/`:
   - `server.js`: Express server returning HTTP 402 Payment Required for enterprise API calls and verifying Algorand Testnet transactions.
 - `tests/`:
