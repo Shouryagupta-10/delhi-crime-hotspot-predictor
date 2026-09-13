@@ -870,7 +870,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           from {{ transform: translateY(-20px); opacity: 0; }}
           to {{ transform: translateY(0); opacity: 1; }}
         }}
-        .nav-hud-main { flex-wrap: wrap;{
+        .nav-hud-main {{ flex-wrap: wrap;
           display: flex;
           align-items: center;
           gap: 12px;
