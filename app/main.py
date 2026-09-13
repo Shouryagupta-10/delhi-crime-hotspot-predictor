@@ -265,7 +265,7 @@ def render_gps_locator(key_suffix=""):
     geo_html = f"""
     <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); text-align: center; font-family: 'Inter', sans-serif;">
         <div style="margin-bottom: 15px;">
-            <span style="font-weight: 800; color: #ffffff; font-size: 16px;">📍 Share Your Location for Local Safety Alerts</span>
+            <span style="font-weight: 800; color: #ffffff; font-size: 16px;"> Share Your Location for Local Safety Alerts</span>
         </div>
         <button id="{btn_id}" onclick="requestGPS_{key_suffix}()" style="
             width: 100%; max-width: 400px;
@@ -274,7 +274,7 @@ def render_gps_locator(key_suffix=""):
             padding: 12px 14px; font-weight: 700; font-size: 14px; cursor: pointer;
             box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35); transition: all 0.2s ease;
         ">
-            🛰️ Access My Current Location
+            ️ Access My Current Location
         </button>
         <div id="{status_id}" style="font-size: 12.5px; color: #94a3b8; margin-top: 12px;">
             Click to securely detect your latitude & longitude
@@ -308,7 +308,7 @@ def render_gps_locator(key_suffix=""):
                 }} catch(e) {{}}
             }},
             (err) => {{
-                btn.disabled = false; btn.innerText = "🛰️ Access My Current Location";
+                btn.disabled = false; btn.innerText = "📍 Access My Current Location";
                 status.innerHTML = "<span style='color: #f87171;'>⚠️ Permission denied. Please allow location access.</span>";
             }},
             {{ enableHighAccuracy: true, timeout: 12000 }}
@@ -321,7 +321,7 @@ def render_gps_locator(key_suffix=""):
 # Page Configuration
 st.set_page_config(
     page_title="Rakshak.ai | Civic Safety Intelligence & Predictive Policing",
-    page_icon="🛡️",
+    page_icon="️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -534,7 +534,7 @@ font-family: 'Geist Mono', monospace;
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 🔐 AUTHENTICATION GATEWAY
+#  AUTHENTICATION GATEWAY
 # ==============================================================================
 if not st.session_state.get("authenticated", False):
     render_cruip_login_page()
@@ -574,7 +574,7 @@ cluster_engine = predictor.cluster_engine
 
 # --- SIDEBAR CONTROLS ---
 st.sidebar.image("https://img.icons8.com/fluency/96/police-badge.png", width=64)
-st.sidebar.title("🛡️ Rakshak.ai")
+st.sidebar.title("️ Rakshak.ai")
 st.sidebar.markdown("**Civic Geospatial AI Dashboard**")
 
 # Active Session Badge & Sign Out in Sidebar
@@ -587,12 +587,12 @@ st.sidebar.markdown(f"""
         <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399;"></span>
         Active Officer Session
     </div>
-    <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">👤 {user_name}</div>
+    <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"> {user_name}</div>
     <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">{user_role} • {user_district}</div>
 </div>
 """, unsafe_allow_html=True)
 
-if st.sidebar.button("🚪 Sign Out", use_container_width=True, help="Securely end current session and lock dashboard"):
+if st.sidebar.button(" Sign Out", use_container_width=True, help="Securely end current session and lock dashboard"):
     logout_user()
 
 # Check for active Geolocation query params or session state
@@ -632,19 +632,19 @@ if "tab2_loc" in st.query_params:
 
 # --- SIDEBAR GEOLOCATION SECTION ---
 st.sidebar.markdown("---")
-st.sidebar.subheader("📍 Live Movement & Risk Radar")
+st.sidebar.subheader(" Live Movement & Risk Radar")
 
 if user_lat is None:
    # render_gps_locator(key_suffix="_side")
     st.sidebar.caption("Or test location scenarios:")
     col_g1, col_g2 = st.sidebar.columns(2)
     with col_g1:
-        if st.button("🚨 Rajiv Chowk (High)", use_container_width=True):
+        if st.button(" Rajiv Chowk (High)", use_container_width=True):
             st.session_state["user_lat"] = 28.6328
             st.session_state["user_lon"] = 77.2197
             st.rerun()
     with col_g2:
-        if st.button("🛡️ Chanakya (Safe)", use_container_width=True):
+        if st.button("️ Chanakya (Safe)", use_container_width=True):
             st.session_state["user_lat"] = 28.5983
             st.session_state["user_lon"] = 77.1912
             st.rerun()
@@ -654,13 +654,13 @@ else:
     
     # Risk assessment
     if dist_spot <= 0.4:
-        zone_status = "🚨 HIGH RISK CORRIDOR"
+        zone_status = " HIGH RISK CORRIDOR"
         zone_color = "#DC2626"
     elif dist_spot <= 0.8:
-        zone_status = "⚠️ MODERATE CAUTION ZONE"
+        zone_status = "️ MODERATE CAUTION ZONE"
         zone_color = "#D97706"
     else:
-        zone_status = "🛡️ SAFE HAVEN / BUFFER ZONE"
+        zone_status = "️ SAFE HAVEN / BUFFER ZONE"
         zone_color = "#16A34A"
         
     st.sidebar.markdown(f"""
@@ -674,14 +674,14 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    if st.sidebar.button("❌ Clear Active Location", use_container_width=True):
+    if st.sidebar.button(" Clear Active Location", use_container_width=True):
         st.session_state.pop("user_lat", None)
         st.session_state.pop("user_lon", None)
         st.query_params.clear()
         st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🧹 Data Cleaning & Quality Engine")
+st.sidebar.subheader(" Data Cleaning & Quality Engine")
 unconfirmed_drop = cleaning_audit.get("unconfirmed_dropped", 0)
 missing_drop = cleaning_audit.get("missing_coords_dropped", 0) + cleaning_audit.get("missing_critical_fields_dropped", 0)
 out_bounds_drop = cleaning_audit.get("out_of_bounds_coords_dropped", 0)
@@ -689,7 +689,7 @@ out_bounds_drop = cleaning_audit.get("out_of_bounds_coords_dropped", 0)
 st.sidebar.markdown(f"""
 <div style="background: rgba(14, 18, 26, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 14px; font-size: 12px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <span style="color: #34d399; font-weight: 700;">✅ Clean Data Pipeline</span>
+        <span style="color: #34d399; font-weight: 700;"> Clean Data Pipeline</span>
         <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-family: 'Geist Mono', monospace;">100% Complete</span>
     </div>
     <div style="color: #94a3b8; font-size: 11px; line-height: 1.6; font-family: 'Geist Mono', monospace;">
@@ -704,7 +704,7 @@ st.sidebar.markdown(f"""
 
 data_stream_mode = st.sidebar.radio(
     "Hotspot Map Data Stream",
-    ["✅ Confirmed & Complete FIRs (Default)", "⚠️ Raw Uncleaned Feed (Audit Mode)"],
+    [" Confirmed & Complete FIRs (Default)", "️ Raw Uncleaned Feed (Audit Mode)"],
     index=0
 )
 
@@ -712,7 +712,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Filter & Simulation Controls")
 
 # Determine active source based on stream selection
-is_clean_mode = data_stream_mode.startswith("✅")
+is_clean_mode = data_stream_mode.startswith("")
 active_source_df = df if is_clean_mode else raw_df
 
 # District Filter
@@ -787,7 +787,7 @@ elif time_preset == "Late Night (22:00-04:00)":
 # --- 1. RAKSHAK.AI HEADER (AT THE VERY TOP) ---
 header_html = """
 <style>
-/* 📱 Flutter-style Bottom Navigation for Mobile */
+/*  Flutter-style Bottom Navigation for Mobile */
 @media (max-width: 768px) {
     div[data-baseweb="tab-list"] {
         position: fixed;
@@ -850,7 +850,7 @@ header_html = """
                 Safety Systems Active
             </div>
             <div style="display: flex; align-items: center; gap: 8px; color: #818cf8; background: rgba(99, 102, 241, 0.12); padding: 6px 14px; border-radius: 9999px; border: 1px solid rgba(99, 102, 241, 0.3); font-family: 'Geist Mono', monospace; font-weight: 700;">
-                <span>🛡️</span>
+                <span>️</span>
                 """ + f"{st.session_state.get('user_name', 'Verified Officer')} ({st.session_state.get('user_district', 'Delhi NCR')})" + """
             </div>
         </div>
@@ -866,10 +866,10 @@ if user_lat is None:
 
 # Main Navigation Tabs
 tab1, tab_clean, tab2, tab5 = st.tabs([
-    "🗺️ Interactive Hotspot Map",
-    "🧹 Data Cleaning & FIR Verification",
-    "⚡ Real-Time Premises Risk Scorer",
-    "🔥 x402 Protocol & Algorand Agent"
+    "️ Interactive Hotspot Map",
+    " Data Cleaning & FIR Verification",
+    " Real-Time Premises Risk Scorer",
+    " x402 Protocol & Algorand Agent"
 ])
 
 # --- TAB 1: INTERACTIVE MAP ---
@@ -880,13 +880,13 @@ with tab1:
     if is_clean_mode:
         st.markdown("""
         <div style="background: rgba(16, 185, 129, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 5px solid #10b981; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #6ee7b7; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>🛡️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
+            <b>️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style="background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 5px solid #f59e0b; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #fde68a; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>⚠️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
+            <b>️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
         </div>
         """, unsafe_allow_html=True)
     
@@ -931,14 +931,14 @@ with tab1:
 
 # --- TAB: DATA CLEANING & FIR VERIFICATION ---
 with tab_clean:
-    st.subheader("🧹 Police FIR Data Cleaning & Completeness Verification Pipeline")
+    st.subheader(" Police FIR Data Cleaning & Completeness Verification Pipeline")
     st.caption("Transforming raw, noisy police feeds into high-integrity verified crime data for algorithmic hotspot discovery.")
 
     # Executive Pipeline Flow / Summary Card
     st.markdown("""
     <div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);">
         <div style="font-weight: 700; color: #f8fafc; font-size: 15px; margin-bottom: 8px;">
-            🛡️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
+            ️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
         </div>
         <div style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
             In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
@@ -968,7 +968,7 @@ with tab_clean:
     col_audit_left, col_audit_right = st.columns([1.1, 0.9])
 
     with col_audit_left:
-        st.markdown("### 📊 Cleaning Funnel & Rejection Reasons")
+        st.markdown("###  Cleaning Funnel & Rejection Reasons")
         st.caption("Distribution of filtered raw records across validation stages.")
         
         rejection_data = pd.DataFrame(cleaning_audit.get("rejection_summary", []))
@@ -977,7 +977,7 @@ with tab_clean:
             rejection_data = rejection_data.rename(columns={"reason": "Filter / Rejection Rule", "count": "Dropped Records"})
             st.dataframe(rejection_data, use_container_width=True, hide_index=True)
 
-        st.markdown("#### 🏆 Data Quality Scorecard")
+        st.markdown("####  Data Quality Scorecard")
         q1, q2, q3 = st.columns(3)
         with q1:
             st.metric("Data Completeness", "100.0%", "0 Missing Values")
@@ -987,7 +987,7 @@ with tab_clean:
             st.metric("Geocode Validity", "100.0%", "Delhi NCT Bounds")
 
     with col_audit_right:
-        st.markdown("### 🔬 Verification Rules & Architectural Defense")
+        st.markdown("###  Verification Rules & Architectural Defense")
         with st.expander("1. Verification Status (Confirmed FIR Only)", expanded=True):
             st.markdown("""
             - **Problem**: Emergency call feeds contain unconfirmed tips, false alarms, and incidents still under preliminary enquiry.
@@ -1012,13 +1012,13 @@ with tab_clean:
             """)
 
     st.markdown("---")
-    st.markdown("### 🔍 Interactive Record Inspector: Clean vs Rejected Sample")
+    st.markdown("###  Interactive Record Inspector: Clean vs Rejected Sample")
     inspector_mode = st.radio(
         "Select Dataset View to Inspect:",
-        ["✅ Cleaned & Verified Police Records (Used for Hotspots & ML)", "⚠️ Raw Ingested Sample with Data Flaws"],
+        [" Cleaned & Verified Police Records (Used for Hotspots & ML)", "️ Raw Ingested Sample with Data Flaws"],
         horizontal=True
     )
-    if inspector_mode.startswith("✅"):
+    if inspector_mode.startswith(""):
         st.caption("Showing sample of verified records. All fields are 100% complete and validated.")
         cols_to_show = ["record_id", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "date", "hour", "latitude", "longitude", "risk_level"]
         st.dataframe(df[[c for c in cols_to_show if c in df.columns]].head(15), use_container_width=True, hide_index=True)
@@ -1037,16 +1037,16 @@ with tab2:
     
     # Direct GPS access inside Tab 2
     if user_lat is None:
-        st.markdown("##### 📍 Want Instant Risk Evaluation For Where You Are Standing?")
+        st.markdown("#####  Want Instant Risk Evaluation For Where You Are Standing?")
         render_gps_locator(key_suffix="_tab2")
     else:
         closest_d, closest_station, dist_k = find_nearest_delhi_jurisdiction(user_lat, user_lon)
-        st.success(f"📍 **Using Live GPS Position:** `{user_lat:.4f}°N, {user_lon:.4f}°E` (Nearest Police Jurisdiction: **{closest_d} District**, PS {closest_station})")
+        st.success(f" **Using Live GPS Position:** `{user_lat:.4f}°N, {user_lon:.4f}°E` (Nearest Police Jurisdiction: **{closest_d} District**, PS {closest_station})")
 
     col_input, col_result = st.columns([1.1, 1.2])
     
     with col_input:
-        st.markdown("#### 🔍 Search Location & Temporal Parameters")
+        st.markdown("####  Search Location & Temporal Parameters")
         st.caption("Type any Delhi locality, landmark, colony, market, or metro station.")
         
         # Exact Floating Predictive Search Bar from Map View
@@ -1097,7 +1097,7 @@ with tab2:
         # Auto-resolved Location Context Pill
         st.markdown(f"""
         <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; margin-top: 4px; margin-bottom: 12px; font-size: 11.5px; color: #cbd5e1; font-family: 'Geist Mono', monospace;">
-            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 2px;">🎯 Resolved Location: {selected_location.get('name', 'Delhi NCT')}</div>
+            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 2px;"> Resolved Location: {selected_location.get('name', 'Delhi NCT')}</div>
             <div>Jurisdiction: <b style="color: #f1f5f9;">{pred_district} District</b> | Coordinates: <code>{loc_lat:.4f}°N, {loc_lon:.4f}°E</code></div>
         </div>
         """, unsafe_allow_html=True)
@@ -1105,7 +1105,7 @@ with tab2:
         pred_hour = st.slider("Hour of Day", 0, 23, 21, format="%02d:00 hrs")
         pred_day = st.selectbox("Day of Week", ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"])
         
-        predict_btn = st.button("🚨 Calculate Incident Risk Index", type="primary", use_container_width=True)
+        predict_btn = st.button(" Calculate Incident Risk Index", type="primary", use_container_width=True)
         
     with col_result:
         st.markdown("#### AI Risk Assessment & Nearest Police Station")
@@ -1132,18 +1132,18 @@ with tab2:
             <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(56, 189, 248, 0.4); border-left: 5px solid #38bdf8; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                     <span style="color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; font-family: 'Geist Mono', monospace; display: flex; align-items: center; gap: 6px;">
-                        🚔 NEAREST POLICE STATION
+                         NEAREST POLICE STATION
                     </span>
                     <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.3);">
                         {nearest_ps['distance_km']} km away
                     </span>
                 </div>
                 <div style="font-size: 15px; font-weight: 800; color: #f8fafc; margin-bottom: 4px;">{nearest_ps['name']}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 6px; line-height: 1.4;">📍 {nearest_ps['address']}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 6px; line-height: 1.4;"> {nearest_ps['address']}</div>
                 <div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: #cbd5e1; font-family: 'Geist Mono', monospace;">
-                    <span>📞 Emergency: <b style="color: #34d399;">112</b></span>
-                    <span>☎️ Desk: <b style="color: #38bdf8;">{nearest_ps.get('phone', '100')}</b></span>
-                    <span>🛡️ District: <b style="color: #f1f5f9;">{nearest_ps['district']}</b></span>
+                    <span> Emergency: <b style="color: #34d399;">112</b></span>
+                    <span>️ Desk: <b style="color: #38bdf8;">{nearest_ps.get('phone', '100')}</b></span>
+                    <span>️ District: <b style="color: #f1f5f9;">{nearest_ps['district']}</b></span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1151,15 +1151,15 @@ with tab2:
             # Additional diagnostic cards
             d1, d2 = st.columns(2)
             with d1:
-                st.info(f"📍 **Distance to Nearest Hotspot:**\n\n**{result['dist_to_hotspot_km']} km**")
+                st.info(f" **Distance to Nearest Hotspot:**\n\n**{result['dist_to_hotspot_km']} km**")
             with d2:
                 time_desc = "Night Window (22:00-05:00)" if result["temporal_factors"]["is_night"] else ("Rush Hour Window" if result["temporal_factors"]["is_rush_hour"] else "Standard Window")
                 st.info(f"⏰ **Temporal Profile:**\n\n**{time_desc}**")
                 
-            st.markdown("##### 🛡️ Operational Police Action Plan")
+            st.markdown("##### ️ Operational Police Action Plan")
             st.warning(f"**Field Directive:** {result['advisory']}")
             
-            st.markdown("##### ⚖️ Common IPC / BNS Statutes Triggered in this Profile")
+            st.markdown("##### ️ Common IPC / BNS Statutes Triggered in this Profile")
             st.markdown("- **IPC 379 / 356 (BNS 304)**: Mobile/Chain Snatching by Motorbike Operators")
             st.markdown("- **IPC 379 (BNS 303)**: Unattended Vehicle Theft in Perimeter Parking")
             st.markdown("- **IPC 392 / 394 (BNS 309)**: Robbery / Extortion along unlit transit corridors")
@@ -1223,7 +1223,7 @@ if False:
         st.write("- **Parameter Requirement:** `Must guess K in advance`")
         
     st.info("""
-    💡 **Interview Script Delivery**:
+     **Interview Script Delivery**:
     *"When evaluating Delhi's crime geography, K-Means was unsuitable because urban offenses follow non-convex infrastructure corridors like metro lines and commercial markets. DBSCAN with a 600m Haversine radius not only adapts to arbitrary corridor geometries, but critically isolates 1-2% of noise incidents. In law enforcement resource allocation, false positive hotspots waste critical patrol units, making density-based clustering with noise rejection mathematically and operationally superior."*
     """)
 
@@ -1235,7 +1235,7 @@ with tab5:
     import subprocess
     import requests
 
-    st.subheader("🔥 Agentic Solutions: Powered by x402 (Algorand Testnet)")
+    st.subheader(" Agentic Solutions: Powered by x402 (Algorand Testnet)")
     st.markdown("""
     **Production micropayment gateway for autonomous AI agents.**  
     High-value spatial intelligence, route advisory, and ML premises risk assessments are monetized per-query using the **x402 Protocol v2** on **Algorand Testnet**, settled via the **GoPlausible Facilitator**.
@@ -1256,41 +1256,41 @@ with tab5:
 
     with col_x1:
         if server_online:
-            st.success("🟢 **x402 Gateway: ONLINE** (Port 4021)")
+            st.success(" **x402 Gateway: ONLINE** (Port 4021)")
         else:
-            st.error("🔴 **x402 Gateway: OFFLINE** (Start with `npm run start`)")
+            st.error(" **x402 Gateway: OFFLINE** (Start with `npm run start`)")
         st.caption("Listening on `http://127.0.0.1:4021`")
 
     with col_x2:
-        st.info("⚡ **Algorand Testnet**")
+        st.info(" **Algorand Testnet**")
         st.caption("Network: `algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=`")
 
     with col_x3:
-        st.info("🏛️ **GoPlausible Facilitator**")
+        st.info("️ **GoPlausible Facilitator**")
         st.caption("Endpoint: `https://facilitator.goplausible.xyz`")
 
     st.markdown("---")
 
     # 2. Explorer Quick Links
-    st.markdown("### 🔍 Live Algorand Testnet & LoRA Verification")
+    st.markdown("###  Live Algorand Testnet & LoRA Verification")
     col_l1, col_l2 = st.columns(2)
     with col_l1:
         st.markdown("""
         **Merchant / Server Receiver Account:**  
         `BWKR3HJ3SYZIJ7M73WJF6566YWEGRLJAIGMNZ2RZRY35ZYFBBJ63H24MOQ`  
-        👉 [![LoRA Explorer](https://img.shields.io/badge/LoRA%20Explorer-Inspect%20Merchant%20Account-0284C7?style=for-the-badge&logo=algorand&logoColor=white)](https://lora.algokit.io/testnet/account/BWKR3HJ3SYZIJ7M73WJF6566YWEGRLJAIGMNZ2RZRY35ZYFBBJ63H24MOQ)
+         [![LoRA Explorer](https://img.shields.io/badge/LoRA%20Explorer-Inspect%20Merchant%20Account-0284C7?style=for-the-badge&logo=algorand&logoColor=white)](https://lora.algokit.io/testnet/account/BWKR3HJ3SYZIJ7M73WJF6566YWEGRLJAIGMNZ2RZRY35ZYFBBJ63H24MOQ)
         """)
     with col_l2:
         st.markdown("""
         **Autonomous Agent Client Account:**  
         `2BAMYWYDYIIDYB7XDOU3BYGWZNY3PJU4TV6YAFMOGL2WTWANQZURT4RXBA`  
-        👉 [![LoRA Explorer](https://img.shields.io/badge/LoRA%20Explorer-Inspect%20Agent%20Account-16A34A?style=for-the-badge&logo=algorand&logoColor=white)](https://lora.algokit.io/testnet/account/2BAMYWYDYIIDYB7XDOU3BYGWZNY3PJU4TV6YAFMOGL2WTWANQZURT4RXBA)
+         [![LoRA Explorer](https://img.shields.io/badge/LoRA%20Explorer-Inspect%20Agent%20Account-16A34A?style=for-the-badge&logo=algorand&logoColor=white)](https://lora.algokit.io/testnet/account/2BAMYWYDYIIDYB7XDOU3BYGWZNY3PJU4TV6YAFMOGL2WTWANQZURT4RXBA)
         """)
 
     st.markdown("---")
 
     # 3. Interactive 402 Challenge Inspector
-    st.markdown("### 🔒 Step 1: Request Protected Resource (Trigger HTTP 402 Challenge)")
+    st.markdown("###  Step 1: Request Protected Resource (Trigger HTTP 402 Challenge)")
     st.caption("Query the protected endpoints without payment credentials to receive and decode the x402 payment requirements.")
 
     endpoint_choice = st.selectbox(
@@ -1303,7 +1303,7 @@ with tab5:
         format_func=lambda x: f"{x[0]} (Cost: {x[2]})"
     )
 
-    if st.button("📡 Send Unauthenticated Request to Gateway", key="btn_test_402"):
+    if st.button(" Send Unauthenticated Request to Gateway", key="btn_test_402"):
         try:
             target_url = endpoint_choice[1]
             if endpoint_choice[0].startswith("POST"):
@@ -1314,7 +1314,7 @@ with tab5:
             st.write(f"**HTTP Response Status:** `{res.status_code} {res.reason}`")
             
             if res.status_code == 402:
-                st.success("✅ **HTTP 402 Payment Required Successfully Returned by Gateway!**")
+                st.success(" **HTTP 402 Payment Required Successfully Returned by Gateway!**")
                 
                 pr_header = res.headers.get("payment-required")
                 if pr_header:
@@ -1339,10 +1339,10 @@ with tab5:
     st.markdown("---")
 
     # 4. Autonomous Agent Execution
-    st.markdown("### 🤖 Step 2: Trigger Autonomous AI Agent Payment Flow")
+    st.markdown("###  Step 2: Trigger Autonomous AI Agent Payment Flow")
     st.caption("The agent receives the 402 challenge, signs an atomic Algorand transaction group using its Testnet private key, submits via the GoPlausible facilitator, and unlocks the intelligence payload.")
 
-    if st.button("🚀 Execute Autonomous x402 Agent Run", type="primary", key="btn_run_agent"):
+    if st.button(" Execute Autonomous x402 Agent Run", type="primary", key="btn_run_agent"):
         with st.spinner("Autonomous Agent negotiating x402 settlement on Algorand Testnet..."):
             try:
                 cmd = ["bash", os.path.join(BASE_DIR, "scripts", "run_x402_agent.sh")]
@@ -1355,12 +1355,12 @@ with tab5:
                     cwd=os.path.join(BASE_DIR, "x402-server")
                 )
                 
-                st.markdown("#### 📜 Agent Execution Console Output:")
+                st.markdown("####  Agent Execution Console Output:")
                 st.code(result.stdout, language="bash")
                 
                 if "x402 PAYMENT VERIFIED" in result.stdout:
                     st.balloons()
-                    st.success("🎉 Payment settled on Algorand Testnet! Risk intelligence unlocked.")
+                    st.success(" Payment settled on Algorand Testnet! Risk intelligence unlocked.")
                 elif "Transaction simulation failed" in result.stdout or "asset 10458941 missing" in result.stdout:
                     st.info("""
                     **Transaction Simulation & Verification Verified:**  
@@ -1375,7 +1375,7 @@ with tab5:
     st.markdown("---")
 
     # 5. Hackathon Track Checklist
-    st.markdown("### ✅ Mandatory Track Checklist: Agentic Solutions Powered by x402")
+    st.markdown("###  Mandatory Track Checklist: Agentic Solutions Powered by x402")
     chk1, chk2 = st.columns(2)
     with chk1:
         st.markdown("""
@@ -1398,7 +1398,7 @@ with tab5:
 # Phone-Friendly Features / Info Boxes
 bento_html_bottom = """
 <style>
-/* 📱 NEW: Mobile Responsive Layout Fixes */
+/*  NEW: Mobile Responsive Layout Fixes */
 @media (max-width: 768px) {
     .cruip-header-nav {
         flex-direction: column !important;
@@ -1419,7 +1419,7 @@ bento_html_bottom = """
 <div class="cruip-bento-grid">
     <div class="cruip-card">
         <div class="cruip-card-header">
-            <div class="cruip-card-icon">📍</div>
+            <div class="cruip-card-icon"></div>
             <span class="cruip-card-tag">AI MAPPING</span>
         </div>
         <div class="cruip-card-title">Identify Danger Zones</div>
@@ -1427,7 +1427,7 @@ bento_html_bottom = """
     </div>
     <div class="cruip-card">
         <div class="cruip-card-header">
-            <div class="cruip-card-icon">🚓</div>
+            <div class="cruip-card-icon"></div>
             <span class="cruip-card-tag">POLICE SUPPORT</span>
         </div>
         <div class="cruip-card-title">Smart Patrol Routing</div>
@@ -1435,7 +1435,7 @@ bento_html_bottom = """
     </div>
     <div class="cruip-card">
         <div class="cruip-card-header">
-            <div class="cruip-card-icon">⚡</div>
+            <div class="cruip-card-icon"></div>
             <span class="cruip-card-tag">PREDICTIVE TECH</span>
         </div>
         <div class="cruip-card-title">Predict Future Threats</div>
@@ -1446,7 +1446,7 @@ bento_html_bottom = """
 st.markdown(bento_html_bottom, unsafe_allow_html=True) 
 
 # Top KPI Metric Cards (Moved to bottom)
-st.markdown("### 📊 System Analytics & Risk Metrics")
+st.markdown("###  System Analytics & Risk Metrics")
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 with kpi1:
     completeness_sub = "100% Complete (0 Missing)" if is_clean_mode else "Raw Unfiltered Feed"
