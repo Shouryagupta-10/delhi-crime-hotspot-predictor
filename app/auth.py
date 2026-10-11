@@ -188,14 +188,15 @@ def render_cruip_login_page():
     <style>
     /* Fullscreen Glassmorphic Login Overlay */
     .login-hero-container {
-        max-width: 540px;
-        margin: 25px auto 25px auto;
-        padding: 34px 30px 24px 30px;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 20px 0 16px 0 !important;
+        padding: 30px 24px 22px 24px;
         background: rgba(15, 23, 42, 0.85);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 24px;
+        border-radius: 20px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 32px rgba(99, 102, 241, 0.2);
         text-align: center;
     }
@@ -232,7 +233,7 @@ def render_cruip_login_page():
         justify-content: center;
         gap: 8px;
         flex-wrap: wrap;
-        margin-bottom: 20px;
+        margin-bottom: 6px;
     }
     .feature-pill {
         font-size: 11px;
@@ -242,24 +243,81 @@ def render_cruip_login_page():
         padding: 3px 10px;
         border-radius: 9999px;
     }
+
+    /* Auth Action Selector - 100% width matching the hero card and form card left edges */
+    div[data-testid="stRadio"],
+    div.stRadio {
+        display: flex !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 16px 0 !important;
+        padding: 0 !important;
+    }
+    div[data-testid="stRadio"] > label,
+    div.stRadio > label {
+        display: none !important;
+    }
+    div[data-testid="stRadio"] > div[role="radiogroup"],
+    div.stRadio > div[role="radiogroup"] {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        gap: 6px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        padding: 6px 8px !important;
+        border-radius: 9999px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+    }
+    div[data-testid="stRadio"] label[data-baseweb="radio"],
+    div.stRadio label[data-baseweb="radio"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 1 1 0% !important;
+        background: transparent !important;
+        padding: 7px 8px !important;
+        border-radius: 9999px !important;
+        margin: 0 !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+    }
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
+    div.stRadio label[data-baseweb="radio"]:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    div[data-testid="stRadio"] label[data-baseweb="radio"] p,
+    div.stRadio label[data-baseweb="radio"] p {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #e2e8f0 !important;
+        letter-spacing: 0.01em !important;
+        margin: 0 !important;
+        text-align: center !important;
+    }
+    @media (max-width: 900px) {
+        div[data-testid="stRadio"] > div[role="radiogroup"],
+        div.stRadio > div[role="radiogroup"] {
+            flex-wrap: wrap !important;
+            border-radius: 16px !important;
+        }
+    }
+
+    /* Style the form card so its width, left edge, and border radius line up seamlessly */
+    div[data-testid="stForm"] {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        border-radius: 20px !important;
+    }
     </style>
-    
-    <div class="login-hero-container">
-        <div class="login-badge">
-            <span style="width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
-            CITIZEN SAFETY PORTAL
-        </div>
-        <div class="login-title">Rakshak.ai</div>
-        <div class="login-subtitle">
-            Sign in to access real-time neighborhood danger heatmaps, live safe walking corridors, emergency SOS, and safe travel navigation.
-        </div>
-        <div class="feature-pill-bar">
-            <span class="feature-pill">🚶 Safe Walking Routes</span>
-            <span class="feature-pill">🚗 Safe Vehicle Corridors</span>
-            <span class="feature-pill">🚨 Real-Time Risk Alerts</span>
-            <span class="feature-pill">🔒 Private & Secure</span>
-        </div>
-    </div>
     """, unsafe_allow_html=True)
 
     # Check for lockout
@@ -268,15 +326,33 @@ def render_cruip_login_page():
         st.error(lockout_msg)
         st.stop()
 
-    auth_tab_choice = st.radio(
-        "Authentication Action",
-        ["🔐 Sign In", "📝 Create Citizen Account", "🚀 Instant 1-Click Guest Access"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-    col_wrap = st.columns([1, 2, 1])
+    col_wrap = st.columns([1, 1.8, 1])
     with col_wrap[1]:
+        st.markdown("""
+        <div class="login-hero-container">
+            <div class="login-badge">
+                <span style="width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+                CITIZEN SAFETY PORTAL
+            </div>
+            <div class="login-title">Rakshak.ai</div>
+            <div class="login-subtitle">
+                Sign in to access real-time neighborhood danger heatmaps, live safe walking corridors, emergency SOS, and safe travel navigation.
+            </div>
+            <div class="feature-pill-bar">
+                <span class="feature-pill">🚶 Safe Walking Routes</span>
+                <span class="feature-pill">🚗 Safe Vehicle Corridors</span>
+                <span class="feature-pill">🚨 Real-Time Risk Alerts</span>
+                <span class="feature-pill">🔒 Private & Secure</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        auth_tab_choice = st.radio(
+            "Authentication Action",
+            ["🔐 Sign In", "📝 Create Citizen Account", "🚀 Instant 1-Click Guest Access"],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
         # --- TAB 1: SIGN IN ---
         if auth_tab_choice.startswith("🔐 Sign In"):
             with st.form("form_citizen_login"):
