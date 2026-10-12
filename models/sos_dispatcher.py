@@ -231,7 +231,32 @@ class EmergencySOSDispatcher:
             except Exception as e:
                 dispatched_channels.append(f"Webhook Error: {str(e)[:60]}")
 
-        # 5. Fallback / Demonstration Simulated Delivery
+        # 5. Free Real-Time Mobile Push Notification Gateway (ntfy.sh)
+        clean_phone = "".join(ch for ch in recipient_phone if ch.isdigit())
+        if len(clean_phone) > 10:
+            clean_phone = clean_phone[-10:]
+        if clean_phone:
+            try:
+                ntfy_topic = f"rakshak_sos_{clean_phone}"
+                ntfy_url = f"https://ntfy.sh/{ntfy_topic}"
+                ntfy_req = urllib.request.Request(
+                    ntfy_url,
+                    data=message_body.encode("utf-8"),
+                    headers={
+                        "Title": "🚨 EMERGENCY SOS: Danger Zone Alert (<100m)",
+                        "Priority": "urgent",
+                        "Tags": "rotating_light,sos,warning",
+                        "Click": payload["location"]["google_maps_live_link"]
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(ntfy_req, timeout=5) as resp:
+                    if resp.status in (200, 201):
+                        dispatched_channels.append(f"Instant Push Notification (ntfy.sh/{ntfy_topic})")
+            except Exception:
+                pass
+
+        # 6. Fallback / Demonstration Simulated Delivery
         if not dispatched_channels:
             dispatched_channels.append("Rakshak.ai Autonomous Sentinel SMS Hub (Direct Simulation Mode)")
 

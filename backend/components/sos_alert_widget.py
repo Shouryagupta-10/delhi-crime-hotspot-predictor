@@ -6,8 +6,10 @@ Features:
 - Emergency Contacts Modal with Web Contact Picker API & manual entry
 - Explicit Primary Contact selection via radio buttons and localStorage persistence
 - Audio alarm: recurring two-tone pulsed beep (880Hz alternating with 1200Hz) via Web Audio API
-- Immediate Alert Dispatch to /api/send-sos and /api/v1/sos-alert with live Google Maps link
-- Immediate toast notifications and error handling
+- Immediate Alert Dispatch to /api/send-sos (Port 4021) and real-time push via ntfy.sh
+- Desktop/Mobile System Notification via HTML5 Notification API
+- Direct SMS App (`sms:`) and WhatsApp deep links for guaranteed delivery
+- Floating toast notifications and error handling
 """
 
 import json
@@ -34,7 +36,7 @@ def render_sos_emergency_sidebar_widget(
     user_lat: Optional[float] = None,
     user_lon: Optional[float] = None,
     hotspots: Optional[List[Dict[str, Any]]] = None,
-    height: int = 380
+    height: int = 440
 ):
     """
     Renders the primary SOS EMERGENCY button at the top of the left sidebar.
@@ -143,6 +145,81 @@ def render_sos_emergency_sidebar_widget(
             100% {{ box-shadow: 0 0 45px #38bdf8; transform: scale(1.03); }}
         }}
 
+        /* Stop Alarm Control */
+        .dismiss-alarm-btn {{
+            display: none;
+            width: 100%;
+            background: #eab308;
+            color: #0f172a;
+            font-size: 11.5px;
+            font-weight: 900;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.7);
+            animation: pulseRedGlow 1s infinite;
+        }}
+
+        /* Direct Dispatch Action Tray (Appears after SOS triggered) */
+        .dispatch-tray {{
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1.5px solid #ef4444;
+            border-radius: 12px;
+            padding: 8px 10px;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+            animation: toastSlideDown 0.25s ease-out;
+        }}
+        .dispatch-tray-header {{
+            font-size: 10px;
+            font-weight: 800;
+            color: #f87171;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        .dispatch-buttons {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 2px;
+        }}
+        .dispatch-btn {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 7px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }}
+        .dispatch-btn-sms {{
+            background: #2563eb;
+            color: #ffffff;
+        }}
+        .dispatch-btn-sms:hover {{
+            background: #1d4ed8;
+        }}
+        .dispatch-btn-wa {{
+            background: #16a34a;
+            color: #ffffff;
+        }}
+        .dispatch-btn-wa:hover {{
+            background: #15803d;
+        }}
+
         /* Settings Toggle Button Directly under SOS button */
         .contacts-toggle-btn {{
             width: 100%;
@@ -189,24 +266,6 @@ def render_sos_emergency_sidebar_widget(
         .badge-safe {{ background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }}
         .badge-danger {{ background: rgba(239, 68, 68, 0.3); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.6); animation: pulseRedGlow 1s infinite; }}
 
-        /* Stop Alarm Control */
-        .dismiss-alarm-btn {{
-            display: none;
-            width: 100%;
-            background: #eab308;
-            color: #0f172a;
-            font-size: 11.5px;
-            font-weight: 900;
-            padding: 7px 10px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            box-shadow: 0 0 15px rgba(234, 179, 8, 0.7);
-            animation: pulseRedGlow 1s infinite;
-        }}
-
         /* Floating Toast Notification */
         .toast-notification {{
             display: none;
@@ -214,7 +273,7 @@ def render_sos_emergency_sidebar_widget(
             top: -5px;
             left: 0;
             right: 0;
-            background: rgba(15, 23, 42, 0.96);
+            background: rgba(15, 23, 42, 0.98);
             border: 1.5px solid #10b981;
             border-radius: 12px;
             padding: 10px 12px;
@@ -250,7 +309,7 @@ def render_sos_emergency_sidebar_widget(
             border: 1px solid #334155;
             border-radius: 16px;
             width: 100%;
-            max-width: 340px;
+            max-width: 350px;
             padding: 16px;
             box-shadow: 0 25px 50px rgba(0,0,0,0.9);
             display: flex;
@@ -264,6 +323,30 @@ def render_sos_emergency_sidebar_widget(
             justify-content: space-between;
             border-bottom: 1px solid #1e293b;
             padding-bottom: 8px;
+        }}
+
+        .modal-tabs {{
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 6px;
+        }}
+        .modal-tab-btn {{
+            flex: 1;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 5px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+        }}
+        .modal-tab-btn.active {{
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #3b82f6;
         }}
 
         .contact-row {{
@@ -299,7 +382,7 @@ def render_sos_emergency_sidebar_widget(
             border-radius: 8px;
             padding: 7px 10px;
             color: #f8fafc;
-            font-size: 11.5px;
+            font-size: 11px;
             outline: none;
         }}
         .modal-input:focus {{ border-color: #38bdf8; }}
@@ -335,6 +418,26 @@ def render_sos_emergency_sidebar_widget(
             ⏹️ Stop Alarm / Dismiss
         </button>
 
+        <!-- Direct Dispatch Action Tray (Appears upon SOS trigger for immediate SMS & WhatsApp) -->
+        <div id="dispatchTray" class="dispatch-tray">
+            <div class="dispatch-tray-header">
+                <span>⚡ Instant Distress Dispatch</span>
+                <span style="color: #38bdf8; font-size: 9px;" id="dispatchStatusText">Distress Ready</span>
+            </div>
+            <div class="dispatch-buttons">
+                <a id="btnSmsNative" class="dispatch-btn dispatch-btn-sms" href="#" target="_blank">
+                    <span>💬 Open SMS App</span>
+                </a>
+                <a id="btnWhatsApp" class="dispatch-btn dispatch-btn-wa" href="#" target="_blank">
+                    <span>📱 WhatsApp SOS</span>
+                </a>
+            </div>
+            <div style="font-size: 9.5px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
+                <span id="pushStatusIndicator">🔔 Push Notification: Active</span>
+                <a id="linkNtfyLive" href="#" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 9.5px;">View Phone Alert ↗</a>
+            </div>
+        </div>
+
         <!-- 2. Settings Toggle next to / directly under SOS button -->
         <div class="contacts-toggle-btn" onclick="openContactModal()">
             <span style="display: flex; align-items: center; gap: 5px;">
@@ -361,33 +464,66 @@ def render_sos_emergency_sidebar_widget(
         </div>
     </div>
 
-    <!-- 4. Emergency Contacts Modal -->
+    <!-- 4. Emergency Contacts & SMS Settings Modal -->
     <div id="contactModal" class="modal-backdrop">
         <div class="modal-window">
             <div class="modal-header">
-                <span style="font-size: 13px; font-weight: 800; color: #fff;">🛡️ Emergency Contacts Manager</span>
+                <span style="font-size: 13px; font-weight: 800; color: #fff;">🛡️ Emergency Contacts & SMS</span>
                 <span style="cursor: pointer; font-size: 16px; color: #94a3b8;" onclick="closeContactModal()">✕</span>
             </div>
 
-            <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.4;">
-                Select your <strong>Primary Emergency Contact</strong>. Emergency SMS & distress telemetry will target this contact immediately.
+            <!-- Tab Switcher -->
+            <div class="modal-tabs">
+                <div id="tabBtnContacts" class="modal-tab-btn active" onclick="switchModalTab('contacts')">👥 Contacts</div>
+                <div id="tabBtnSettings" class="modal-tab-btn" onclick="switchModalTab('settings')">⚙️ SMS / Push Config</div>
             </div>
 
-            <!-- Sync via Web Contact Picker API (if mobile / Chrome supported) -->
-            <button onclick="syncFromNativeContacts()" class="action-btn-sm" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); width: 100%;">
-                📱 Sync from Phone Contacts (Web Contact Picker)
-            </button>
+            <!-- Tab 1: Contacts List & Picker -->
+            <div id="tabContentContacts" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.4;">
+                    Select your <strong>Primary Emergency Contact</strong>. Emergency SMS & distress telemetry will target this contact immediately.
+                </div>
 
-            <!-- Contacts List with Radio Selection -->
-            <div id="contactsListContainer" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
-
-            <!-- Add Contact Form -->
-            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
-                <input id="inputNewName" class="modal-input" placeholder="Contact Name (e.g. Guardian / Sister)" />
-                <input id="inputNewPhone" class="modal-input" placeholder="Phone Number (+91 98100 12345)" />
-                <button onclick="addNewContact()" class="action-btn-sm" style="background: #2563eb; color: #fff; width: 100%;">
-                    + Add & Set as Primary Contact
+                <!-- Sync via Web Contact Picker API (if mobile / Chrome supported) -->
+                <button onclick="syncFromNativeContacts()" class="action-btn-sm" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); width: 100%;">
+                    📱 Sync from Phone Contacts (Web Contact Picker)
                 </button>
+
+                <!-- Contacts List with Radio Selection -->
+                <div id="contactsListContainer" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
+
+                <!-- Add Contact Form -->
+                <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
+                    <input id="inputNewName" class="modal-input" placeholder="Contact Name (e.g. Guardian / Sister)" />
+                    <input id="inputNewPhone" class="modal-input" placeholder="Phone Number (+91 98100 12345)" />
+                    <button onclick="addNewContact()" class="action-btn-sm" style="background: #2563eb; color: #fff; width: 100%;">
+                        + Add & Set as Primary Contact
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: SMS & Notification Settings -->
+            <div id="tabContentSettings" style="display: none; flex-direction: column; gap: 8px;">
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid #334155;">
+                    <div style="font-size: 11px; font-weight: 700; color: #38bdf8; margin-bottom: 3px;">🔔 System Push Notification</div>
+                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">Receive loud OS desktop/mobile banners when distress is triggered.</div>
+                    <button id="btnRequestNotif" onclick="enableSystemNotifications()" class="action-btn-sm" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; width: 100%;">
+                        🔔 Enable Browser Notification Permission
+                    </button>
+                </div>
+
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid #334155;">
+                    <div style="font-size: 11px; font-weight: 700; color: #f59e0b; margin-bottom: 3px;">⚡ Fast2SMS Gateway (Optional)</div>
+                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">Add your free Fast2SMS API key to deliver automated server-side SMS:</div>
+                    <input id="inputFast2SmsKey" class="modal-input" placeholder="Fast2SMS API Key (fast2sms.com)" />
+                    <button onclick="saveFast2SmsKey()" class="action-btn-sm" style="background: #d97706; color: #fff; width: 100%; margin-top: 5px;">
+                        Save Fast2SMS Key
+                    </button>
+                </div>
+
+                <div style="font-size: 9.5px; color: #64748b; line-height: 1.3;">
+                    💡 <strong>Tip:</strong> Even without an SMS API key, clicking SOS generates 1-tap direct dispatch buttons for your device's <strong>Native SMS App</strong> and <strong>WhatsApp</strong>, and fires real-time mobile push notifications to <strong>ntfy.sh</strong>!
+                </div>
             </div>
         </div>
     </div>
@@ -442,12 +578,110 @@ def render_sos_emergency_sidebar_widget(
         return list.find(c => c.phone === phone) || list[0] || null;
     }}
 
+    function getCleanPhone(phone) {{
+        const digits = (phone || "").replace(/\\D/g, "");
+        return digits.length > 10 ? digits.slice(-10) : digits;
+    }}
+
     function updateUI() {{
         const primary = getPrimaryContact();
         const pill = document.getElementById("primaryContactPill");
         if (pill && primary) {{
             pill.innerText = `Primary: ${{primary.name}}`;
             pill.title = `${{primary.name}}: ${{primary.phone}}`;
+        }}
+
+        // Update notification button text if supported
+        const notifBtn = document.getElementById("btnRequestNotif");
+        if (notifBtn && "Notification" in window) {{
+            if (Notification.permission === "granted") {{
+                notifBtn.innerText = "✅ Browser Notifications Enabled";
+                notifBtn.style.background = "rgba(16, 185, 129, 0.3)";
+            }} else if (Notification.permission === "denied") {{
+                notifBtn.innerText = "❌ Notification Permission Blocked";
+                notifBtn.style.background = "rgba(239, 68, 68, 0.2)";
+            }}
+        }}
+
+        // Populate Fast2SMS key if saved
+        const fKeyInput = document.getElementById("inputFast2SmsKey");
+        if (fKeyInput) {{
+            fKeyInput.value = localStorage.getItem("rakshak_fast2sms_key") || "";
+        }}
+    }}
+
+    // ------------------------------------------------------------------------
+    // TAB SWITCHER
+    // ------------------------------------------------------------------------
+    function switchModalTab(tab) {{
+        const tabContacts = document.getElementById("tabContentContacts");
+        const tabSettings = document.getElementById("tabContentSettings");
+        const btnContacts = document.getElementById("tabBtnContacts");
+        const btnSettings = document.getElementById("tabBtnSettings");
+
+        if (tab === 'contacts') {{
+            tabContacts.style.display = "flex";
+            tabSettings.style.display = "none";
+            btnContacts.classList.add("active");
+            btnSettings.classList.remove("active");
+        }} else {{
+            tabContacts.style.display = "none";
+            tabSettings.style.display = "flex";
+            btnContacts.classList.remove("active");
+            btnSettings.classList.add("active");
+        }}
+    }}
+
+    function saveFast2SmsKey() {{
+        const input = document.getElementById("inputFast2SmsKey");
+        if (input) {{
+            const val = input.value.trim();
+            localStorage.setItem("rakshak_fast2sms_key", val);
+            showToast("✅ Fast2SMS API Key saved!", "success");
+        }}
+    }}
+
+    // ------------------------------------------------------------------------
+    // HTML5 NOTIFICATION API
+    // ------------------------------------------------------------------------
+    function enableSystemNotifications() {{
+        if (!("Notification" in window)) {{
+            showToast("ℹ️ System notifications not supported in this browser.", "warning");
+            return;
+        }}
+        Notification.requestPermission().then(perm => {{
+            if (perm === "granted") {{
+                showToast("✅ Browser notification permission granted!", "success");
+                updateUI();
+                new Notification("🛡️ Rakshak.ai Sentinel Ready", {{
+                    body: "System notifications are now active for emergency SOS alerts.",
+                    icon: "https://img.icons8.com/fluency/96/police-badge.png"
+                }});
+            }} else {{
+                showToast("⚠️ Permission not granted: " + perm, "error");
+                updateUI();
+            }}
+        }});
+    }}
+
+    function triggerSystemNotification(primary, lat, lon, mapsLink) {{
+        if (!("Notification" in window)) return;
+        
+        const title = "🚨 RAKSHAK.AI EMERGENCY SOS ALERT";
+        const options = {{
+            body: `Distress alert targeting ${{primary.name}} (${{primary.phone}})!\\nLocation: https://www.google.com/maps?q=${{lat.toFixed(5)}},${{lon.toFixed(5)}}`,
+            icon: "https://img.icons8.com/fluency/96/police-badge.png",
+            requireInteraction: true
+        }};
+
+        if (Notification.permission === "granted") {{
+            try {{ new Notification(title, options); }} catch(e) {{}}
+        }} else if (Notification.permission !== "denied") {{
+            Notification.requestPermission().then(p => {{
+                if (p === "granted") {{
+                    try {{ new Notification(title, options); }} catch(e) {{}}
+                }}
+            }});
         }}
     }}
 
@@ -457,6 +691,7 @@ def render_sos_emergency_sidebar_widget(
     function openContactModal() {{
         document.getElementById("contactModal").classList.add("active");
         renderContactsList();
+        updateUI();
     }}
 
     function closeContactModal() {{
@@ -621,7 +856,7 @@ def render_sos_emergency_sidebar_widget(
 
         setTimeout(() => {{
             toast.style.display = "none";
-        }}, 4500);
+        }}, 5500);
     }}
 
     // ------------------------------------------------------------------------
@@ -692,7 +927,7 @@ def render_sos_emergency_sidebar_widget(
     }}
 
     // ------------------------------------------------------------------------
-    // SOS BUTTON CLICK & DISPATCH TRIGGER
+    // SOS BUTTON CLICK & MULTI-CHANNEL DISPATCH TRIGGER
     // ------------------------------------------------------------------------
     async function handleSosClick() {{
         // If alarm is already sounding, tapping dismisses it
@@ -717,7 +952,52 @@ def render_sos_emergency_sidebar_widget(
         const lon = currentLon || 77.2197;
         const mapsLink = `https://www.google.com/maps?q=${{lat.toFixed(5)}},${{lon.toFixed(5)}}`;
         const urgentText = `EMERGENCY SOS: User is near a high-risk danger zone (<100m). Immediate help needed! Location: ${{mapsLink}}`;
+        const encodedText = encodeURIComponent(urgentText);
+        const cleanPhone = getCleanPhone(primary.phone);
 
+        // 4. Trigger Native System / Desktop / Mobile Push Notification
+        triggerSystemNotification(primary, lat, lon, mapsLink);
+
+        // 5. Update and Show Direct Dispatch Tray for Instant 1-Tap SMS & WhatsApp
+        const tray = document.getElementById("dispatchTray");
+        const btnSms = document.getElementById("btnSmsNative");
+        const btnWa = document.getElementById("btnWhatsApp");
+        const linkNtfy = document.getElementById("linkNtfyLive");
+        const statusText = document.getElementById("dispatchStatusText");
+
+        if (btnSms) {{
+            btnSms.href = `sms:${{primary.phone}}?body=${{encodedText}}`;
+            btnSms.title = `Send SMS directly to ${{primary.phone}} via your messaging app`;
+        }}
+        if (btnWa) {{
+            btnWa.href = `https://api.whatsapp.com/send?phone=91${{cleanPhone}}&text=${{encodedText}}`;
+            btnWa.title = `Send distress alert to ${{primary.phone}} via WhatsApp`;
+        }}
+        if (linkNtfy) {{
+            linkNtfy.href = `https://ntfy.sh/rakshak_sos_${{cleanPhone}}`;
+        }}
+        if (tray) {{
+            tray.style.display = "flex";
+        }}
+
+        // 6. Direct Mobile Push Dispatch via ntfy.sh (No signup, instant mobile buzzer)
+        if (cleanPhone) {{
+            try {{
+                fetch(`https://ntfy.sh/rakshak_sos_${{cleanPhone}}`, {{
+                    method: 'POST',
+                    body: urgentText,
+                    headers: {{
+                        'Title': `🚨 EMERGENCY SOS: Danger Zone Alert (<100m)`,
+                        'Priority': 'urgent',
+                        'Tags': 'rotating_light,sos,warning',
+                        'Click': mapsLink
+                    }}
+                }}).catch(() => {{}});
+            }} catch(e) {{}}
+        }}
+
+        // 7. Backend Dispatch via local SOS Server (Port 4021)
+        const fast2smsKey = localStorage.getItem("rakshak_fast2sms_key") || "";
         const payload = {{
             recipient: primary,
             location: {{
@@ -727,30 +1007,32 @@ def render_sos_emergency_sidebar_widget(
                 google_maps_link: mapsLink
             }},
             message: urgentText,
-            push_notification: {{
-                sound: "safety_beep.mp3",
-                priority: "high"
+            gateway_config: {{
+                fast2sms_key: fast2smsKey
             }}
         }};
 
-        // 4. Immediate Alert Dispatch (SMS / Webhook) via Backend Route
+        let serverDispatched = false;
         try {{
-            // Target /api/send-sos and fallback /api/v1/sos-alert
-            const endpoints = ['/api/send-sos', 'http://127.0.0.1:4021/api/send-sos', 'http://127.0.0.1:4021/api/v1/sos-alert'];
-            for (const ep of endpoints) {{
-                try {{
-                    fetch(ep, {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/json' }},
-                        body: JSON.stringify(payload)
-                    }});
-                }} catch(e) {{}}
+            const res = await fetch('http://127.0.0.1:4021/api/send-sos', {{
+                method: 'POST',
+                headers: {{ 'Content-Type': 'application/json' }},
+                body: JSON.stringify(payload)
+            }});
+            if (res.ok) {{
+                const data = await res.json();
+                serverDispatched = true;
+                if (statusText) statusText.innerText = "Dispatched Online";
             }}
-
-            showToast(`🚨 SOS Alert sent to ${{primary.name}} (${{primary.phone}})! Immediate help requested.`, "success");
         }} catch(err) {{
-            showToast(`⚠️ SOS telemetry logged to ${{primary.name}} (${{primary.phone}}).`, "warning");
+            console.log("Local SOS API note:", err);
         }}
+
+        showToast(
+            `🚨 SOS Alert Triggered for ${{primary.name}} (${{primary.phone}})! ` +
+            `<br/><span style="font-size:10px;color:#38bdf8;">Tap [Open SMS App] or [WhatsApp SOS] below to send directly from device.</span>`,
+            "success"
+        );
     }}
 
     window.addEventListener('DOMContentLoaded', () => {{

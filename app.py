@@ -35,6 +35,13 @@ from router import RoutePlanner
 from components.map_view import render_rakshak_map
 from components.sos_alert_widget import render_sos_emergency_sidebar_widget
 
+# Start local SOS API Server in background for real-time alert dispatch
+try:
+    from sos_api_server import start_sos_api_server_background
+    start_sos_api_server_background(port=4021)
+except Exception:
+    pass
+
 # -----------------------------------------------------------------------------
 # STRICT ANTI-SLOP DISPATCH CSS (Dark Sky / Linear Palette)
 # -----------------------------------------------------------------------------

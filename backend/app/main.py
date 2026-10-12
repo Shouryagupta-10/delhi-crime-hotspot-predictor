@@ -50,6 +50,17 @@ except ImportError:
     except ImportError:
         from backend.components.sos_alert_widget import render_sos_emergency_sidebar_widget
 
+# Start local SOS API Server in background for real-time alert dispatch
+try:
+    from sos_api_server import start_sos_api_server_background
+    start_sos_api_server_background(port=4021)
+except Exception:
+    try:
+        from backend.sos_api_server import start_sos_api_server_background
+        start_sos_api_server_background(port=4021)
+    except Exception:
+        pass
+
 # Comprehensive Delhi Police Station Geocoordinates Registry for Precision Proximity Calculation
 DELHI_POLICE_STATIONS = [
     # New Delhi

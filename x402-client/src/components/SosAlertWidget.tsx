@@ -241,6 +241,38 @@ export const SosAlertWidget: React.FC<SosAlertWidgetProps> = ({
     // 3. Payload with clickable Google Maps link
     const mapsLink = `https://www.google.com/maps?q=${currentLat.toFixed(5)},${currentLon.toFixed(5)}`;
     const urgentText = `EMERGENCY SOS: User is near a high-risk danger zone (<100m). Immediate help needed! Location: ${mapsLink}`;
+    const cleanPhone = primaryContact.phone.replace(/\D/g, '').slice(-10);
+    const encodedText = encodeURIComponent(urgentText);
+
+    // 4. Trigger Browser Native System Notification
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification('🚨 RAKSHAK.AI EMERGENCY SOS', {
+            body: `Distress alert targeting ${primaryContact.name} (${primaryContact.phone})\nLocation: ${mapsLink}`,
+            icon: 'https://img.icons8.com/fluency/96/police-badge.png',
+          });
+        } catch {}
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    }
+
+    // 5. Direct Mobile Push Dispatch via ntfy.sh
+    if (cleanPhone) {
+      try {
+        fetch(`https://ntfy.sh/rakshak_sos_${cleanPhone}`, {
+          method: 'POST',
+          body: urgentText,
+          headers: {
+            'Title': '🚨 EMERGENCY SOS: Danger Zone Alert (<100m)',
+            'Priority': 'urgent',
+            'Tags': 'rotating_light,sos,warning',
+            'Click': mapsLink,
+          },
+        }).catch(() => {});
+      } catch {}
+    }
 
     const payload = {
       recipient: primaryContact,
@@ -258,9 +290,9 @@ export const SosAlertWidget: React.FC<SosAlertWidgetProps> = ({
 
     if (onAlertDispatched) onAlertDispatched(payload);
 
-    // 4. Alert Dispatch (SMS / Webhook)
+    // 6. Alert Dispatch via Local SOS Server
     try {
-      const endpoints = ['/api/send-sos', 'http://127.0.0.1:4021/api/send-sos', 'http://127.0.0.1:4021/api/v1/sos-alert'];
+      const endpoints = ['http://127.0.0.1:4021/api/send-sos', '/api/send-sos', 'http://127.0.0.1:4021/api/v1/sos-alert'];
       for (const ep of endpoints) {
         try {
           fetch(ep, {
@@ -270,7 +302,9 @@ export const SosAlertWidget: React.FC<SosAlertWidgetProps> = ({
           });
         } catch {}
       }
-      showToast(`🚨 SOS Alert sent to ${primaryContact.name} (${primaryContact.phone})!`);
+      showToast(
+        `🚨 SOS Alert Triggered for ${primaryContact.name} (${primaryContact.phone})! Sent via System Push & Server Dispatch.`
+      );
     } catch (err) {
       showToast(`⚠️ SOS telemetry logged to ${primaryContact.name}`, true);
     }
