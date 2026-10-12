@@ -1,16 +1,17 @@
 """
-Rakshak.ai Emergency SOS Alert Component for Streamlit Sidebar
+Rakshak.ai Emergency SOS Alert Component for Left Sidebar
 Features:
-- Prominent pulsing red emergency button right at the top of the left sidebar
-- Real-time geofence calculation against Red Danger Zones (<100m proximity trigger)
-- Contact Picker API (navigator.contacts.select) with modal fallback
-- Web Audio API 880Hz alternating safety beep
-- SMS/Webhook payload dispatch with Google Maps live link
+- Primary SOS EMERGENCY Button with glowing, pulsing alarm states
+- Emergency Contacts settings toggle directly under the button
+- Emergency Contacts Modal with Web Contact Picker API & manual entry
+- Explicit Primary Contact selection via radio buttons and localStorage persistence
+- Audio alarm: recurring two-tone pulsed beep (880Hz alternating with 1200Hz) via Web Audio API
+- Immediate Alert Dispatch to /api/send-sos and /api/v1/sos-alert with live Google Maps link
+- Immediate toast notifications and error handling
 """
 
 import json
 from typing import Optional, List, Dict, Any
-import streamlit as st
 import streamlit.components.v1 as components
 
 DEFAULT_HOTSPOTS_DATA = [
@@ -33,10 +34,10 @@ def render_sos_emergency_sidebar_widget(
     user_lat: Optional[float] = None,
     user_lon: Optional[float] = None,
     hotspots: Optional[List[Dict[str, Any]]] = None,
-    height: int = 330
+    height: int = 380
 ):
     """
-    Renders the prominent SOS EMERGENCY button at the top of the left sidebar.
+    Renders the primary SOS EMERGENCY button at the top of the left sidebar.
     """
     hotspots_data = hotspots or DEFAULT_HOTSPOTS_DATA
     initial_lat_js = f"{user_lat}" if user_lat is not None else "null"
@@ -59,109 +60,125 @@ def render_sos_emergency_sidebar_widget(
             background: transparent;
             color: #f8fafc;
             overflow-x: hidden;
-            padding: 2px 0 10px 0;
+            padding: 2px 0 12px 0;
         }}
-        
-        .sos-wrapper {{
-            position: relative;
+
+        /* Container */
+        .sos-container {{
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
             width: 100%;
-            margin-bottom: 8px;
+            position: relative;
         }}
-        
-        .sos-btn {{
+
+        /* Primary Glowing SOS Emergency Button */
+        .sos-main-btn {{
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
             color: #ffffff;
             font-size: 13.5px;
             font-weight: 900;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            padding: 13px 16px;
+            padding: 13px 14px;
             border-radius: 14px;
             border: 2px solid #ef4444;
             cursor: pointer;
-            box-shadow: 0 0 16px rgba(239, 68, 68, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-            animation: pulseGlow 2s infinite ease-in-out;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+            animation: pulseRedGlow 2s infinite ease-in-out;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            overflow: hidden;
             outline: none;
+            user-select: none;
         }}
-        
-        .sos-btn:hover {{
+
+        .sos-main-btn:hover {{
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
-            box-shadow: 0 0 24px rgba(239, 68, 68, 0.9), inset 0 1px 4px rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 28px rgba(239, 68, 68, 0.95), inset 0 1px 4px rgba(255, 255, 255, 0.6);
             transform: translateY(-1px);
         }}
-        
-        .sos-btn:active {{
+
+        .sos-main-btn:active {{
             transform: scale(0.98);
         }}
-        
-        @keyframes pulseGlow {{
+
+        @keyframes pulseRedGlow {{
             0%, 100% {{
                 box-shadow: 0 0 14px rgba(239, 68, 68, 0.6), 0 0 4px rgba(239, 68, 68, 0.4);
                 border-color: #ef4444;
             }}
             50% {{
-                box-shadow: 0 0 26px rgba(239, 68, 68, 0.95), 0 0 10px rgba(248, 113, 113, 0.8);
+                box-shadow: 0 0 28px rgba(239, 68, 68, 0.95), 0 0 10px rgba(248, 113, 113, 0.8);
                 border-color: #fca5a5;
             }}
         }}
 
-        .sos-btn.high-risk {{
+        /* Active High Risk State (<100m) */
+        .sos-main-btn.high-risk {{
             background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 50%, #450a0a 100%) !important;
             border: 2.5px solid #f87171 !important;
-            animation: highRiskFlash 0.9s infinite alternate !important;
+            animation: highRiskStrobe 0.8s infinite alternate !important;
         }}
 
-        @keyframes highRiskFlash {{
-            0% {{
-                box-shadow: 0 0 15px #ef4444, inset 0 0 10px #f87171;
-                transform: scale(1);
-            }}
-            100% {{
-                box-shadow: 0 0 35px #ff0000, 0 0 15px #fca5a5, inset 0 0 18px #ff4d4d;
-                transform: scale(1.02);
-            }}
+        @keyframes highRiskStrobe {{
+            0% {{ box-shadow: 0 0 15px #ef4444, inset 0 0 10px #f87171; transform: scale(1); }}
+            100% {{ box-shadow: 0 0 36px #ff0000, 0 0 14px #fca5a5, inset 0 0 18px #ff4d4d; transform: scale(1.02); }}
         }}
 
-        .sos-icon-beacon {{
-            font-size: 16px;
-            animation: rotateBeacon 1.4s infinite ease-in-out;
-            display: inline-block;
+        /* Alarm Sounding Flashing State */
+        .sos-main-btn.alarm-sounding {{
+            background: linear-gradient(135deg, #ff0000 0%, #b91c1c 50%, #ffffff 100%) !important;
+            color: #ffffff !important;
+            border: 2.5px solid #ffffff !important;
+            animation: sirenFlash 0.35s infinite alternate !important;
         }}
 
-        @keyframes rotateBeacon {{
-            0%, 100% {{ transform: rotate(0deg) scale(1); }}
-            25% {{ transform: rotate(-12deg) scale(1.15); }}
-            75% {{ transform: rotate(12deg) scale(1.15); }}
+        @keyframes sirenFlash {{
+            0% {{ box-shadow: 0 0 35px #ff0000; transform: scale(1.01); }}
+            100% {{ box-shadow: 0 0 45px #38bdf8; transform: scale(1.03); }}
         }}
 
-        .sos-hud {{
+        /* Settings Toggle Button Directly under SOS button */
+        .contacts-toggle-btn {{
+            width: 100%;
             background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 8px 10px;
-            margin-top: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: #cbd5e1;
             font-size: 11px;
+            font-weight: 700;
+            padding: 7px 10px;
             display: flex;
-            flex-direction: column;
-            gap: 5px;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
             backdrop-filter: blur(8px);
         }}
+        .contacts-toggle-btn:hover {{
+            background: rgba(30, 41, 59, 0.95);
+            border-color: #38bdf8;
+            color: #ffffff;
+        }}
 
-        .hud-row {{
+        /* Proximity Info Sub-bar */
+        .proximity-hud {{
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 10.5px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }}
 
-        .badge-risk {{
+        .badge-pill {{
             font-size: 9.5px;
             font-weight: 800;
             padding: 2px 7px;
@@ -170,245 +187,311 @@ def render_sos_emergency_sidebar_widget(
             font-family: monospace;
         }}
         .badge-safe {{ background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }}
-        .badge-danger {{ background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.5); animate: pulse 1s infinite; }}
+        .badge-danger {{ background: rgba(239, 68, 68, 0.3); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.6); animation: pulseRedGlow 1s infinite; }}
 
-        .contact-tag {{
-            font-size: 10.5px;
-            color: #94a3b8;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 170px;
-        }}
-        .contact-tag b {{ color: #e2e8f0; }}
-
-        .action-link {{
-            color: #38bdf8;
-            text-decoration: none;
+        /* Stop Alarm Control */
+        .dismiss-alarm-btn {{
+            display: none;
+            width: 100%;
+            background: #eab308;
+            color: #0f172a;
+            font-size: 11.5px;
+            font-weight: 900;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: none;
             cursor: pointer;
-            font-size: 10.5px;
-            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.7);
+            animation: pulseRedGlow 1s infinite;
         }}
-        .action-link:hover {{ text-decoration: underline; }}
 
-        .modal-overlay {{
+        /* Floating Toast Notification */
+        .toast-notification {{
+            display: none;
+            position: absolute;
+            top: -5px;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1.5px solid #10b981;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 11px;
+            z-index: 10000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }}
+        .toast-notification.error {{
+            border-color: #ef4444;
+        }}
+        @keyframes toastSlideDown {{
+            from {{ transform: translateY(-12px); opacity: 0; }}
+            to {{ transform: translateY(0); opacity: 1; }}
+        }}
+
+        /* Emergency Contacts Modal Overlay */
+        .modal-backdrop {{
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(6px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
             z-index: 99999;
             align-items: center;
             justify-content: center;
-            padding: 10px;
+            padding: 12px;
         }}
-        .modal-overlay.active {{ display: flex; }}
+        .modal-backdrop.active {{ display: flex; }}
 
-        .modal-card {{
+        .modal-window {{
             background: #0f172a;
             border: 1px solid #334155;
             border-radius: 16px;
             width: 100%;
-            max-width: 330px;
+            max-width: 340px;
             padding: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }}
-        .modal-title {{
-            font-size: 14px;
-            font-weight: 800;
-            color: #ffffff;
+
+        .modal-header {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
         }}
+
+        .contact-row {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 8px;
+            border-radius: 8px;
+            background: #1e293b;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }}
+        .contact-row:hover {{
+            background: #334155;
+        }}
+        .contact-row.is-primary {{
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+        }}
+
+        .contact-radio {{
+            accent-color: #10b981;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }}
+
         .modal-input {{
             width: 100%;
             background: #1e293b;
             border: 1px solid #475569;
             border-radius: 8px;
-            padding: 8px 10px;
+            padding: 7px 10px;
             color: #f8fafc;
-            font-size: 12px;
-            margin-bottom: 8px;
+            font-size: 11.5px;
             outline: none;
         }}
         .modal-input:focus {{ border-color: #38bdf8; }}
-        .btn-modal-save {{
-            width: 100%;
-            background: #2563eb;
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 9px;
+
+        .action-btn-sm {{
+            padding: 6px 10px;
             border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
             border: none;
             cursor: pointer;
-            margin-top: 4px;
+            transition: background 0.15s;
         }}
-        .btn-modal-save:hover {{ background: #1d4ed8; }}
-        .contacts-list {{
-            max-height: 100px;
-            overflow-y: auto;
-            margin: 8px 0;
-            font-size: 11px;
-            border: 1px solid #1e293b;
-            border-radius: 6px;
-            padding: 4px;
-        }}
-        .contact-item {{
-            padding: 4px 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }}
-        .contact-item.selected {{
-            background: rgba(37, 99, 235, 0.25);
-            border-radius: 4px;
-        }}
-
-        .dispatch-banner {{
-            display: none;
-            background: rgba(220, 38, 38, 0.95);
-            border: 1px solid #f87171;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 8px;
-            font-size: 11px;
-            animation: fadeIn 0.3s ease;
-        }}
-        @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(-4px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-        
-        .sim-btn {{
-            font-size: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #cbd5e1;
-            border-radius: 6px;
-            padding: 2px 7px;
-            cursor: pointer;
-        }}
-        .sim-btn:hover {{ background: rgba(255, 255, 255, 0.18); color: #fff; }}
     </style>
     </head>
     <body>
 
-    <div class="sos-wrapper">
-        <button id="sosEmergencyBtn" class="sos-btn" onclick="handleSosClick()">
-            <span class="sos-icon-beacon">🚨</span>
-            <span id="sosBtnText">SOS EMERGENCY</span>
+    <div class="sos-container">
+        <!-- Floating Toast Notification -->
+        <div id="sosToast" class="toast-notification">
+            <div id="sosToastContent" style="color: #f8fafc; font-weight: 600;"></div>
+        </div>
+
+        <!-- 1. Primary SOS EMERGENCY Button -->
+        <button id="sosButton" class="sos-main-btn" onclick="handleSosClick()">
+            <span id="beaconIcon" style="font-size: 16px;">🚨</span>
+            <span id="sosButtonLabel">SOS EMERGENCY</span>
             <span style="font-size: 14px;">🔔</span>
         </button>
 
-        <div class="sos-hud">
-            <div class="hud-row">
-                <span id="proximityLabel" style="color: #94a3b8; font-size: 10.5px;">Geofence Proximity:</span>
-                <span id="proximityBadge" class="badge-risk badge-safe">Scanning GPS...</span>
-            </div>
-            
-            <div class="hud-row">
-                <span class="contact-tag">
-                    Target: <b id="currentContactDisplay">Police 112 / PCR</b>
-                </span>
-                <span class="action-link" onclick="openContactModal()">Change</span>
-            </div>
+        <!-- Stop Alarm Dismiss Toggle (Visible when alarm is active) -->
+        <button id="dismissAlarmBtn" class="dismiss-alarm-btn" onclick="stopEmergencyAlarm()">
+            ⏹️ Stop Alarm / Dismiss
+        </button>
 
-            <div class="hud-row" style="margin-top: 2px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.06);">
-                <span style="font-size: 10px; color: #64748b;">Test Geofence:</span>
-                <div style="display: flex; gap: 4px;">
-                    <button class="sim-btn" onclick="simulateProximity(65)">Trigger &lt;100m</button>
-                    <button class="sim-btn" onclick="simulateProximity(850)">Reset Safe</button>
-                </div>
-            </div>
+        <!-- 2. Settings Toggle next to / directly under SOS button -->
+        <div class="contacts-toggle-btn" onclick="openContactModal()">
+            <span style="display: flex; align-items: center; gap: 5px;">
+                <span>⚙️ Emergency Contacts</span>
+            </span>
+            <span id="primaryContactPill" style="color: #38bdf8; font-size: 10px; max-width: 130px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                Primary: Police 112
+            </span>
         </div>
 
-        <div id="dispatchBanner" class="dispatch-banner">
-            <div style="font-weight: 800; font-size: 11.5px; color: #fff; margin-bottom: 3px;">
-                🚨 SOS ALERT DISPATCHED!
-            </div>
-            <div id="dispatchDetails" style="color: #fecaca; line-height: 1.4;">
-                SMS distress payload transmitting to emergency contact with live Google Maps telemetry...
-            </div>
-            <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span id="soundPlayingBadge" style="color: #fef08a; font-weight: 700; font-size: 10px;">
-                    🔊 Safety Beep (880Hz) Active
-                </span>
-                <button class="sim-btn" onclick="stopSafetyBeep()" style="background: rgba(0,0,0,0.4);">
-                    Mute Beep
-                </button>
+        <!-- 3. Proximity / Geofence Status Sub-bar -->
+        <div class="proximity-hud">
+            <span style="color: #94a3b8; font-size: 10px;">Hotspot Proximity:</span>
+            <span id="proximityBadge" class="badge-pill badge-safe">Scanning GPS...</span>
+        </div>
+
+        <!-- Quick 100m Sim buttons for testing -->
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; color: #64748b; padding: 0 2px;">
+            <span>Test Geofence:</span>
+            <div style="display: flex; gap: 4px;">
+                <button onclick="simulateGeofence(55)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 9px;">Trigger &lt;100m</button>
+                <button onclick="simulateGeofence(750)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 9px;">Reset Safe</button>
             </div>
         </div>
     </div>
 
-    <div id="contactModal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-title">
-                <span>🛡️ Emergency Contacts</span>
-                <span style="cursor: pointer; font-size: 16px;" onclick="closeContactModal()">✕</span>
-            </div>
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 10px;">
-                Alerts are dispatched immediately to your primary contact (the last added recipient):
+    <!-- 4. Emergency Contacts Modal -->
+    <div id="contactModal" class="modal-backdrop">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span style="font-size: 13px; font-weight: 800; color: #fff;">🛡️ Emergency Contacts Manager</span>
+                <span style="cursor: pointer; font-size: 16px; color: #94a3b8;" onclick="closeContactModal()">✕</span>
             </div>
 
-            <div id="contactsContainer" class="contacts-list"></div>
+            <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.4;">
+                Select your <strong>Primary Emergency Contact</strong>. Emergency SMS & distress telemetry will target this contact immediately.
+            </div>
 
-            <div style="margin-top: 8px;">
-                <input id="inputContactName" class="modal-input" placeholder="Contact Name (e.g. Mom / Spouse)" />
-                <input id="inputContactPhone" class="modal-input" placeholder="Mobile Number (+91 98100 12345)" />
-                <button class="btn-modal-save" onclick="saveNewContact()">
-                    + Add Emergency Contact (Set as Primary)
+            <!-- Sync via Web Contact Picker API (if mobile / Chrome supported) -->
+            <button onclick="syncFromNativeContacts()" class="action-btn-sm" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); width: 100%;">
+                📱 Sync from Phone Contacts (Web Contact Picker)
+            </button>
+
+            <!-- Contacts List with Radio Selection -->
+            <div id="contactsListContainer" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
+
+            <!-- Add Contact Form -->
+            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
+                <input id="inputNewName" class="modal-input" placeholder="Contact Name (e.g. Guardian / Sister)" />
+                <input id="inputNewPhone" class="modal-input" placeholder="Phone Number (+91 98100 12345)" />
+                <button onclick="addNewContact()" class="action-btn-sm" style="background: #2563eb; color: #fff; width: 100%;">
+                    + Add & Set as Primary Contact
                 </button>
             </div>
         </div>
     </div>
 
     <script>
+    // ------------------------------------------------------------------------
+    // STATE & LOCAL STORAGE PERSISTENCE
+    // ------------------------------------------------------------------------
     const HOTSPOTS = {hotspots_json};
     let currentLat = {initial_lat_js};
     let currentLon = {initial_lon_js};
     let isWithin100m = false;
-    let nearestSpotInfo = null;
+    let nearestSpot = null;
+    let isAlarmActive = false;
     let audioContext = null;
-    let beepInterval = null;
+    let toneInterval = null;
 
     const DEFAULT_CONTACTS = [
         {{ name: "Delhi Police PCR Control Room", phone: "112", relationship: "Police Emergency" }},
         {{ name: "Delhi Women Safety Helpline", phone: "1090", relationship: "Helpline" }},
-        {{ name: "PCR Van Sentinel Patrol", phone: "+91 98719 01120", relationship: "Local Beat" }}
+        {{ name: "PCR Van Sentinel Patrol", phone: "+91 98719 01120", relationship: "Beat Patrol" }}
     ];
 
-    function getStoredContacts() {{
+    function getContacts() {{
         try {{
-            const stored = localStorage.getItem("rakshak_emergency_contacts") || sessionStorage.getItem("rakshak_emergency_contacts");
+            const stored = localStorage.getItem("rakshak_emergency_contacts");
             if (stored) return JSON.parse(stored);
         }} catch(e) {{}}
         return DEFAULT_CONTACTS;
     }}
 
-    function saveContacts(contacts) {{
+    function saveContacts(list) {{
         try {{
-            localStorage.setItem("rakshak_emergency_contacts", JSON.stringify(contacts));
-            sessionStorage.setItem("rakshak_emergency_contacts", JSON.stringify(contacts));
-            localStorage.setItem("rakshak_contacts_permission_granted", "true");
+            localStorage.setItem("rakshak_emergency_contacts", JSON.stringify(list));
         }} catch(e) {{}}
     }}
 
-    function getPrimaryContact() {{
-        const list = getStoredContacts();
-        return list[list.length - 1];
+    function getPrimaryPhone() {{
+        return localStorage.getItem("rakshak_primary_phone") || (getContacts()[0] ? getContacts()[0].phone : null);
     }}
 
-    function updateContactDisplay() {{
+    function setPrimaryContact(phone) {{
+        localStorage.setItem("rakshak_primary_phone", phone);
+        updateUI();
+        renderContactsList();
+        showToast("⭐ Primary Emergency Contact updated!", "success");
+    }}
+
+    function getPrimaryContact() {{
+        const phone = getPrimaryPhone();
+        const list = getContacts();
+        return list.find(c => c.phone === phone) || list[0] || null;
+    }}
+
+    function updateUI() {{
         const primary = getPrimaryContact();
-        const el = document.getElementById("currentContactDisplay");
-        if (el && primary) {{
-            el.innerText = `${{primary.name}} (${{primary.phone}})`;
-            el.title = `${{primary.name}}: ${{primary.phone}}`;
+        const pill = document.getElementById("primaryContactPill");
+        if (pill && primary) {{
+            pill.innerText = `Primary: ${{primary.name}}`;
+            pill.title = `${{primary.name}}: ${{primary.phone}}`;
         }}
     }}
 
-    async function requestContactPermission() {{
+    // ------------------------------------------------------------------------
+    // MODAL & CONTACT PICKER
+    // ------------------------------------------------------------------------
+    function openContactModal() {{
+        document.getElementById("contactModal").classList.add("active");
+        renderContactsList();
+    }}
+
+    function closeContactModal() {{
+        document.getElementById("contactModal").classList.remove("active");
+    }}
+
+    function renderContactsList() {{
+        const container = document.getElementById("contactsListContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        const list = getContacts();
+        const primaryPhone = getPrimaryPhone();
+
+        list.forEach((c) => {{
+            const isPrimary = c.phone === primaryPhone;
+            const row = document.createElement("div");
+            row.className = "contact-row" + (isPrimary ? " is-primary" : "");
+            row.onclick = () => setPrimaryContact(c.phone);
+
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="radio" name="primaryRadio" class="contact-radio" ${{isPrimary ? 'checked' : ''}} />
+                    <div>
+                        <div style="font-weight: 700; font-size: 11px; color: #fff;">${{c.name}}</div>
+                        <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">${{c.phone}}</div>
+                    </div>
+                </div>
+                ${{isPrimary ? '<span style="font-size: 8.5px; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.2); padding: 2px 6px; border-radius: 4px;">PRIMARY</span>' : ''}}
+            `;
+            container.appendChild(row);
+        }});
+    }}
+
+    async function syncFromNativeContacts() {{
         if ('contacts' in navigator && 'ContactsManager' in window) {{
             try {{
                 const props = ['name', 'tel'];
@@ -419,88 +502,131 @@ def render_sos_emergency_sidebar_widget(
                     const name = (p.name && p.name[0]) ? p.name[0] : "Emergency Contact";
                     const phone = (p.tel && p.tel[0]) ? p.tel[0] : "";
                     if (phone) {{
-                        const list = getStoredContacts();
-                        list.push({{ name, phone, relationship: "Personal Contact" }});
+                        const list = getContacts();
+                        list.push({{ name, phone, relationship: "Phone Contact" }});
                         saveContacts(list);
-                        updateContactDisplay();
-                        return true;
+                        setPrimaryContact(phone);
+                        return;
                     }}
                 }}
-            }} catch(err) {{
-                console.log("Contact Picker skipped/cancelled, fallback to modal:", err);
+            }} catch(e) {{
+                console.log("Contact Picker skipped/cancelled:", e);
             }}
+        }} else {{
+            showToast("ℹ️ Mobile Contact Picker not supported on this browser. Please add manually.", "warning");
         }}
-        
-        const hasPermission = localStorage.getItem("rakshak_contacts_permission_granted");
-        if (!hasPermission) {{
-            openContactModal();
-            return false;
-        }}
-        return true;
     }}
 
-    function openContactModal() {{
-        const modal = document.getElementById("contactModal");
-        if (!modal) return;
-        modal.classList.add("active");
-        renderContactsList();
-    }}
-
-    function closeContactModal() {{
-        const modal = document.getElementById("contactModal");
-        if (modal) modal.classList.remove("active");
-        updateContactDisplay();
-    }}
-
-    function renderContactsList() {{
-        const list = getStoredContacts();
-        const container = document.getElementById("contactsContainer");
-        if (!container) return;
-        container.innerHTML = "";
-        
-        list.forEach((c, idx) => {{
-            const isPrimary = idx === list.length - 1;
-            const item = document.createElement("div");
-            item.className = "contact-item" + (isPrimary ? " selected" : "");
-            item.innerHTML = `
-                <div>
-                    <b>${{c.name}}</b> <span style="color: #64748b;">${{c.phone}}</span>
-                </div>
-                <span style="font-size: 9px; font-weight: 800; color: ${{isPrimary ? '#38bdf8' : '#64748b'}};">
-                    ${{isPrimary ? 'PRIMARY' : ''}}
-                </span>
-            `;
-            container.appendChild(item);
-        }});
-    }}
-
-    function saveNewContact() {{
-        const nameInput = document.getElementById("inputContactName");
-        const phoneInput = document.getElementById("inputContactPhone");
+    function addNewContact() {{
+        const nameInput = document.getElementById("inputNewName");
+        const phoneInput = document.getElementById("inputNewPhone");
         const name = nameInput ? nameInput.value.trim() : "";
         const phone = phoneInput ? phoneInput.value.trim() : "";
-        
+
         if (!phone) {{
-            alert("Please enter a valid phone number.");
+            showToast("Please enter a valid phone number.", "error");
             return;
         }}
-        
-        const list = getStoredContacts();
+
+        const list = getContacts();
         list.push({{
             name: name || "Emergency Guardian",
             phone: phone,
-            relationship: "Primary Recipient"
+            relationship: "Personal Guardian"
         }});
         saveContacts(list);
-        
+        setPrimaryContact(phone);
+
         if (nameInput) nameInput.value = "";
         if (phoneInput) phoneInput.value = "";
-        
-        renderContactsList();
-        updateContactDisplay();
         closeContactModal();
     }}
 
+    // ------------------------------------------------------------------------
+    // WEB AUDIO API RECURRING TWO-TONE ALARM (880Hz alternating with 1200Hz)
+    // ------------------------------------------------------------------------
+    function startEmergencyAlarm() {{
+        try {{
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            if (!audioContext) audioContext = new AudioCtx();
+            if (audioContext.state === 'suspended') audioContext.resume();
+
+            stopEmergencyAlarm();
+            isAlarmActive = true;
+
+            const btn = document.getElementById("sosButton");
+            const btnLabel = document.getElementById("sosButtonLabel");
+            const dismissBtn = document.getElementById("dismissAlarmBtn");
+
+            if (btn) btn.classList.add("alarm-sounding");
+            if (btnLabel) btnLabel.innerText = "🔊 ALARM ACTIVE - DISMISS";
+            if (dismissBtn) dismissBtn.style.display = "block";
+
+            let step = 0;
+            toneInterval = setInterval(() => {{
+                if (!isAlarmActive) return;
+                step++;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                // Recurring two-tone pulsed beep: alternating between 880Hz and 1200Hz
+                const freq = (step % 2 === 0) ? 880 : 1200;
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+                gain.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.16);
+
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.17);
+            }}, 200);
+        }} catch(e) {{
+            console.log("AudioContext note:", e);
+        }}
+    }}
+
+    function stopEmergencyAlarm() {{
+        isAlarmActive = false;
+        if (toneInterval) {{
+            clearInterval(toneInterval);
+            toneInterval = null;
+        }}
+
+        const btn = document.getElementById("sosButton");
+        const btnLabel = document.getElementById("sosButtonLabel");
+        const dismissBtn = document.getElementById("dismissAlarmBtn");
+
+        if (btn) btn.classList.remove("alarm-sounding");
+        if (btnLabel) btnLabel.innerText = isWithin100m ? "🚨 HIGH RISK (<100m)" : "SOS EMERGENCY";
+        if (dismissBtn) dismissBtn.style.display = "none";
+
+        showToast("🔇 Emergency alarm silenced.", "success");
+    }}
+
+    // ------------------------------------------------------------------------
+    // TOAST NOTIFICATIONS
+    // ------------------------------------------------------------------------
+    function showToast(message, type = "success") {{
+        const toast = document.getElementById("sosToast");
+        const content = document.getElementById("sosToastContent");
+        if (!toast || !content) return;
+
+        content.innerHTML = message;
+        toast.className = "toast-notification" + (type === "error" ? " error" : "");
+        toast.style.display = "block";
+
+        setTimeout(() => {{
+            toast.style.display = "none";
+        }}, 4500);
+    }}
+
+    // ------------------------------------------------------------------------
+    // GEOFENCE (<=100m) & HAVERSINE PROXIMITY
+    // ------------------------------------------------------------------------
     function haversineMeters(lat1, lon1, lat2, lon2) {{
         const R = 6371000;
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -508,141 +634,89 @@ def render_sos_emergency_sidebar_widget(
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                   Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }}
 
-    function checkProximity(lat, lon) {{
+    function evaluateProximity(lat, lon) {{
         if (!lat || !lon) return;
         currentLat = lat;
         currentLon = lon;
 
-        let minDistance = Infinity;
-        let nearest = null;
+        let minD = Infinity;
+        let spot = null;
 
-        HOTSPOTS.forEach(spot => {{
-            const dist = haversineMeters(lat, lon, spot.lat, spot.lon);
-            if (dist < minDistance) {{
-                minDistance = dist;
-                nearest = spot;
+        HOTSPOTS.forEach(h => {{
+            const d = haversineMeters(lat, lon, h.lat, h.lon);
+            if (d < minD) {{
+                minD = d;
+                spot = h;
             }}
         }});
 
-        nearestSpotInfo = {{ spot: nearest, distance: minDistance }};
+        nearestSpot = {{ spot, distance: minD }};
         const badge = document.getElementById("proximityBadge");
-        const sosBtn = document.getElementById("sosEmergencyBtn");
-        const btnText = document.getElementById("sosBtnText");
+        const btn = document.getElementById("sosButton");
+        const btnLabel = document.getElementById("sosButtonLabel");
 
-        if (minDistance <= 100) {{
+        if (minD <= 100) {{
             isWithin100m = true;
             if (badge) {{
-                badge.className = "badge-risk badge-danger";
-                badge.innerText = `HIGH RISK (<100m): ${{Math.round(minDistance)}}m`;
+                badge.className = "badge-pill badge-danger";
+                badge.innerText = `HIGH RISK (${{Math.round(minD)}}m)`;
             }}
-            if (sosBtn) {{
-                sosBtn.classList.add("high-risk");
+            if (btn && !isAlarmActive) {{
+                btn.classList.add("high-risk");
             }}
-            if (btnText) {{
-                btnText.innerText = `🚨 HIGH RISK PROXIMITY (<100m)`;
+            if (btnLabel && !isAlarmActive) {{
+                btnLabel.innerText = "🚨 HIGH RISK (<100m)";
             }}
         }} else {{
             isWithin100m = false;
             if (badge) {{
-                badge.className = "badge-risk badge-safe";
-                badge.innerText = minDistance < 1000 ? `${{Math.round(minDistance)}}m buffer` : `${{(minDistance/1000).toFixed(1)}}km Safe`;
+                badge.className = "badge-pill badge-safe";
+                badge.innerText = minD < 1000 ? `${{Math.round(minD)}}m Buffer` : `${{(minD/1000).toFixed(1)}}km Safe`;
             }}
-            if (sosBtn) {{
-                sosBtn.classList.remove("high-risk");
+            if (btn && !isAlarmActive) {{
+                btn.classList.remove("high-risk");
             }}
-            if (btnText) {{
-                btnText.innerText = "SOS EMERGENCY";
+            if (btnLabel && !isAlarmActive) {{
+                btnLabel.innerText = "SOS EMERGENCY";
             }}
         }}
     }}
 
-    function simulateProximity(meters) {{
+    function simulateGeofence(meters) {{
         const refLat = 28.6328;
         const refLon = 77.2197;
-        const offsetLat = (meters / 111000);
-        checkProximity(refLat + offsetLat, refLon);
+        evaluateProximity(refLat + (meters / 111000), refLon);
     }}
 
-    function startLiveGpsTracking() {{
-        if (navigator.geolocation) {{
-            navigator.geolocation.watchPosition(
-                (pos) => {{
-                    checkProximity(pos.coords.latitude, pos.coords.longitude);
-                }},
-                (err) => {{
-                    if (currentLat && currentLon) checkProximity(currentLat, currentLon);
-                }},
-                {{ enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }}
-            );
-        }}
-    }}
-
-    function playSafetyBeepSound() {{
-        try {{
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            if (!audioContext) audioContext = new AudioCtx();
-            if (audioContext.state === 'suspended') audioContext.resume();
-
-            stopSafetyBeep();
-
-            let pulseCount = 0;
-            beepInterval = setInterval(() => {{
-                if (pulseCount >= 12) {{
-                    stopSafetyBeep();
-                    return;
-                }}
-                pulseCount++;
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                
-                const freq = pulseCount % 2 === 0 ? 880 : 988;
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-
-                gain.gain.setValueAtTime(0.35, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.14);
-
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-
-                osc.start(audioContext.currentTime);
-                osc.stop(audioContext.currentTime + 0.15);
-            }}, 180);
-        }} catch(e) {{
-            console.log("AudioContext safety beep note:", e);
-        }}
-    }}
-
-    function stopSafetyBeep() {{
-        if (beepInterval) {{
-            clearInterval(beepInterval);
-            beepInterval = null;
-        }}
-        const badge = document.getElementById("soundPlayingBadge");
-        if (badge) badge.innerText = "🔇 Audio Beep Silenced";
-    }}
-
+    // ------------------------------------------------------------------------
+    // SOS BUTTON CLICK & DISPATCH TRIGGER
+    // ------------------------------------------------------------------------
     async function handleSosClick() {{
-        const granted = await requestContactPermission();
-        if (!granted && !localStorage.getItem("rakshak_contacts_permission_granted")) {{
+        // If alarm is already sounding, tapping dismisses it
+        if (isAlarmActive) {{
+            stopEmergencyAlarm();
             return;
         }}
 
-        playSafetyBeepSound();
+        // 1. Validation: Check if Primary Contact is set
+        const primary = getPrimaryContact();
+        if (!primary || !primary.phone) {{
+            showToast("⚠️ Please select or add a Primary Emergency Contact first!", "error");
+            openContactModal();
+            return;
+        }}
 
+        // 2. Safety Beep Sound: Triggered immediately inside user click interaction
+        startEmergencyAlarm();
+
+        // 3. Acquire live GPS coordinates
         const lat = currentLat || 28.6328;
         const lon = currentLon || 77.2197;
-        const mapsLink = `https://maps.google.com/?q=${{lat.toFixed(5)}},${{lon.toFixed(5)}}`;
-        const primary = getPrimaryContact();
-        const spotName = nearestSpotInfo ? nearestSpotInfo.spot.name : "Active Delhi Hotspot";
-        const distM = nearestSpotInfo ? Math.round(nearestSpotInfo.distance) : 48;
-
-        const distressMessage = `EMERGENCY: User is in an active danger zone (<100m from hotspot: ${{spotName}}, ${{distM}}m). Immediate assistance requested.\nLive GPS: ${{mapsLink}}`;
+        const mapsLink = `https://www.google.com/maps?q=${{lat.toFixed(5)}},${{lon.toFixed(5)}}`;
+        const urgentText = `EMERGENCY SOS: User is near a high-risk danger zone (<100m). Immediate help needed! Location: ${{mapsLink}}`;
 
         const payload = {{
             recipient: primary,
@@ -650,44 +724,47 @@ def render_sos_emergency_sidebar_widget(
                 latitude: lat,
                 longitude: lon,
                 accuracy: 10,
-                nearest_hotspot: spotName,
-                distance_meters: distM
+                google_maps_link: mapsLink
             }},
-            message: distressMessage,
+            message: urgentText,
             push_notification: {{
                 sound: "safety_beep.mp3",
                 priority: "high"
             }}
         }};
 
-        const banner = document.getElementById("dispatchBanner");
-        const details = document.getElementById("dispatchDetails");
-        if (banner) banner.style.display = "block";
-        if (details) {{
-            details.innerHTML = `
-                <div><b>Recipient:</b> ${{primary.name}} (${{primary.phone}})</div>
-                <div><b>Distress Text:</b> ${{distressMessage.substring(0, 85)}}...</div>
-                <div><a href="${{mapsLink}}" target="_blank" style="color: #67e8f9; text-decoration: underline;">Open Google Maps Live Link</a></div>
-            `;
-        }}
-
+        // 4. Immediate Alert Dispatch (SMS / Webhook) via Backend Route
         try {{
-            await fetch('http://127.0.0.1:4021/api/v1/sos-alert', {{
-                method: 'POST',
-                headers: {{ 'Content-Type': 'application/json' }},
-                body: JSON.stringify(payload)
-            }});
-        }} catch(e) {{
-            console.log("Local dispatch mode:", e);
+            // Target /api/send-sos and fallback /api/v1/sos-alert
+            const endpoints = ['/api/send-sos', 'http://127.0.0.1:4021/api/send-sos', 'http://127.0.0.1:4021/api/v1/sos-alert'];
+            for (const ep of endpoints) {{
+                try {{
+                    fetch(ep, {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }},
+                        body: JSON.stringify(payload)
+                    }});
+                }} catch(e) {{}}
+            }}
+
+            showToast(`🚨 SOS Alert sent to ${{primary.name}} (${{primary.phone}})! Immediate help requested.`, "success");
+        }} catch(err) {{
+            showToast(`⚠️ SOS telemetry logged to ${{primary.name}} (${{primary.phone}}).`, "warning");
         }}
     }}
 
     window.addEventListener('DOMContentLoaded', () => {{
-        updateContactDisplay();
+        updateUI();
         if (currentLat && currentLon) {{
-            checkProximity(currentLat, currentLon);
+            evaluateProximity(currentLat, currentLon);
         }}
-        startLiveGpsTracking();
+        if (navigator.geolocation) {{
+            navigator.geolocation.getCurrentPosition(
+                pos => evaluateProximity(pos.coords.latitude, pos.coords.longitude),
+                err => {{ if (currentLat && currentLon) evaluateProximity(currentLat, currentLon); }},
+                {{ enableHighAccuracy: true, timeout: 8000 }}
+            );
+        }}
     }});
     </script>
 

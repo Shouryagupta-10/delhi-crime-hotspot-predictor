@@ -61,6 +61,8 @@ app.get('/api/v1/dbscan-hotspots', handleHotspotsRequest);
 // 5. Emergency SOS Alert Dispatch (Always open & unblocked for citizen distress)
 app.post('/api/v1/sos-alert', handleSosAlertRequest);
 app.get('/api/v1/sos-alert', handleSosAlertRequest);
+app.post('/api/send-sos', handleSosAlertRequest);
+app.get('/api/send-sos', handleSosAlertRequest);
 
 app.get('/health', (c) => c.json({ status: 'OK', network: 'Algorand Testnet', timestamp: new Date().toISOString() }));
 app.get('/', (c) =>

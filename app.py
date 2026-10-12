@@ -33,6 +33,7 @@ from config import (
 from data_loader import load_and_cluster_crime_data
 from router import RoutePlanner
 from components.map_view import render_rakshak_map
+from components.sos_alert_widget import render_sos_emergency_sidebar_widget
 
 # -----------------------------------------------------------------------------
 # STRICT ANTI-SLOP DISPATCH CSS (Dark Sky / Linear Palette)
@@ -257,6 +258,9 @@ st.markdown(f"""
 # SIDEBAR CONTROL DRAWER
 # -----------------------------------------------------------------------------
 with st.sidebar:
+    # 0. Primary SOS EMERGENCY Button & Proximity Radar (Top of Left Sidebar)
+    render_sos_emergency_sidebar_widget()
+
     st.markdown("""
     <div style="margin-bottom: 12px;">
         <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;">

@@ -83,13 +83,13 @@ class TestEmergencySOSAlert(unittest.TestCase):
         self.assertTrue(payload["recipient"]["is_primary"])
 
         # Check live Google Maps link
-        expected_maps_link = f"https://maps.google.com/?q={lat:.5f},{lon:.5f}"
+        expected_maps_link = f"https://www.google.com/maps?q={lat:.5f},{lon:.5f}"
         self.assertEqual(payload["location"]["google_maps_live_link"], expected_maps_link)
         self.assertIn(expected_maps_link, payload["message"])
 
         # Check distress message contents
-        self.assertIn("EMERGENCY: User is in an active danger zone", payload["message"])
-        self.assertIn("Immediate assistance requested", payload["message"])
+        self.assertIn("EMERGENCY SOS: User is near a high-risk danger zone", payload["message"])
+        self.assertIn("Immediate help needed", payload["message"])
 
         # Check high priority push notification parameters
         push = payload["push_notification"]
@@ -114,7 +114,7 @@ class TestEmergencySOSAlert(unittest.TestCase):
 
         self.assertTrue(result["success"])
         self.assertEqual(result["recipient_phone"], "+91 98100 12345")
-        self.assertIn("https://maps.google.com", result["maps_live_link"])
+        self.assertIn("google.com/maps", result["maps_live_link"])
         self.assertTrue(len(result["dispatched_channels"]) > 0)
         self.assertEqual(result["delivery_status"], "DELIVERED_TO_EMERGENCY_NETWORK")
 

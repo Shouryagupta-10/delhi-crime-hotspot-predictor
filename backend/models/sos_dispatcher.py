@@ -12,6 +12,7 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional, Tuple, List
 
+# Standard Delhi High-Risk Hotspots Centroids for verification
 DELHI_HOTSPOT_CENTROIDS = [
     {"name": "Rajiv Chowk Metro / CP Outer Circle", "lat": 28.6328, "lon": 77.2197, "risk": "CRITICAL"},
     {"name": "Seelampur Market & Flyover Underpass", "lat": 28.6644, "lon": 77.2711, "risk": "CRITICAL"},
@@ -67,6 +68,7 @@ class EmergencySOSDispatcher:
         self.twilio_token = os.getenv("TWILIO_AUTH_TOKEN", "")
         self.twilio_from = os.getenv("TWILIO_PHONE_NUMBER", "")
         self.fast2sms_key = os.getenv("FAST2SMS_API_KEY", "")
+        self.msg91_key = os.getenv("MSG91_AUTH_KEY", "")
         self.webhook_url = os.getenv("SOS_WEBHOOK_URL", "")
 
     def is_within_100m_danger_zone(self, lat: float, lon: float, hotspots: Optional[List[Dict[str, Any]]] = None) -> Tuple[bool, float, Dict[str, Any]]:
@@ -91,14 +93,13 @@ class EmergencySOSDispatcher:
         """
         Constructs standard Rakshak.ai emergency distress payload with live Google Maps link.
         """
-        maps_link = f"https://maps.google.com/?q={lat:.5f},{lon:.5f}"
+        maps_link = f"https://www.google.com/maps?q={lat:.5f},{lon:.5f}"
         dist_str = f"{distance_meters:.1f}m" if distance_meters is not None else "<100m"
         spot_str = hotspot_name or "active crime hotspot"
 
         default_text = (
-            f"EMERGENCY: User is in an active danger zone ({dist_str} from {spot_str}). "
-            f"Immediate assistance requested.\n"
-            f"Live GPS Location: {maps_link}"
+            f"EMERGENCY SOS: User is near a high-risk danger zone (<100m). "
+            f"Immediate help needed! Location: {maps_link}"
         )
 
         message_body = custom_message or default_text
@@ -194,7 +195,28 @@ class EmergencySOSDispatcher:
             except Exception as e:
                 dispatched_channels.append(f"Fast2SMS Error: {str(e)[:60]}")
 
-        # 3. External Webhook Dispatch
+        # 3. MSG91 SMS Gateway
+        if self.msg91_key:
+            try:
+                clean_phone = "".join(ch for ch in recipient_phone if ch.isdigit())[-10:]
+                url = "https://control.msg91.com/api/v5/flow/"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps({
+                        "template_id": os.getenv("MSG91_TEMPLATE_ID", "default_sos"),
+                        "short_url": "1",
+                        "recipients": [{"mobiles": "91" + clean_phone, "message": message_body}]
+                    }).encode("utf-8"),
+                    headers={"authkey": self.msg91_key, "Content-Type": "application/json"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    if resp.status == 200:
+                        dispatched_channels.append("MSG91 SMS Gateway (Live)")
+            except Exception as e:
+                dispatched_channels.append(f"MSG91 Error: {str(e)[:60]}")
+
+        # 4. External Webhook Dispatch
         if self.webhook_url:
             try:
                 req = urllib.request.Request(
@@ -209,7 +231,7 @@ class EmergencySOSDispatcher:
             except Exception as e:
                 dispatched_channels.append(f"Webhook Error: {str(e)[:60]}")
 
-        # 4. Fallback / Demonstration Simulated Delivery
+        # 5. Fallback / Demonstration Simulated Delivery
         if not dispatched_channels:
             dispatched_channels.append("Rakshak.ai Autonomous Sentinel SMS Hub (Direct Simulation Mode)")
 
