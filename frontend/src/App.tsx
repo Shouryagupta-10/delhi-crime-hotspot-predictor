@@ -26,6 +26,7 @@ import {
 import { DELHI_HOTSPOTS, DELHI_SAFE_ZONES } from './components/SmoothRiskMap';
 import { AdvancedMap } from '@/components/ui/interactive-map';
 import { PredictivePolicingStudio } from './components/PredictivePolicingStudio';
+import { SosAlertWidget } from './components/SosAlertWidget';
 
 const SERVER_URL = 'http://127.0.0.1:4021';
 const RECEIVER_ADDR = 'BWKR3HJ3SYZIJ7M73WJF6566YWEGRLJAIGMNZ2RZRY35ZYFBBJ63H24MOQ';
@@ -241,26 +242,33 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Brand & Location / Timezone */}
-          <div 
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer group once-surface rounded-full px-3 sm:px-4 py-2 hover:border-white/[0.2] transition-all"
-            onClick={() => setActiveTab('map')}
-          >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <Shield className="w-4 h-4 text-slate-950 font-black" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div 
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer group once-surface rounded-full px-3 sm:px-4 py-2 hover:border-white/[0.2] transition-all"
+              onClick={() => setActiveTab('map')}
+            >
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform border border-amber-300/40">
+                <Shield className="w-4 h-4 text-slate-950 font-black" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-white tracking-tight text-xs sm:text-sm">Rakshak.ai</span>
+                  <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded-full bg-cyan-950/70 text-cyan-400 border border-cyan-800/50">
+                    x402
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <Globe className="w-3 h-3 text-emerald-400" />
+                  <span className="hidden md:inline">Delhi NCR</span>
+                  <span className="text-slate-600 hidden md:inline">•</span>
+                  <TimeDisplay timeZone="Asia/Kolkata" />
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-white tracking-tight text-xs sm:text-sm">Rakshak.ai</span>
-                <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded-full bg-cyan-950/70 text-cyan-400 border border-cyan-800/50">
-                  x402
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <Globe className="w-3 h-3 text-emerald-400" />
-                <span className="hidden md:inline">Delhi NCR</span>
-                <span className="text-slate-600 hidden md:inline">•</span>
-                <TimeDisplay timeZone="Asia/Kolkata" />
-              </div>
+
+            {/* Prominent Pulsing Red SOS Emergency Button placed directly next to the Gold Shield Logo / Rakshak.ai Header */}
+            <div className="hidden sm:block">
+              <SosAlertWidget compact={true} currentLat={parseFloat(lat) || 28.6328} currentLon={parseFloat(lon) || 77.2197} />
             </div>
           </div>
 
@@ -333,13 +341,9 @@ export default function App() {
               <ExternalLink className="w-3 h-3 text-cyan-400" />
             </a>
 
-            <button 
-              onClick={() => alert('🚨 Emergency SOS Triggered: In case of active danger in Delhi NCR, dial 112 (Delhi Police Control Room) or 1090 (Women Safety Helpline).')} 
-              className="px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-lg transition-all flex items-center gap-1"
-            >
-              <PhoneCall className="w-3 h-3" /> 
-              <span>SOS 112</span>
-            </button>
+            <div className="sm:hidden">
+              <SosAlertWidget compact={true} currentLat={parseFloat(lat) || 28.6328} currentLon={parseFloat(lon) || 77.2197} />
+            </div>
           </div>
 
         </div>
@@ -445,6 +449,18 @@ export default function App() {
             {/* Left Panel: Triage & Risk Parameter Inputs */}
             <div className="lg:col-span-4 space-y-6">
               
+              {/* 0. Prominent Pulsing Red SOS EMERGENCY Sentinel Button */}
+              <div className="once-surface rounded-3xl p-5 shadow-2xl border border-red-500/30 bg-gradient-to-b from-red-950/20 via-slate-900/60 to-transparent">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                    Rapid Distress Sentinel
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">100m Geofence Armed</span>
+                </div>
+                <SosAlertWidget currentLat={parseFloat(lat) || 28.6328} currentLon={parseFloat(lon) || 77.2197} />
+              </div>
+
               <div className="once-surface rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
                 <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">

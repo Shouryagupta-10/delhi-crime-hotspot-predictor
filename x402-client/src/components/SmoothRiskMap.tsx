@@ -11,6 +11,7 @@ import {
   Zap,
   Crosshair
 } from 'lucide-react';
+import { SosAlertWidget } from './SosAlertWidget';
 
 export interface HotspotPoint {
   id: string;
@@ -609,6 +610,9 @@ export const SmoothRiskMap: React.FC<SmoothRiskMapProps> = ({
         {/* Action Controls: Live GPS, Simulation, Center */}
         <div className="pointer-events-auto flex items-center gap-2">
           
+          {/* Emergency SOS Quick Dispatch */}
+          <SosAlertWidget compact={true} currentLat={userLocation?.lat || 28.6328} currentLon={userLocation?.lon || 77.2197} />
+
           {/* GPS Tracking Trigger Button */}
           <button
             onClick={startContinuousTracking}

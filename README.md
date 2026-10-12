@@ -28,6 +28,7 @@ Most candidates present generic Kaggle projects (Titanic survival, Boston house 
 3. **Supervised Risk Forecasting**: Predicts incident severity and high-risk likelihood given time, district, and premises category.
 4. **Live GPS Geolocation Integration**: Real-time browser GPS tracking mapping the citizen's current coordinates to the nearest Delhi Police jurisdiction and calculating live proximity to active crime corridors.
 5. **Operational Civic Impact**: Outputs actionable field patrol advisories for police dispatchers and citizen safety routing.
+6. **Emergency SOS Alert & Geofence Proximity (<100m)**: Real-time geofence proximity detection against Delhi crime hotspots with active warning flash, native Web Contact Picker API with primary recipient selection, Web Audio API 880Hz synthesized safety beep, and emergency distress dispatch with live Google Maps links.
 
 ---
 

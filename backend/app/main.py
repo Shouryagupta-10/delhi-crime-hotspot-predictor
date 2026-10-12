@@ -14,10 +14,13 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
-# Add parent directory to sys.path
+# Add parent directory and workspace root to sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
+for p in [BASE_DIR, PROJECT_ROOT]:
+    if p and p not in sys.path:
+        sys.path.insert(0, p)
 
 from models.risk_predictor import DelhiCrimeRiskPredictor
 from models.cluster_engine import HotspotClusterEngine, compare_dbscan_vs_kmeans
@@ -38,6 +41,14 @@ try:
     from auth import render_cruip_login_page, logout_user
 except ImportError:
     from app.auth import render_cruip_login_page, logout_user
+
+try:
+    from components.sos_alert_widget import render_sos_emergency_sidebar_widget
+except ImportError:
+    try:
+        from app.components.sos_alert_widget import render_sos_emergency_sidebar_widget
+    except ImportError:
+        from backend.components.sos_alert_widget import render_sos_emergency_sidebar_widget
 
 # Comprehensive Delhi Police Station Geocoordinates Registry for Precision Proximity Calculation
 DELHI_POLICE_STATIONS = [
@@ -572,7 +583,39 @@ df, raw_df, cleaning_audit = load_data()
 predictor = load_or_train_models(df)
 cluster_engine = predictor.cluster_engine
 
+# Check for active Geolocation query params or session state
+user_lat = None
+user_lon = None
+
+if "user_lat" in st.session_state and "user_lon" in st.session_state:
+    user_lat = st.session_state["user_lat"]
+    user_lon = st.session_state["user_lon"]
+elif "user_lat" in st.query_params and "user_lon" in st.query_params:
+    try:
+        user_lat = float(st.query_params["user_lat"])
+        user_lon = float(st.query_params["user_lon"])
+        st.session_state["user_lat"] = user_lat
+        st.session_state["user_lon"] = user_lon
+    except (ValueError, TypeError):
+        user_lat = None
+        user_lon = None
+
+# Extract hotspot centroids for Geofence & Proximity Detection (<100m trigger)
+sos_hotspots = []
+if cluster_engine and cluster_engine.hotspots_df is not None:
+    for _, row in cluster_engine.hotspots_df.iterrows():
+        sos_hotspots.append({
+            "name": f"{row.get('primary_crime', 'Crime')} Hotspot ({row.get('district', 'Delhi')})",
+            "lat": float(row["centroid_lat"]),
+            "lon": float(row["centroid_lon"]),
+            "risk": "CRITICAL" if row.get("avg_risk", 0.5) >= 0.6 else "HIGH"
+        })
+
 # --- SIDEBAR CONTROLS ---
+# 1. Prominent Pulsing Red SOS Emergency Alert Button (Top of Left Sidebar, above Rakshak.ai header & gold shield logo)
+with st.sidebar:
+    render_sos_emergency_sidebar_widget(user_lat=user_lat, user_lon=user_lon, hotspots=sos_hotspots)
+
 st.sidebar.image("https://img.icons8.com/fluency/96/police-badge.png", width=64)
 st.sidebar.title("🛡️ Rakshak.ai")
 st.sidebar.markdown("**Civic Geospatial AI Dashboard**")
@@ -594,23 +637,6 @@ st.sidebar.markdown(f"""
 
 if st.sidebar.button("🚪 Sign Out", use_container_width=True, help="Securely end current session and return to login screen"):
     logout_user()
-
-# Check for active Geolocation query params or session state
-user_lat = None
-user_lon = None
-
-if "user_lat" in st.session_state and "user_lon" in st.session_state:
-    user_lat = st.session_state["user_lat"]
-    user_lon = st.session_state["user_lon"]
-elif "user_lat" in st.query_params and "user_lon" in st.query_params:
-    try:
-        user_lat = float(st.query_params["user_lat"])
-        user_lon = float(st.query_params["user_lon"])
-        st.session_state["user_lat"] = user_lat
-        st.session_state["user_lon"] = user_lon
-    except (ValueError, TypeError):
-        user_lat = None
-        user_lon = None
 
 # Query parameters for Tab 2 location search
 if "tab2_loc" in st.query_params:

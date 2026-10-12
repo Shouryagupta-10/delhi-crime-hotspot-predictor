@@ -16,6 +16,7 @@ import { bazaarResourceServerExtension } from '@x402-avm/extensions';
 import { handleRiskAssessmentRequest } from './handlers/risk-assessment';
 import { handlePatrolRouteOptimizerRequest } from './handlers/patrol-advisory';
 import { handleHotspotsRequest } from './handlers/hotspot-clusters';
+import { handleSosAlertRequest } from './handlers/sos-alert';
 import createPaymentConfig, { ALGORAND_TESTNET_NETWORK } from './endpoints.config';
 
 config();
@@ -56,6 +57,10 @@ app.use(paymentMiddleware(paymentConfig, x402Server));
 app.get('/api/v1/risk-assessment', handleRiskAssessmentRequest);
 app.post('/api/v1/patrol-route-optimizer', handlePatrolRouteOptimizerRequest);
 app.get('/api/v1/dbscan-hotspots', handleHotspotsRequest);
+
+// 5. Emergency SOS Alert Dispatch (Always open & unblocked for citizen distress)
+app.post('/api/v1/sos-alert', handleSosAlertRequest);
+app.get('/api/v1/sos-alert', handleSosAlertRequest);
 
 app.get('/health', (c) => c.json({ status: 'OK', network: 'Algorand Testnet', timestamp: new Date().toISOString() }));
 app.get('/', (c) =>
