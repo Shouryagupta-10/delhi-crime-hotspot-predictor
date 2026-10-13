@@ -854,7 +854,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           top: 10px;
           left: 12px;
           right: 12px;
-          max-width: 660px;
+          max-width: 840px;
           margin: 0 auto;
           z-index: 1100;
           background: rgba(11, 15, 25, 0.94);
@@ -870,7 +870,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           from {{ transform: translateY(-20px); opacity: 0; }}
           to {{ transform: translateY(0); opacity: 1; }}
         }}
-        .nav-hud-main {{
+        .nav-hud-main {{ flex-wrap: wrap;
           display: flex;
           align-items: center;
           gap: 12px;
@@ -1226,7 +1226,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
               <button id="btnAll" class="pill-btn active" onclick="setLayerFilter('ALL')">All</button>
               <button id="btnHigh" class="pill-btn" onclick="setLayerFilter('HIGH')">🔴 High Risk</button>
               <button id="btnSafe" class="pill-btn" onclick="setLayerFilter('SAFE')">🟢 Safe Havens</button>
-              <button id="btnClusterToggle" class="pill-btn active" onclick="toggleIncidentClusters()">📌 Pins</button>
             </div>
           </div>
           
@@ -1234,7 +1233,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           <div class="nav-section">
             <button id="btnQuickNav" class="action-btn" style="background: linear-gradient(135deg, #0284c7, #4f46e5); border-color: #38bdf8; font-weight: 700;" onclick="openQuickRouteModal()">🧭 Route / ETA</button>
             <button id="btnLiveGps" class="action-btn live-btn" onclick="activateLiveGpsTracking()" title="Acquire and track device real GPS location">📡 Live GPS</button>
-            <button id="btnSim" class="action-btn sim-btn" onclick="toggleSimulation()" title="Preview Route Simulation Demo">🎬 Sim Demo</button>
             <button class="action-btn" onclick="centerOnMe()">📍 Me</button>
           </div>
           
@@ -1249,8 +1247,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             <div class="nav-hud-main">
               <div id="navManeuverIcon" class="nav-maneuver-icon">⬆</div>
               <div class="nav-hud-text">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px;">
-                  <span id="navModeBadge" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; font-size: 9.5px; font-weight: 800; padding: 1px 7px; border-radius: 9999px; letter-spacing: 0.5px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; flex-wrap: wrap;">
+                  <span id="navModeBadge" style="white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; font-size: 9.5px; font-weight: 800; padding: 1px 7px; border-radius: 9999px; letter-spacing: 0.5px;">
                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span> LIVE NAVIGATION
                   </span>
                   <div class="nav-mode-switcher" title="Toggle Vehicle (Driving) vs Foot (Walking) Route">
@@ -1559,8 +1557,8 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                 </div>
                 <div style="padding: 8px 12px 4px; font-weight: 700; color: #fff; font-size: 12px;">${{inc.crime}}</div>
                 <div style="padding: 0 12px 10px; font-size: 11px;">
-                  <div style="color: #cbd5e1; margin-bottom: 3px;"><b>Premises:</b> ${{inc.premises}}</div>
-                  <div style="color: #cbd5e1; margin-bottom: 3px;"><b>Landmark:</b> ${{inc.landmark || 'Delhi NCT'}}</div>
+                  <div style="color: #cbd5e1; margin-bottom: 3px; flex-wrap: wrap;"><b>Premises:</b> ${{inc.premises}}</div>
+                  <div style="color: #cbd5e1; margin-bottom: 3px; flex-wrap: wrap;"><b>Landmark:</b> ${{inc.landmark || 'Delhi NCT'}}</div>
                   <div style="color: #94a3b8; font-size: 10.5px; margin-top: 6px;">📅 ${{inc.date || ''}} &bull; ${{String(inc.hour).padStart(2, '0')}}:00 hrs</div>
                   <div style="color: #64748b; font-size: 9.5px; margin-top: 3px; font-family: monospace;">FIR: ${{inc.id}} &bull; ${{inc.district}}</div>
                 </div>
@@ -1573,7 +1571,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         
         window.toggleIncidentClusters = function() {{
           showIncidents = !showIncidents;
-          const btn = document.getElementById('btnClusterToggle');
           if (showIncidents) {{
             map.addLayer(incidentClusterGroup);
             btn.classList.add('active');
@@ -1626,7 +1623,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
                   <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 35px; background: linear-gradient(to top, #0b0f19, transparent);"></div>
                 </div>
                 <div style="padding: 10px 12px;">
-                  <div style="font-size: 13px; font-weight: 800; color: #f8fafc; margin-bottom: 3px; line-height: 1.2;">${{h.name}}</div>
+                  <div style="font-size: 13px; font-weight: 800; color: #f8fafc; margin-bottom: 3px; flex-wrap: wrap; line-height: 1.2;">${{h.name}}</div>
                   <div style="font-size: 10.5px; color: #94a3b8; margin-bottom: 8px;">${{h.district}} &bull; ${{h.incidents}} Police Reports</div>
                   <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 6px 8px; font-size: 11px; margin-bottom: 8px;">
                     <div style="color: #cbd5e1; margin-bottom: 2px;"><b>Crime:</b> ${{h.crime}}</div>
@@ -2621,7 +2618,7 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             const badgeBg = isFoot ? 'rgba(16, 185, 129, 0.24)' : (penCount === 0 ? 'rgba(16, 185, 129, 0.22)' : 'rgba(2, 132, 199, 0.22)');
             const badgeColor = isFoot ? '#34d399' : (penCount === 0 ? '#34d399' : '#38bdf8');
             const badgeBorder = isFoot ? 'rgba(16, 185, 129, 0.55)' : (penCount === 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(56, 189, 248, 0.5)');
-            const modePrefix = isFoot ? '🚶 SAFE FOOT WALKWAY' : '🚗 SAFEST PATROL CORRIDOR';
+            const modePrefix = isFoot ? '🚶 FOOT ROUTE' : '🚗 PATROL ROUTE';
             
             modeBadge.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:${{badgeColor}}; box-shadow:0 0 8px ${{badgeColor}};"></span> ${{modePrefix}} &bull; ${{safetyPct}}% SHIELDED`;
             modeBadge.style.background = badgeBg;
@@ -2773,7 +2770,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           if (!currentNavRoute) return;
           const isFoot = (currentNavRoute.travelMode === 'foot');
           const btn = document.getElementById('navSimPlayBtn');
-          const simTopBtn = document.getElementById('btnSim');
           const modeBadge = document.getElementById('navModeBadge');
           const liveTrackBtn = document.getElementById('navLiveTrackBtn');
           
@@ -2878,7 +2874,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
           if (clearUI) {{
             document.getElementById('navHud').style.display = 'none';
             document.getElementById('navStepsDrawer').style.display = 'none';
-            const btn = document.getElementById('btnSim');
             if (btn) {{ btn.innerText = '🎬 Sim Demo'; btn.classList.remove('active'); }}
             if (lastLiveGpsPos) {{
               updateUserPosition(lastLiveGpsPos.lat, lastLiveGpsPos.lon, 20, false, null);
@@ -3008,7 +3003,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
             clearInterval(navDriveTimer);
             navDriveTimer = null;
             isDriving = false;
-            const simTopBtn = document.getElementById('btnSim');
             if (simTopBtn) {{
               simTopBtn.innerText = '🎬 Sim Demo';
               simTopBtn.classList.remove('active');
@@ -3120,7 +3114,6 @@ def create_smooth_realtime_leaflet_html(hotspots_df=None, initial_user_lat=None,
         }});
         
         window.toggleSimulation = function() {{
-          const btn = document.getElementById('btnSim');
           if (isDriving || navDriveTimer) {{
             toggleNavDriveSim();
             btn.innerText = '🎬 Sim Demo';
