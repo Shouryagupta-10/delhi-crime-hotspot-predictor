@@ -28,5 +28,15 @@
     "salt": "d90e3e70998194838479f5e267d235c3",
     "created_at": "2026-03-01T10:00:00Z",
     "is_verified": true
+  },
+  "aadijain9574@gmail.com": {
+    "name": "Aadi Jain",
+    "email": "aadijain9574@gmail.com",
+    "role": "Daily Metro & Walking Commuter",
+    "district": "South Delhi",
+    "hash": "94ac1109e7f783c9d1d667ca3948899e250319bd2d923fcd331845181b124229",
+    "salt": "3ecd2b0c2d8de12e0dae55b25626535d",
+    "created_at": "2026-10-13T17:19:30Z",
+    "is_verified": true
   }
 }
