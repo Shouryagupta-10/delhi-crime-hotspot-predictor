@@ -998,7 +998,7 @@ with tab_clean:
     # Official Delhi Police FIR Direct Link Action
     st.link_button(
         "Click here to register an FIR (First Information Report) ↗",
-        "https://delhipolice.gov.in",
+        "https://delhipolice.gov.in/index#service-box",
         type="primary",
         help="Access the official Delhi Police e-FIR portal for formal legal reporting"
     )
@@ -1300,7 +1300,7 @@ if False:
 
 
 # --- TAB 5: x402 PROTOCOL & ALGORAND AGENT ---
-with tab5:
+if False:
     import json
     import base64
     import subprocess
