@@ -924,11 +924,10 @@ if user_lat is None:
 
 
 # Main Navigation Tabs
-tab1, tab_clean, tab2, tab5 = st.tabs([
+tab1, tab_clean, tab2 = st.tabs([
     "️ Interactive Hotspot Map",
-    " Data Cleaning & FIR Verification",
-    " Real-Time Premises Risk Scorer",
-    " x402 Protocol & Algorand Agent"
+    " FIR Registration & Verification",
+    " Real-Time Premises Risk Scorer"
 ])
 
 # --- TAB 1: INTERACTIVE MAP ---
@@ -993,8 +992,18 @@ with tab1:
 
 # --- TAB: DATA CLEANING & FIR VERIFICATION ---
 with tab_clean:
-    st.subheader(" Police FIR Data Cleaning & Completeness Verification Pipeline")
-    st.caption("Transforming raw, noisy police feeds into high-integrity verified crime data for algorithmic hotspot discovery.")
+    st.subheader(" Police FIR Registration & Data Verification Pipeline")
+    st.caption("Official reporting gateway and high-integrity data pipeline for algorithmic hotspot discovery.")
+
+    # Official Delhi Police FIR Direct Link Action
+    st.link_button(
+        "Click here to register an FIR (First Information Report) ↗",
+        "https://delhipolice.gov.in",
+        type="primary",
+        help="Access the official Delhi Police e-FIR portal for formal legal reporting"
+    )
+
+    st.write("")  # Visual spacer
 
     # Executive Pipeline Flow / Summary Card
     st.markdown("""
@@ -1005,7 +1014,7 @@ with tab_clean:
         <div style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
             In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
             false alarms, or records with missing coordinates leak into density estimators like DBSCAN, cluster centroids warp and police patrols 
-            are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter.
+            are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter on confirmed official records.
         </div>
     </div>
     """, unsafe_allow_html=True)
