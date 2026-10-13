@@ -186,72 +186,97 @@ def render_cruip_login_page():
     """
     st.markdown("""
     <style>
-    /* Fullscreen Glassmorphic Login Overlay */
+    /* Fullscreen Glassmorphic & Ambient Glow Container */
+    .stApp {
+        background-color: #030014 !important;
+        background-image: 
+            radial-gradient(circle at 50% 0%, rgba(147, 51, 234, 0.22) 0%, rgba(15, 7, 36, 0.6) 40%, rgba(3, 0, 20, 0.95) 75%),
+            radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+            radial-gradient(circle at 15% 70%, rgba(168, 85, 247, 0.10) 0%, transparent 50%) !important;
+        background-attachment: fixed !important;
+    }
+
     .login-hero-container {
         width: 100% !important;
         box-sizing: border-box !important;
-        margin: 20px 0 16px 0 !important;
-        padding: 30px 24px 22px 24px;
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 20px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 32px rgba(99, 102, 241, 0.2);
+        margin: 24px 0 16px 0 !important;
+        padding: 28px 24px 22px 24px;
+        background: rgba(10, 5, 24, 0.65) !important;
+        backdrop-filter: blur(24px) !important;
+        -webkit-backdrop-filter: blur(24px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(168, 85, 247, 0.15) !important;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .login-hero-container::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.6), transparent);
     }
     .login-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.35);
+        border: 1px solid rgba(16, 185, 129, 0.3);
         color: #34d399;
         padding: 4px 14px;
         border-radius: 9999px;
         font-size: 11px;
-        font-family: 'Geist Mono', monospace;
-        font-weight: 700;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+        font-weight: 600;
         margin-bottom: 14px;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
     }
     .login-title {
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 900;
         color: #ffffff;
-        letter-spacing: -0.02em;
-        margin-bottom: 6px;
+        letter-spacing: -0.03em;
+        margin-bottom: 8px;
+        background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.75) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .login-subtitle {
-        font-size: 13.5px;
-        color: #94a3b8;
-        line-height: 1.5;
-        margin-bottom: 20px;
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.6;
+        margin-bottom: 18px;
+        max-width: 440px;
+        margin-left: auto;
+        margin-right: auto;
     }
     .feature-pill-bar {
         display: flex;
         justify-content: center;
         gap: 8px;
         flex-wrap: wrap;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     .feature-pill {
         font-size: 11px;
-        color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        padding: 3px 10px;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 4px 11px;
         border-radius: 9999px;
+        backdrop-filter: blur(8px);
     }
 
-    /* Auth Action Selector - 100% width matching the hero card and form card left edges */
+    /* Auth Action Selector - Modern Pill Tabs */
     div[data-testid="stRadio"],
     div.stRadio {
         display: flex !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        margin: 0 0 16px 0 !important;
+        margin: 0 0 18px 0 !important;
         padding: 0 !important;
+        justify-content: center !important;
     }
     div[data-testid="stRadio"] > label,
     div.stRadio > label {
@@ -260,62 +285,131 @@ def render_cruip_login_page():
     div[data-testid="stRadio"] > div[role="radiogroup"],
     div.stRadio > div[role="radiogroup"] {
         display: flex !important;
-        justify-content: space-between !important;
+        justify-content: center !important;
         align-items: center !important;
-        flex-wrap: nowrap !important;
+        flex-wrap: wrap !important;
         width: 100% !important;
         box-sizing: border-box !important;
         margin: 0 !important;
-        gap: 6px !important;
-        background: rgba(15, 23, 42, 0.75) !important;
-        padding: 6px 8px !important;
-        border-radius: 9999px !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
+        gap: 8px !important;
+        background: transparent !important;
+        padding: 4px 0 !important;
+        border: none !important;
+        box-shadow: none !important;
     }
     div[data-testid="stRadio"] label[data-baseweb="radio"],
     div.stRadio label[data-baseweb="radio"] {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        flex: 1 1 0% !important;
-        background: transparent !important;
-        padding: 7px 8px !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        padding: 8px 16px !important;
         border-radius: 9999px !important;
         margin: 0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         cursor: pointer !important;
         white-space: nowrap !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     }
     div[data-testid="stRadio"] label[data-baseweb="radio"]:hover,
     div.stRadio label[data-baseweb="radio"]:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    /* Hide the radio circle button */
+    div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child,
+    div.stRadio label[data-baseweb="radio"] > div:first-child {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+    }
+    /* Active pill style */
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
+    div.stRadio label[data-baseweb="radio"]:has(input:checked) {
+        background: #ffffff !important;
+        border-color: #ffffff !important;
+        box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3) !important;
+    }
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p,
+    div.stRadio label[data-baseweb="radio"]:has(input:checked) p,
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) span,
+    div.stRadio label[data-baseweb="radio"]:has(input:checked) span {
+        color: #000000 !important;
+        font-weight: 700 !important;
     }
     div[data-testid="stRadio"] label[data-baseweb="radio"] p,
-    div.stRadio label[data-baseweb="radio"] p {
-        font-size: 13px !important;
-        font-weight: 600 !important;
-        color: #e2e8f0 !important;
-        letter-spacing: 0.01em !important;
+    div.stRadio label[data-baseweb="radio"] p,
+    div[data-testid="stRadio"] label[data-baseweb="radio"] span,
+    div.stRadio label[data-baseweb="radio"] span {
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: rgba(255, 255, 255, 0.8) !important;
         margin: 0 !important;
         text-align: center !important;
-    }
-    @media (max-width: 900px) {
-        div[data-testid="stRadio"] > div[role="radiogroup"],
-        div.stRadio > div[role="radiogroup"] {
-            flex-wrap: wrap !important;
-            border-radius: 16px !important;
-        }
+        transition: color 0.2s ease !important;
     }
 
-    /* Style the form card so its width, left edge, and border radius line up seamlessly */
+    /* Modern Glassmorphic Form Card */
     div[data-testid="stForm"] {
         width: 100% !important;
         box-sizing: border-box !important;
         margin: 0 !important;
+        padding: 24px !important;
+        background: rgba(10, 5, 24, 0.65) !important;
+        backdrop-filter: blur(24px) !important;
+        -webkit-backdrop-filter: blur(24px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 20px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(168, 85, 247, 0.12) !important;
+    }
+
+    /* Form Inputs */
+    div[data-testid="stForm"] div[data-baseweb="input"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stForm"] div[data-baseweb="input"]:focus-within {
+        border-color: rgba(168, 85, 247, 0.6) !important;
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    div[data-testid="stForm"] input {
+        color: #ffffff !important;
+        font-size: 13.5px !important;
+    }
+    div[data-testid="stForm"] label p {
+        color: rgba(255, 255, 255, 0.7) !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+    }
+
+    /* Form Submit Button: White-to-gray gradient button matching React component */
+    div[data-testid="stForm"] button[kind="secondaryFormSubmit"],
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"] {
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+        color: #09090b !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        padding: 12px 20px !important;
+        margin-top: 12px !important;
+        box-shadow: 0 4px 18px rgba(255, 255, 255, 0.25) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stForm"] button[kind="secondaryFormSubmit"]:hover,
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 24px rgba(255, 255, 255, 0.4) !important;
+        background: #ffffff !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -331,7 +425,7 @@ def render_cruip_login_page():
         st.markdown("""
         <div class="login-hero-container">
             <div class="login-badge">
-                <span style="width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+                <span style="width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981; display:inline-block;"></span>
                 CITIZEN SAFETY PORTAL
             </div>
             <div class="login-title">Rakshak.ai</div>
@@ -339,28 +433,28 @@ def render_cruip_login_page():
                 Sign in to access real-time neighborhood danger heatmaps, live safe walking corridors, emergency SOS, and safe travel navigation.
             </div>
             <div class="feature-pill-bar">
-                <span class="feature-pill">🚶 Safe Walking Routes</span>
-                <span class="feature-pill">🚗 Safe Vehicle Corridors</span>
-                <span class="feature-pill">🚨 Real-Time Risk Alerts</span>
-                <span class="feature-pill">🔒 Private & Secure</span>
+                <span class="feature-pill"><span style="color:#c084fc;">🧭</span> Safe Walking Routes</span>
+                <span class="feature-pill"><span style="color:#60a5fa;">🚗</span> Safe Vehicle Corridors</span>
+                <span class="feature-pill"><span style="color:#fbbf24;">⚠️</span> Real-Time Risk Alerts</span>
+                <span class="feature-pill"><span style="color:#34d399;">🔒</span> Private & Secure</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
         auth_tab_choice = st.radio(
             "Authentication Action",
-            ["🔐 Sign In", "📝 Create Citizen Account", "🚀 Instant 1-Click Guest Access"],
+            ["🔴 Sign In", "👤 Create Citizen Account", "🚀 Instant 1-Click Guest Access"],
             horizontal=True,
             label_visibility="collapsed"
         )
         # --- TAB 1: SIGN IN ---
-        if auth_tab_choice.startswith("🔐 Sign In"):
+        if "Sign In" in auth_tab_choice:
             with st.form("form_citizen_login"):
-                st.markdown("##### 👤 Sign in to your Account")
+                st.markdown("<div style='display:flex; align-items:center; gap:8px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:13px; font-weight:600; color:#fff;'><span style='color:#c084fc;'>👤</span> Sign in to your Account</div>", unsafe_allow_html=True)
                 login_email = st.text_input("Email Address", placeholder="e.g. ananya.sharma@gmail.com", key="in_login_email")
                 login_password = st.text_input("Password", type="password", placeholder="••••••••", key="in_login_pwd")
                 
-                submitted = st.form_submit_button("🔓 Sign In & Explore Safe Routes", use_container_width=True)
+                submitted = st.form_submit_button("🔒 Sign In & Explore Safe Routes", use_container_width=True)
                 
                 if submitted:
                     ok, msg, user_data = authenticate_user(login_email, login_password)
@@ -373,10 +467,10 @@ def render_cruip_login_page():
                         record_failed_attempt()
                         st.error(f"❌ {msg}")
             
-            st.caption("💡 Quick test account: `ananya.sharma@gmail.com` | Password: `Citizen@2026` or use the **Instant 1-Click Guest Access** tab.")
+            st.markdown("<div style='text-align:center; font-size:11px; color:rgba(255,255,255,0.5); margin-top:14px; line-height:1.6;'>💡 Quick test account: <span style='color:#d8b4fe; font-family:monospace;'>ananya.sharma@gmail.com</span> | Password: <span style='color:#d8b4fe; font-family:monospace;'>Citizen@2026</span> or use the Instant 1-Click Guest Access tab.</div>", unsafe_allow_html=True)
 
         # --- TAB 2: CREATE CITIZEN ACCOUNT ---
-        elif auth_tab_choice.startswith("📝 Create"):
+        elif "Create" in auth_tab_choice:
             with st.form("form_citizen_register"):
                 st.markdown("##### 📝 Create Your Free Citizen Account")
                 reg_name = st.text_input("Your Full Name", placeholder="e.g. Ananya Sharma")
@@ -415,7 +509,7 @@ def render_cruip_login_page():
                             st.error(f"❌ {msg}")
 
         # --- TAB 3: INSTANT GUEST & DEMO ACCESS ---
-        elif auth_tab_choice.startswith("🚀 Instant"):
+        elif "Guest" in auth_tab_choice:
             st.markdown("""
             <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 16px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 14px;">
                 <div style="font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 6px;">⚡ Instant One-Click Citizen Access</div>

@@ -21,12 +21,14 @@ import {
   Clock,
   Compass,
   MapPin,
-  Globe
+  Globe,
+  FileCheck
 } from 'lucide-react';
 import { DELHI_HOTSPOTS, DELHI_SAFE_ZONES } from './components/SmoothRiskMap';
 import { AdvancedMap } from '@/components/ui/interactive-map';
 import { PredictivePolicingStudio } from './components/PredictivePolicingStudio';
 import { SosAlertWidget } from './components/SosAlertWidget';
+import { EFirRegistrationVault } from './components/EFirRegistrationVault';
 
 const SERVER_URL = 'http://127.0.0.1:4021';
 const RECEIVER_ADDR = 'BWKR3HJ3SYZIJ7M73WJF6566YWEGRLJAIGMNZ2RZRY35ZYFBBJ63H24MOQ';
@@ -73,7 +75,7 @@ const TimeDisplay: React.FC<{ timeZone: string }> = ({ timeZone }) => {
 export default function App() {
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'map' | 'predictive' | 'x402' | 'hotspots'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'efir' | 'predictive' | 'hotspots'>('map');
 
   // Input states for Risk Assessment
   const [lat, setLat] = useState('28.6328');
@@ -283,7 +285,19 @@ export default function App() {
               }`}
             >
               <Navigation className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Sentinel Map</span>
+              <span className="hidden sm:inline">Interactive Hotspot Map</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('efir')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === 'efir' 
+                  ? 'bg-white/[0.12] text-white border border-white/[0.2] shadow-sm' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>e-FIR Registration & Vault</span>
             </button>
 
             <button 
@@ -294,20 +308,8 @@ export default function App() {
                   : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Predictive Policing</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('x402')}
-              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                activeTab === 'x402' 
-                  ? 'bg-white/[0.12] text-white border border-white/[0.2] shadow-sm' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">x402 Gateway</span>
+              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Real-Time Premises Risk Scorer</span>
             </button>
 
             <button 
@@ -725,57 +727,14 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: PREDICTIVE POLICING STUDIO */}
-        {activeTab === 'predictive' && (
-          <PredictivePolicingStudio />
+        {/* TAB 2: e-FIR REGISTRATION & VAULT */}
+        {activeTab === 'efir' && (
+          <EFirRegistrationVault />
         )}
 
-        {/* TAB 3: DEDICATED X402 GATEWAY INSPECTOR */}
-        {activeTab === 'x402' && (
-          <div className="once-surface rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-400" />
-                  <span>x402 Protocol on Algorand Testnet</span>
-                </h3>
-                <p className="text-xs text-slate-400">Verifiable on-chain micropayment architecture powered by GoPlausible Facilitator</p>
-              </div>
-              <a
-                href={`${LORA_BASE}/account/${RECEIVER_ADDR}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-4 py-2 rounded-full flex items-center gap-1.5 shadow-lg"
-              >
-                <span>LoRA Explorer</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-              <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.08]">
-                <span className="text-slate-400 block mb-1">Merchant Payee</span>
-                <code className="text-emerald-400 text-[11px] break-all">{RECEIVER_ADDR}</code>
-              </div>
-              <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.08]">
-                <span className="text-slate-400 block mb-1">Agent Keypair</span>
-                <code className="text-cyan-400 text-[11px] break-all">{AGENT_ADDR}</code>
-              </div>
-              <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.08]">
-                <span className="text-slate-400 block mb-1">Facilitator</span>
-                <span className="text-white font-bold block">{FACILITATOR_URL}</span>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-black/40 border border-white/[0.08] space-y-3">
-              <h4 className="font-bold text-white text-xs">Autonomous Agent CLI Execution</h4>
-              <p className="text-slate-400 text-xs">Execute the autonomous Python agent to test end-to-end atomic micropayments:</p>
-              <div className="p-3 rounded-xl bg-black/60 border border-white/[0.08] font-mono text-xs text-emerald-400 flex items-center justify-between">
-                <code>bash scripts/run_x402_agent.sh</code>
-                <span className="text-slate-500 text-[10px]">Auto Signed</span>
-              </div>
-            </div>
-          </div>
+        {/* TAB 3: REAL-TIME PREMISES RISK SCORER */}
+        {activeTab === 'predictive' && (
+          <PredictivePolicingStudio />
         )}
 
         {/* TAB 4: 44 DBSCAN HOTSPOTS FEED */}
