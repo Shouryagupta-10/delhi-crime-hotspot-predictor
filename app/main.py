@@ -548,6 +548,9 @@ font-family: 'Geist Mono', monospace;
 #  AUTHENTICATION GATEWAY
 # ==============================================================================
 if not st.session_state.get("authenticated", False):
+    # 0. Primary SOS EMERGENCY Button (Top of Left Sidebar - Accessible at all times for immediate emergency distress)
+    with st.sidebar:
+        render_sos_emergency_sidebar_widget()
     render_cruip_login_page()
     st.stop()
 
