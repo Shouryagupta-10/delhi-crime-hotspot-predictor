@@ -950,7 +950,6 @@ with tab1:
         
         # Hotspots Table
         st.markdown("### Top Identified DBSCAN Crime Hotspots (10-Year Geospatial Corridors)")
-        st.caption("Discovered via Haversine DBSCAN clustering (eps=600m, min_samples=18). Click headers to sort by incidents or severity.")
         if cluster_engine.hotspots_df is not None and not cluster_engine.hotspots_df.empty:
             hotspot_display = cluster_engine.hotspots_df.copy()
             hotspot_display["Risk Level"] = hotspot_display["avg_risk"].apply(
