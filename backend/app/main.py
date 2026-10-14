@@ -1479,55 +1479,6 @@ if False:
 # CITIZEN FEATURES & METRICS (Moved to Bottom)
 # ==========================================
 
-# Phone-Friendly Features / Info Boxes
-bento_html_bottom = """
-<style>
-/*  NEW: Mobile Responsive Layout Fixes */
-@media (max-width: 768px) {
-    .cruip-header-nav {
-        flex-direction: column !important;
-        align-items: center !important;
-        text-align: center !important;
-        padding: 14px !important;
-    }
-    .cruip-bento-grid { 
-        grid-template-columns: 1fr !important; 
-        gap: 12px !important;
-    }
-    .cruip-card {
-        padding: 16px !important;
-    }
-}
-</style>
-
-<div class="cruip-bento-grid">
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">AI MAPPING</span>
-        </div>
-        <div class="cruip-card-title">Identify Danger Zones</div>
-        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">POLICE SUPPORT</span>
-        </div>
-        <div class="cruip-card-title">Smart Patrol Routing</div>
-        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">PREDICTIVE TECH</span>
-        </div>
-        <div class="cruip-card-title">Predict Future Threats</div>
-        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
-    </div>
-</div>
-"""
-st.markdown(bento_html_bottom, unsafe_allow_html=True) 
 
 # Top KPI Metric Cards (Moved to bottom)
 st.markdown("###  System Analytics & Risk Metrics")
