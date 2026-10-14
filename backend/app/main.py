@@ -684,21 +684,7 @@ if "tab2_loc" in st.query_params:
 st.sidebar.markdown("---")
 st.sidebar.subheader(" Live Movement & Risk Radar")
 
-if user_lat is None:
-   # render_gps_locator(key_suffix="_side")
-    st.sidebar.caption("Or test location scenarios:")
-    col_g1, col_g2 = st.sidebar.columns(2)
-    with col_g1:
-        if st.button(" Rajiv Chowk (High)", use_container_width=True):
-            st.session_state["user_lat"] = 28.6328
-            st.session_state["user_lon"] = 77.2197
-            st.rerun()
-    with col_g2:
-        if st.button("️ Chanakya (Safe)", use_container_width=True):
-            st.session_state["user_lat"] = 28.5983
-            st.session_state["user_lon"] = 77.1912
-            st.rerun()
-else:
+if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
     
@@ -958,20 +944,6 @@ tab1, tab_clean, tab2, tab4 = st.tabs([
 # --- TAB 1: INTERACTIVE MAP ---
 with tab1:
     st.subheader("Delhi Geospatial Crime Map & Hotspot Corridors")
-    st.caption("Visualizing spatial density gradients, DBSCAN cluster centroids, and localized premises risk profiles.")
-    
-    if is_clean_mode:
-        st.markdown("""
-        <div style="background: rgba(16, 185, 129, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 5px solid #10b981; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #6ee7b7; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div style="background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 5px solid #f59e0b; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #fde68a; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
-        </div>
-        """, unsafe_allow_html=True)
     
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
@@ -1482,55 +1454,6 @@ if False:
 # CITIZEN FEATURES & METRICS (Moved to Bottom)
 # ==========================================
 
-# Phone-Friendly Features / Info Boxes
-bento_html_bottom = """
-<style>
-/*  NEW: Mobile Responsive Layout Fixes */
-@media (max-width: 768px) {
-    .cruip-header-nav {
-        flex-direction: column !important;
-        align-items: center !important;
-        text-align: center !important;
-        padding: 14px !important;
-    }
-    .cruip-bento-grid { 
-        grid-template-columns: 1fr !important; 
-        gap: 12px !important;
-    }
-    .cruip-card {
-        padding: 16px !important;
-    }
-}
-</style>
-
-<div class="cruip-bento-grid">
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">AI MAPPING</span>
-        </div>
-        <div class="cruip-card-title">Identify Danger Zones</div>
-        <p class="cruip-card-desc">Automatically highlights high-risk areas in your city so you can avoid dangerous streets and plan safer routes.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">POLICE SUPPORT</span>
-        </div>
-        <div class="cruip-card-title">Smart Patrol Routing</div>
-        <p class="cruip-card-desc">Helps local police position themselves in the most effective spots to deter crime and protect citizens.</p>
-    </div>
-    <div class="cruip-card">
-        <div class="cruip-card-header">
-            <div class="cruip-card-icon"></div>
-            <span class="cruip-card-tag">PREDICTIVE TECH</span>
-        </div>
-        <div class="cruip-card-title">Predict Future Threats</div>
-        <p class="cruip-card-desc">Uses historical crime data to predict where and when crimes are most likely to happen next, keeping you one step ahead.</p>
-    </div>
-</div>
-"""
-st.markdown(bento_html_bottom, unsafe_allow_html=True) 
 
 # Top KPI Metric Cards (Moved to bottom)
 st.markdown("###  System Analytics & Risk Metrics")
