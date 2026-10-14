@@ -358,29 +358,29 @@ def generate_plaintext_receipt(fir: Dict[str, Any]) -> str:
         "             Generated under Sec 173 BNSS, 2023 & Sec 63 BSA, 2023",
         "================================================================================",
         "",
-        f"REGISTRATION IDENTIFIER : {fir['id']}",
-        f"FILING TIMESTAMP        : {fir['filedAt']}",
-        f"JURISDICTIONAL STATUS   : {fir['status']}",
-        f"STATUTORY COMPLIANCE    : {fir['legalAct']}",
+        f"REGISTRATION IDENTIFIER : {fir.get('id', 'N/A')}",
+        f"FILING TIMESTAMP        : {fir.get('filedAt', get_current_ist_timestamp())}",
+        f"JURISDICTIONAL STATUS   : {fir.get('status', 'REGISTERED')}",
+        f"STATUTORY COMPLIANCE    : {fir.get('legalAct', 'Section 173 BNSS, 2023 & Section 63 BSA, 2023')}",
         "",
         "--- COMPLAINANT PARTICULARS ---",
-        f"Name                  : {fir['complainant']['name']}",
-        f"Contact Phone         : {fir['complainant']['phone']}",
-        f"Government UID        : {fir['complainant']['maskedAadhaar']}",
-        f"Address               : {fir['complainant']['address']}",
+        f"Name                  : {fir.get('complainant', {}).get('name', 'N/A')}",
+        f"Contact Phone         : {fir.get('complainant', {}).get('phone', 'N/A')}",
+        f"Government UID        : {fir.get('complainant', {}).get('maskedAadhaar', 'N/A')}",
+        f"Address               : {fir.get('complainant', {}).get('address', 'N/A')}",
         "",
         "--- INCIDENT PARTICULARS ---",
-        f"Date & Time of Offense: {fir['incident']['date']} at {fir['incident']['time']} IST",
-        f"Offense Classification: {fir['incident']['offenseTitle']}",
-        f"Statutory Section     : {fir['incident']['bnsSection']} (Equivalent: {fir['incident']['ipcSection']})",
-        f"Severity Classification: {fir['incident'].get('severity', 'HIGH')}",
-        f"Location Coordinates  : {fir['location']['lat']:.5f}°N, {fir['location']['lon']:.5f}°E",
-        f"Landmark / Corridor   : {fir['location']['landmark']}",
-        f"Jurisdictional Station: {fir['location']['policeStation']} ({fir['location']['district']} District)",
+        f"Date & Time of Offense: {fir.get('incident', {}).get('date', 'N/A')} at {fir.get('incident', {}).get('time', 'N/A')} IST",
+        f"Offense Classification: {fir.get('incident', {}).get('offenseTitle', 'N/A')}",
+        f"Statutory Section     : {fir.get('incident', {}).get('bnsSection', 'N/A')} (Equivalent: {fir.get('incident', {}).get('ipcSection', 'N/A')})",
+        f"Severity Classification: {fir.get('incident', {}).get('severity', 'HIGH')}",
+        f"Location Coordinates  : {fir.get('location', {}).get('lat', 28.6139):.5f}°N, {fir.get('location', {}).get('lon', 77.2090):.5f}°E",
+        f"Landmark / Corridor   : {fir.get('location', {}).get('landmark', 'N/A')}",
+        f"Jurisdictional Station: {fir.get('location', {}).get('policeStation', 'Delhi Police')} ({fir.get('location', {}).get('district', 'Delhi')} District)",
         f"Assigned Beat Officer : {fir.get('assignedOfficer', 'Sub-Inspector On Duty')}",
         "",
         "--- SUMMARY OF OCCURRENCE ---",
-        fir['incident']['narrative'],
+        str(fir.get('incident', {}).get('narrative', 'N/A')),
         "",
         "--- CRYPTOGRAPHIC EVIDENCE CHAIN OF CUSTODY (SHA-256) ---"
     ]
@@ -388,18 +388,18 @@ def generate_plaintext_receipt(fir: Dict[str, Any]) -> str:
     if not fir.get("evidenceFiles"):
         lines.append("No digital evidence files attached during initial registration.")
     else:
-        for idx, ev in enumerate(fir["evidenceFiles"], 1):
+        for idx, ev in enumerate(fir.get("evidenceFiles", []), 1):
             lines.append(f"Evidence Object #{idx}:")
-            lines.append(f"  Filename    : {ev['name']}")
+            lines.append(f"  Filename    : {ev.get('name', 'evidence_object')}")
             lines.append(f"  Type / Size : {ev.get('type', 'binary')} ({ev.get('formattedSize', 'N/A')})")
             lines.append(f"  Timestamp   : {ev.get('timestamp', 'N/A')}")
-            lines.append(f"  SHA-256 Hash: {ev['sha256']}")
+            lines.append(f"  SHA-256 Hash: {ev.get('sha256', 'N/A')}")
             lines.append("")
 
     lines.extend([
         "--------------------------------------------------------------------------------",
         "MASTER BUNDLE COMPOSITE HASH (SHA-256):",
-        fir['masterBundleHash'],
+        fir.get('masterBundleHash', 'N/A'),
         "--------------------------------------------------------------------------------",
         "NOTICE: This is an electronically generated legal acknowledgment under Section 173",
         "Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023. Digital evidence hashes are sealed",
@@ -414,13 +414,13 @@ def generate_printable_html_certificate(fir: Dict[str, Any]) -> str:
     """Generates printable, legal certificate HTML with styling and print button."""
     evidence_rows = ""
     if fir.get("evidenceFiles"):
-        for i, ev in enumerate(fir["evidenceFiles"], 1):
+        for i, ev in enumerate(fir.get("evidenceFiles", []), 1):
             evidence_rows += f"""
             <tr style="border-bottom: 1px solid #e2e8f0;">
                 <td style="padding: 8px 12px; font-weight: bold; color: #1e293b;">#{i}</td>
-                <td style="padding: 8px 12px; font-weight: 600; color: #0f172a;">{ev['name']}</td>
+                <td style="padding: 8px 12px; font-weight: 600; color: #0f172a;">{ev.get('name', 'evidence_object')}</td>
                 <td style="padding: 8px 12px; font-family: monospace; font-size: 11px; color: #475569;">{ev.get('formattedSize', '')}</td>
-                <td style="padding: 8px 12px; font-family: monospace; font-size: 11px; color: #0284c7; word-break: break-all;">{ev['sha256']}</td>
+                <td style="padding: 8px 12px; font-family: monospace; font-size: 11px; color: #0284c7; word-break: break-all;">{ev.get('sha256', 'N/A')}</td>
             </tr>
             """
     else:
@@ -436,7 +436,7 @@ def generate_printable_html_certificate(fir: Dict[str, Any]) -> str:
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Official e-FIR Certificate - {fir['id']}</title>
+<title>Official e-FIR Certificate - {fir.get('id', 'N/A')}</title>
 <style>
     @media print {{
         body {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
@@ -556,35 +556,35 @@ def generate_printable_html_certificate(fir: Dict[str, Any]) -> str:
         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
             Issued under Section 173 Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023 & Sec 63 BSA, 2023
         </div>
-        <div class="badge">REGISTRATION ID: {fir['id']}</div>
+        <div class="badge">REGISTRATION ID: {fir.get('id', 'N/A')}</div>
     </div>
 
     <div class="grid">
         <div class="panel">
             <h4>Complainant Record</h4>
-            <div class="row"><span class="label">Full Name:</span> <b>{fir['complainant']['name']}</b></div>
-            <div class="row"><span class="label">Contact Mobile:</span> {fir['complainant']['phone']}</div>
-            <div class="row"><span class="label">Aadhaar UID:</span> {fir['complainant']['maskedAadhaar']}</div>
-            <div class="row"><span class="label">Residential Address:</span> {fir['complainant']['address']}</div>
+            <div class="row"><span class="label">Full Name:</span> <b>{fir.get('complainant', {}).get('name', 'N/A')}</b></div>
+            <div class="row"><span class="label">Contact Mobile:</span> {fir.get('complainant', {}).get('phone', 'N/A')}</div>
+            <div class="row"><span class="label">Aadhaar UID:</span> {fir.get('complainant', {}).get('maskedAadhaar', 'N/A')}</div>
+            <div class="row"><span class="label">Residential Address:</span> {fir.get('complainant', {}).get('address', 'N/A')}</div>
         </div>
 
         <div class="panel">
             <h4>Incident & Jurisdictional Allocation</h4>
-            <div class="row"><span class="label">Police Station:</span> <b>{fir['location']['policeStation']}</b></div>
-            <div class="row"><span class="label">District Jurisdiction:</span> {fir['location']['district']} District</div>
-            <div class="row"><span class="label">Occurrence:</span> {fir['incident']['date']} at {fir['incident']['time']} IST</div>
-            <div class="row"><span class="label">Location GPS:</span> {fir['location']['lat']:.5f}°N, {fir['location']['lon']:.5f}°E</div>
+            <div class="row"><span class="label">Police Station:</span> <b>{fir.get('location', {}).get('policeStation', 'Delhi Police')}</b></div>
+            <div class="row"><span class="label">District Jurisdiction:</span> {fir.get('location', {}).get('district', 'Delhi')} District</div>
+            <div class="row"><span class="label">Occurrence:</span> {fir.get('incident', {}).get('date', 'N/A')} at {fir.get('incident', {}).get('time', 'N/A')} IST</div>
+            <div class="row"><span class="label">Location GPS:</span> {fir.get('location', {}).get('lat', 28.6139):.5f}°N, {fir.get('location', {}).get('lon', 77.2090):.5f}°E</div>
             <div class="row"><span class="label">Assigned Officer:</span> {fir.get('assignedOfficer', 'Sub-Inspector Beat Officer')}</div>
         </div>
     </div>
 
     <div class="panel" style="margin-bottom: 18px;">
         <h4>Classified Offense & Statutory Provisions</h4>
-        <div class="row"><span class="label">Cognizable Offense:</span> <b>{fir['incident']['offenseTitle']}</b></div>
-        <div class="row"><span class="label">Statutory Provisions:</span> <b>{fir['incident']['bnsSection']}</b> (Corresponding: {fir['incident']['ipcSection']})</div>
+        <div class="row"><span class="label">Cognizable Offense:</span> <b>{fir.get('incident', {}).get('offenseTitle', 'N/A')}</b></div>
+        <div class="row"><span class="label">Statutory Provisions:</span> <b>{fir.get('incident', {}).get('bnsSection', 'N/A')}</b> (Corresponding: {fir.get('incident', {}).get('ipcSection', 'N/A')})</div>
         <div class="row" style="margin-top: 8px;"><span class="label">Statement of Facts:</span></div>
         <div style="background: #ffffff; padding: 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11.5px; line-height: 1.5; color: #1e293b; margin-top: 4px;">
-            {fir['incident']['narrative']}
+            {fir.get('incident', {}).get('narrative', 'N/A')}
         </div>
     </div>
 
@@ -609,7 +609,7 @@ def generate_printable_html_certificate(fir: Dict[str, Any]) -> str:
         <div style="font-weight: bold; margin-bottom: 4px; text-transform: uppercase; color: #6ee7b7;">
             Master Bundle SHA-256 Hash Digest (Chain-of-Custody Sealed):
         </div>
-        {fir['masterBundleHash']}
+        {fir.get('masterBundleHash', 'N/A')}
     </div>
 
     <div style="border-top: 1px solid #cbd5e1; padding-top: 12px; font-size: 10.5px; color: #64748b; line-height: 1.5;">
@@ -977,7 +977,7 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                             "lon": target_lon,
                             "landmark": inc_landmark
                         },
-                        "evidenceHashes": [ev["sha256"] for ev in processed_evidence_items],
+                        "evidenceHashes": [ev.get("sha256", "") for ev in processed_evidence_items],
                         "timestamp": now_str
                     }
                     master_hash = compute_sha256_text(json.dumps(master_payload, sort_keys=True))
@@ -1054,7 +1054,7 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                     <div style="text-align: right;">
                         <div style="font-family: 'Geist Mono', monospace; font-size: 10px; color: #94a3b8; text-transform: uppercase;">Official Reference No.</div>
                         <div style="font-family: 'Geist Mono', monospace; font-size: 22px; font-weight: 900; color: #34d399; letter-spacing: 0.05em;">
-                            {active_fir['id']}
+                            {active_fir.get('id', 'N/A')}
                         </div>
                     </div>
                 </div>
@@ -1067,26 +1067,26 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                         <span style="font-family: 'Geist Mono', monospace; font-size: 10px; color: #94a3b8;">64-char Hexadecimal Forensics Stamp</span>
                     </div>
                     <div style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #f1f5f9; word-break: break-all; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.25);">
-                        {active_fir['masterBundleHash']}
+                        {active_fir.get('masterBundleHash', 'N/A')}
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; font-size: 12.5px; margin-bottom: 16px;">
                     <div style="background: rgba(15,23,42,0.6); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                         <span style="color: #94a3b8; display: block; font-size: 11px;">Complainant:</span>
-                        <b style="color: #ffffff;">{active_fir['complainant']['name']}</b> ({active_fir['complainant']['phone']})
+                        <b style="color: #ffffff;">{active_fir.get('complainant', {}).get('name', 'N/A')}</b> ({active_fir.get('complainant', {}).get('phone', 'N/A')})
                     </div>
                     <div style="background: rgba(15,23,42,0.6); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                         <span style="color: #94a3b8; display: block; font-size: 11px;">Jurisdiction:</span>
-                        <b style="color: #ffffff;">{active_fir['location']['policeStation']}</b> ({active_fir['location']['district']} District)
+                        <b style="color: #ffffff;">{active_fir.get('location', {}).get('policeStation', 'Delhi Police')}</b> ({active_fir.get('location', {}).get('district', 'Delhi')} District)
                     </div>
                     <div style="background: rgba(15,23,42,0.6); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                         <span style="color: #94a3b8; display: block; font-size: 11px;">Classified Offense:</span>
-                        <b style="color: #ffffff;">{active_fir['incident']['offenseTitle']}</b>
+                        <b style="color: #ffffff;">{active_fir.get('incident', {}).get('offenseTitle', 'N/A')}</b>
                     </div>
                     <div style="background: rgba(15,23,42,0.6); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                         <span style="color: #94a3b8; display: block; font-size: 11px;">Telemetry Location:</span>
-                        <b style="color: #ffffff;">{active_fir['location']['lat']:.4f}°N, {active_fir['location']['lon']:.4f}°E</b> ({len(active_fir['evidenceFiles'])} Evidence files sealed)
+                        <b style="color: #ffffff;">{active_fir.get('location', {}).get('lat', 28.6139):.4f}°N, {active_fir.get('location', {}).get('lon', 77.2090):.4f}°E</b> ({len(active_fir.get('evidenceFiles', []))} Evidence files sealed)
                     </div>
                 </div>
             </div>
@@ -1099,7 +1099,7 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                 st.download_button(
                     label="📄 Download Official Receipt Slip (.txt)",
                     data=txt_receipt,
-                    file_name=f"{active_fir['id']}_Receipt_Slip.txt",
+                    file_name=f"{active_fir.get('id', 'eFIR')}_Receipt_Slip.txt",
                     mime="text/plain",
                     use_container_width=True
                 )
@@ -1108,7 +1108,7 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                 st.download_button(
                     label="🖨️ Download Printable Legal Certificate (.html)",
                     data=html_cert,
-                    file_name=f"{active_fir['id']}_Legal_Certificate.html",
+                    file_name=f"{active_fir.get('id', 'eFIR')}_Legal_Certificate.html",
                     mime="text/html",
                     use_container_width=True
                 )
@@ -1142,7 +1142,7 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
             total_ev = sum([len(r.get("evidenceFiles", [])) for r in records])
             st.metric("Evidence Objects Sealed", total_ev, "SHA-256 Verified")
         with m3:
-            districts_set = set([r["location"]["district"] for r in records])
+            districts_set = set([r.get("location", {}).get("district", "Delhi") for r in records if isinstance(r, dict)])
             st.metric("Districts Active", len(districts_set), "GNCTD Bounds")
         with m4:
             st.metric("Chain of Custody Standard", "100% Sealed", "Sec 63 BSA")
@@ -1157,58 +1157,85 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
             q = search_fir.strip().lower()
             filtered_records = [
                 r for r in records
-                if q in r["id"].lower() or q in r["complainant"]["name"].lower() or q in r["location"]["policeStation"].lower() or q in r["incident"]["offenseTitle"].lower()
+                if (
+                    q in str(r.get("id", "")).lower()
+                    or q in str(r.get("complainant", {}).get("name", "")).lower()
+                    or q in str(r.get("location", {}).get("policeStation", "")).lower()
+                    or q in str(r.get("incident", {}).get("offenseTitle", "")).lower()
+                )
             ]
 
         if not filtered_records:
             st.info("No e-FIR records match your search criteria.")
         else:
             for fir in filtered_records:
-                with st.expander(f"📋 {fir['id']} • {fir['complainant']['name']} • {fir['location']['policeStation']} ({fir['status']})", expanded=(fir == records[0])):
+                r_id = fir.get('id', 'N/A')
+                r_comp_name = fir.get('complainant', {}).get('name', 'N/A')
+                r_comp_phone = fir.get('complainant', {}).get('phone', 'N/A')
+                r_comp_uid = fir.get('complainant', {}).get('maskedAadhaar', 'N/A')
+                r_comp_addr = fir.get('complainant', {}).get('address', 'N/A')
+                r_station = fir.get('location', {}).get('policeStation', 'Delhi Police')
+                r_district = fir.get('location', {}).get('district', 'Delhi')
+                r_status = fir.get('status', 'REGISTERED')
+                r_filed_at = fir.get('filedAt', 'N/A')
+                r_officer = fir.get('assignedOfficer', 'SI Beat Officer')
+                r_offense = fir.get('incident', {}).get('offenseTitle', 'N/A')
+                r_bns = fir.get('incident', {}).get('bnsSection', 'N/A')
+                r_ipc = fir.get('incident', {}).get('ipcSection', 'N/A')
+                r_date = fir.get('incident', {}).get('date', 'N/A')
+                r_time = fir.get('incident', {}).get('time', 'N/A')
+                r_lat = fir.get('location', {}).get('lat', 28.6139)
+                r_lon = fir.get('location', {}).get('lon', 77.2090)
+                r_landmark = fir.get('location', {}).get('landmark', 'N/A')
+                r_narrative = fir.get('incident', {}).get('narrative', 'N/A')
+                r_ev_files = fir.get('evidenceFiles', [])
+                r_hash = fir.get('masterBundleHash', 'N/A')
+
+                with st.expander(f"📋 {r_id} • {r_comp_name} • {r_station} ({r_status})", expanded=(fir == records[0])):
                     col_det1, col_det2 = st.columns([1.2, 1])
 
                     with col_det1:
                         st.markdown(f"""
-                        **Registration ID:** `{fir['id']}`  
-                        **Filing Timestamp:** `{fir['filedAt']}`  
-                        **Status:** <span style="color: #34d399; font-weight: bold;">{fir['status']}</span>  
-                        **Complainant:** **{fir['complainant']['name']}** ({fir['complainant']['phone']})  
-                        **Masked UID:** `{fir['complainant']['maskedAadhaar']}`  
-                        **Address:** {fir['complainant']['address']}  
-                        **Assigned Officer:** {fir.get('assignedOfficer', 'SI Beat Officer')}  
+                        **Registration ID:** `{r_id}`  
+                        **Filing Timestamp:** `{r_filed_at}`  
+                        **Status:** <span style="color: #34d399; font-weight: bold;">{r_status}</span>  
+                        **Complainant:** **{r_comp_name}** ({r_comp_phone})  
+                        **Masked UID:** `{r_comp_uid}`  
+                        **Address:** {r_comp_addr}  
+                        **Assigned Officer:** {r_officer}  
                         """, unsafe_allow_html=True)
 
                     with col_det2:
                         st.markdown(f"""
-                        **Offense:** **{fir['incident']['offenseTitle']}**  
-                        **Statute:** `{fir['incident']['bnsSection']}` (IPC: `{fir['incident']['ipcSection']}`)  
-                        **Police Station:** **{fir['location']['policeStation']}** ({fir['location']['district']} District)  
-                        **Occurrence Date:** {fir['incident']['date']} at {fir['incident']['time']} IST  
-                        **Coordinates:** `{fir['location']['lat']:.4f}°N, {fir['location']['lon']:.4f}°E`  
-                        **Corridor:** {fir['location']['landmark']}  
+                        **Offense:** **{r_offense}**  
+                        **Statute:** `{r_bns}` (IPC: `{r_ipc}`)  
+                        **Police Station:** **{r_station}** ({r_district} District)  
+                        **Occurrence Date:** {r_date} at {r_time} IST  
+                        **Coordinates:** `{r_lat:.4f}°N, {r_lon:.4f}°E`  
+                        **Corridor:** {r_landmark}  
                         """, unsafe_allow_html=True)
 
                     st.markdown("**Incident Narrative:**")
-                    st.info(fir['incident']['narrative'])
+                    st.info(r_narrative)
 
                     # Evidence Table
-                    if fir.get("evidenceFiles"):
-                        st.markdown(f"**Forensic Evidence Chain ({len(fir['evidenceFiles'])} files):**")
+                    if r_ev_files:
+                        st.markdown(f"**Forensic Evidence Chain ({len(r_ev_files)} files):**")
                         ev_df = pd.DataFrame([
                             {
-                                "Filename": ev["name"],
+                                "Filename": ev.get("name", "evidence_object"),
                                 "Type": ev.get("type", "binary"),
                                 "Size": ev.get("formattedSize", "N/A"),
-                                "SHA-256 Digest": ev["sha256"],
+                                "SHA-256 Digest": ev.get("sha256", "N/A"),
                                 "Timestamp": ev.get("timestamp", "N/A")
                             }
-                            for ev in fir["evidenceFiles"]
+                            for ev in r_ev_files
                         ])
                         st.dataframe(ev_df, use_container_width=True, hide_index=True)
 
                     st.markdown(f"""
                     <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; font-family: 'Geist Mono', monospace; font-size: 11px; margin-top: 8px;">
-                        <span style="color: #38bdf8; font-weight: bold;">MASTER BUNDLE COMPOSITE HASH:</span> {fir['masterBundleHash']}
+                        <span style="color: #38bdf8; font-weight: bold;">MASTER BUNDLE COMPOSITE HASH:</span> {r_hash}
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1219,9 +1246,9 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                         st.download_button(
                             label="📄 Download Slip (.txt)",
                             data=txt_data,
-                            file_name=f"{fir['id']}_Receipt.txt",
+                            file_name=f"{r_id}_Receipt.txt",
                             mime="text/plain",
-                            key=f"dl_txt_{fir['id']}",
+                            key=f"dl_txt_{r_id}",
                             use_container_width=True
                         )
                     with c_dl2:
@@ -1229,13 +1256,13 @@ def render_efir_registration_vault_tab(cleaning_audit: Dict[str, Any], raw_df: p
                         st.download_button(
                             label="🖨️ Printable Certificate (.html)",
                             data=html_data,
-                            file_name=f"{fir['id']}_Certificate.html",
+                            file_name=f"{r_id}_Certificate.html",
                             mime="text/html",
-                            key=f"dl_html_{fir['id']}",
+                            key=f"dl_html_{r_id}",
                             use_container_width=True
                         )
                     with c_dl3:
-                        if st.button("👁️ View Full Confirmation Card", key=f"view_{fir['id']}", use_container_width=True):
+                        if st.button("👁️ View Full Confirmation Card", key=f"view_{r_id}", use_container_width=True):
                             st.session_state["active_receipt"] = fir
                             st.rerun()
 
