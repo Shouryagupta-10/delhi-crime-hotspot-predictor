@@ -10,7 +10,7 @@
 [![Status](https://img.shields.io/badge/Tests-Passing%20(100%25)-brightgreen.svg)]()
 
 > 🛡️ **Live Streamlit Navigator (Rakshak.ai)**: [**https://af17d20f423cc8.lhr.life**](https://af17d20f423cc8.lhr.life)  
-> 🚀 **Vercel Full-Stack Client**: [**https://x402-client-delta.vercel.app**](https://x402-client-delta.vercel.app)  
+
 > 🌐 **GitHub Repository**: [**https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor**](https://github.com/Shouryagupta-10/delhi-crime-hotspot-predictor)  
 > ⚡ **1-Click Streamlit Cloud Deploy**: [**Deploy backend/app/main.py on Streamlit Cloud**](https://share.streamlit.io/deploy?repository=Shouryagupta-10/delhi-crime-hotspot-predictor&branch=main&main_module=backend/app/main.py)
 
