@@ -627,7 +627,7 @@ if cluster_engine and cluster_engine.hotspots_df is not None:
 # --- SIDEBAR CONTROLS ---
 # 1. Prominent Pulsing Red SOS Emergency Alert Button (Top of Left Sidebar, above Rakshak.ai header & gold shield logo)
 with st.sidebar:
-    render_sos_emergency_sidebar_widget(user_lat=user_lat, user_lon=user_lon, hotspots=sos_hotspots)
+    render_sos_emergency_sidebar_widget(user_lat=user_lat, user_lon=user_lon, hotspots=sos_hotspots, height=220)
 
 st.sidebar.image("https://img.icons8.com/fluency/96/police-badge.png", width=64)
 st.sidebar.title("🛡️ Rakshak.ai")
