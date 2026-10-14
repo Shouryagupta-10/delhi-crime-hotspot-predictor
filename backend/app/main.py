@@ -946,20 +946,6 @@ tab1, tab_clean, tab2 = st.tabs([
 # --- TAB 1: INTERACTIVE MAP ---
 with tab1:
     st.subheader("Delhi Geospatial Crime Map & Hotspot Corridors")
-    st.caption("Visualizing spatial density gradients, DBSCAN cluster centroids, and localized premises risk profiles.")
-    
-    if is_clean_mode:
-        st.markdown("""
-        <div style="background: rgba(16, 185, 129, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 5px solid #10b981; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #6ee7b7; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>️ Verified FIR Hotspot Guarantee</b>: Hotspot locations, density clusters, and coordinates are derived exclusively from <b>confirmed police FIR reports with 100% complete data</b> (0 missing values, validated Delhi NCT geocoding).
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div style="background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 5px solid #f59e0b; border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 13px; color: #fde68a; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            <b>️ Raw Feed Audit Mode</b>: Displaying raw, unfiltered police feed containing unconfirmed calls, pending investigations, and incomplete records. Switch to <i>Confirmed & Complete FIRs</i> in the sidebar for operational patrol planning.
-        </div>
-        """, unsafe_allow_html=True)
     
     if filtered_df.empty:
         st.warning("No incidents match the active filters. Please loosen the sidebar filter criteria.")
