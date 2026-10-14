@@ -673,21 +673,8 @@ if "tab2_loc" in st.query_params:
 st.sidebar.markdown("---")
 st.sidebar.subheader(" Live Movement & Risk Radar")
 
-if user_lat is None:
-   # render_gps_locator(key_suffix="_side")
-    st.sidebar.caption("Or test location scenarios:")
-    col_g1, col_g2 = st.sidebar.columns(2)
-    with col_g1:
-        if st.button(" Rajiv Chowk (High)", use_container_width=True):
-            st.session_state["user_lat"] = 28.6328
-            st.session_state["user_lon"] = 77.2197
-            st.rerun()
-    with col_g2:
-        if st.button("️ Chanakya (Safe)", use_container_width=True):
-            st.session_state["user_lat"] = 28.5983
-            st.session_state["user_lon"] = 77.1912
-            st.rerun()
-else:
+
+if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
     
