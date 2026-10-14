@@ -53,6 +53,17 @@ except ImportError:
         except ImportError:
             render_sos_emergency_sidebar_widget = None
 
+try:
+    from components.efir_vault import render_efir_registration_vault_tab
+except ImportError:
+    try:
+        from app.components.efir_vault import render_efir_registration_vault_tab
+    except ImportError:
+        try:
+            from backend.app.components.efir_vault import render_efir_registration_vault_tab
+        except ImportError:
+            render_efir_registration_vault_tab = None
+
 # Auto-start background emergency SOS dispatcher server if available
 try:
     from sos_api_server import start_sos_api_server_background
@@ -673,6 +684,7 @@ if "tab2_loc" in st.query_params:
 st.sidebar.markdown("---")
 st.sidebar.subheader(" Live Movement & Risk Radar")
 
+
 if user_lat is not None:
     closest_d, closest_ps, dist_km = find_nearest_delhi_jurisdiction(user_lat, user_lon)
     dist_spot = cluster_engine.get_distance_to_nearest_hotspot_km(user_lat, user_lon)
@@ -924,9 +936,9 @@ if user_lat is None:
 
 # Main Navigation Tabs
 tab1, tab_clean, tab2 = st.tabs([
-    "️ Interactive Hotspot Map",
-    " FIR Registration & Verification",
-    " Real-Time Premises Risk Scorer"
+    "🗺️ Interactive Hotspot Map",
+    "⚖️ e-FIR Registration & Evidence Vault",
+    "⚡ Real-Time Premises Risk Scorer"
 ])
 
 # --- TAB 1: INTERACTIVE MAP ---
@@ -974,114 +986,12 @@ with tab1:
                 hide_index=True
             )
 
-# --- TAB: DATA CLEANING & FIR VERIFICATION ---
+# --- TAB 2: e-FIR REGISTRATION & DIGITAL FORENSICS EVIDENCE VAULT ---
 with tab_clean:
-    st.subheader(" Police FIR Registration & Data Verification Pipeline")
-    st.caption("Official reporting gateway and high-integrity data pipeline for algorithmic hotspot discovery.")
-
-    # Official Delhi Police FIR Direct Link Action
-    st.link_button(
-        "Click here to register an FIR (First Information Report) ↗",
-        "https://delhipolice.gov.in/index#service-box",
-        type="primary",
-        help="Access the official Delhi Police e-FIR portal for formal legal reporting"
-    )
-
-    st.write("")  # Visual spacer
-
-    # Executive Pipeline Flow / Summary Card
-    st.markdown("""
-    <div style="background: rgba(14, 18, 26, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);">
-        <div style="font-weight: 700; color: #f8fafc; font-size: 15px; margin-bottom: 8px;">
-            ️ Production Data Integrity Standard: Zero-Missing & Confirmed Only
-        </div>
-        <div style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
-            In predictive policing and geospatial clustering, <b>dirty data corrupts algorithmic decisions</b>. If unconfirmed citizen tips, 
-            false alarms, or records with missing coordinates leak into density estimators like DBSCAN, cluster centroids warp and police patrols 
-            are dispatched to phantom corridors. Our data cleaning pipeline enforces a rigorous 5-stage verification filter on confirmed official records.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 6 Funnel KPI Metric Cards
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    with c1:
-        st.metric("1. Raw Feed Ingested", f"{cleaning_audit.get('raw_count', len(raw_df)):,}", "Incoming Logs")
-    with c2:
-        st.metric("2. Unconfirmed Dropped", f"-{cleaning_audit.get('unconfirmed_dropped', 0):,}", "Pending / False")
-    with c3:
-        st.metric("3. Missing GPS Dropped", f"-{cleaning_audit.get('missing_coords_dropped', 0):,}", "Null Coordinates")
-    with c4:
-        st.metric("4. Missing Cols Dropped", f"-{cleaning_audit.get('missing_critical_fields_dropped', 0):,}", "Null Attributes")
-    with c5:
-        st.metric("5. Duplicates Dropped", f"-{cleaning_audit.get('duplicates_dropped', 0):,}", "Duplicate Logs")
-    with c6:
-        st.metric("6. Verified Hotspot Base", f"{len(df):,}", f"{cleaning_audit.get('retention_rate_pct', 72.8)}% Retained")
-
-    st.markdown("---")
-
-    col_audit_left, col_audit_right = st.columns([1.1, 0.9])
-
-    with col_audit_left:
-        st.markdown("###  Cleaning Funnel & Rejection Reasons")
-        st.caption("Distribution of filtered raw records across validation stages.")
-        
-        rejection_data = pd.DataFrame(cleaning_audit.get("rejection_summary", []))
-        if not rejection_data.empty:
-            rejection_data["% of Raw Records"] = (rejection_data["count"] / cleaning_audit.get("raw_count", 1) * 100.0).round(2)
-            rejection_data = rejection_data.rename(columns={"reason": "Filter / Rejection Rule", "count": "Dropped Records"})
-            st.dataframe(rejection_data, use_container_width=True, hide_index=True)
-
-        st.markdown("####  Data Quality Scorecard")
-        q1, q2, q3 = st.columns(3)
-        with q1:
-            st.metric("Data Completeness", "100.0%", "0 Missing Values")
-        with q2:
-            st.metric("FIR Confirmation", "100.0%", "All Confirmed")
-        with q3:
-            st.metric("Geocode Validity", "100.0%", "Delhi NCT Bounds")
-
-    with col_audit_right:
-        st.markdown("###  Verification Rules & Architectural Defense")
-        with st.expander("1. Verification Status (Confirmed FIR Only)", expanded=True):
-            st.markdown("""
-            - **Problem**: Emergency call feeds contain unconfirmed tips, false alarms, and incidents still under preliminary enquiry.
-            - **Criminological Impact**: Clustering unverified calls forces scarce police resources away from real persistent crime hubs.
-            - **Rule**: Retain only records with `confirmation_status == 'Confirmed'`.
-            """)
-        with st.expander("2. Zero-Tolerance for Missing Coordinates & Attributes"):
-            st.markdown("""
-            - **Problem**: In real police databases, 3-6% of records lack GPS coordinates or have (0,0) null placeholders.
-            - **Mathematical Impact**: Haversine distance matrix computation breaks with NaN coordinates. Imputation with district centroids artificially bunches crime into fake clusters.
-            - **Rule**: Prune any record with missing lat/lon, crime type, premises, or timestamp.
-            """)
-        with st.expander("3. Delhi Territorial Geofencing (NCT Bounding Box)"):
-            st.markdown(r"""
-            - **Problem**: Coordinate transpositions or faulty GPS units record incidents in neighboring states (UP, Haryana) or oceans.
-            - **Rule**: Enforce strict bounding box: Latitude $28.30^\circ\text{N} - 28.95^\circ\text{N}$, Longitude $76.80^\circ\text{E} - 77.50^\circ\text{E}$.
-            """)
-        with st.expander("4. Duplicate Incident Deduplication"):
-            st.markdown("""
-            - **Problem**: Multiple citizens report the same snatching or robbery, resulting in multiple dispatch records for a single event.
-            - **Rule**: Deduplicate on composite spatio-temporal key `[record_id]` and `[date, hour, minute, lat, lon, crime_category]`.
-            """)
-
-    st.markdown("---")
-    st.markdown("###  Interactive Record Inspector: Clean vs Rejected Sample")
-    inspector_mode = st.radio(
-        "Select Dataset View to Inspect:",
-        [" Cleaned & Verified Police Records (Used for Hotspots & ML)", "️ Raw Ingested Sample with Data Flaws"],
-        horizontal=True
-    )
-    if inspector_mode.startswith(""):
-        st.caption("Showing sample of verified records. All fields are 100% complete and validated.")
-        cols_to_show = ["record_id", "confirmation_status", "district", "police_station", "crime_category", "premises_type", "date", "hour", "latitude", "longitude", "risk_level"]
-        st.dataframe(df[[c for c in cols_to_show if c in df.columns]].head(15), use_container_width=True, hide_index=True)
+    if render_efir_registration_vault_tab is not None:
+        render_efir_registration_vault_tab(cleaning_audit, raw_df, df)
     else:
-        st.caption("Showing sample from raw feed highlighting unconfirmed statuses and missing fields.")
-        raw_display = raw_df.head(25).copy()
-        cols_to_show = ["record_id", "confirmation_status", "district", "crime_category", "latitude", "longitude", "date", "hour", "risk_level"]
-        st.dataframe(raw_display[[c for c in cols_to_show if c in raw_display.columns]], use_container_width=True, hide_index=True)
+        st.error("e-FIR Registration Vault component could not be loaded.")
 
 
 
@@ -1281,6 +1191,9 @@ if False:
      **Interview Script Delivery**:
     *"When evaluating Delhi's crime geography, K-Means was unsuitable because urban offenses follow non-convex infrastructure corridors like metro lines and commercial markets. DBSCAN with a 600m Haversine radius not only adapts to arbitrary corridor geometries, but critically isolates 1-2% of noise incidents. In law enforcement resource allocation, false positive hotspots waste critical patrol units, making density-based clustering with noise rejection mathematically and operationally superior."*
     """)
+
+
+
 
 
 # --- TAB 5: x402 PROTOCOL & ALGORAND AGENT ---
